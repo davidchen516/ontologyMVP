@@ -149,14 +149,21 @@ def ingest_dataset(
         assert run is not None
         cursor: dict[str, Any] = run["cursor_state"] or {}
 
+    required_fields = getattr(connector.config, "required_fields", ())
+    stats = {"rows_received": 0, "rows_inserted": 0, "rows_rejected": 0, "request_count": 0}
+
     config = getattr(connector, "config", None)
     if config is not None and not config.ingested:
+        # 拒绝时收敛运行状态：不得遗留 RUNNING 等待租约恢复器（审查遗留 MINOR）
+        _finish_failed(
+            uow_factory, run_id, IngestRunStatus.FAILED_FINAL,
+            f"probe-only dataset {connector.dataset_name}: raw ingestion not allowed",
+            stats,
+            request_delta=0,
+        )
         raise ProbeOnlyDatasetError(
             f"{connector.dataset_name} is probe-only; raw ingestion is not allowed"
         )
-
-    required_fields = getattr(connector.config, "required_fields", ())
-    stats = {"rows_received": 0, "rows_inserted": 0, "rows_rejected": 0, "request_count": 0}
     anomalies: list[str] = []
     batch_index = 0
 
@@ -327,10 +334,12 @@ def _finish_failed(
     status: IngestRunStatus,
     reason: str,
     stats: dict[str, int],
+    request_delta: int = 1,
 ) -> None:
+    """终态失败收尾：request_delta 是尚未入账的外呼次数（增量，非累计值）。"""
     with uow_factory.transaction() as uow:
-        # 失败时的外呼次数（含失败的那一次）如实入账，管理接口不得低报
-        uow.ingest_runs.update_counts(run_id, request_count=stats["request_count"])
+        # 失败时的外呼次数（含失败的那一次）如实入账，管理接口不得低报/多报
+        uow.ingest_runs.update_counts(run_id, request_count=request_delta)
         uow.ingest_runs.transition(
             run_id,
             status,
@@ -349,6 +358,7 @@ def _fuse_dataset(
     reason: str,
     run_id: Any,
     stats: dict[str, int],
+    request_delta: int = 1,
 ) -> None:
     """Schema 变化熔断：能力状态置 SCHEMA_CHANGED，运行终态失败。"""
     with uow_factory.transaction() as uow:
@@ -358,7 +368,7 @@ def _fuse_dataset(
             status="SCHEMA_CHANGED",
             detail={"reason": reason[:300], "fused_run_id": str(run_id)},
         )
-        uow.ingest_runs.update_counts(run_id, request_count=stats["request_count"])
+        uow.ingest_runs.update_counts(run_id, request_count=request_delta)
         uow.ingest_runs.transition(
             run_id,
             IngestRunStatus.FAILED_FINAL,

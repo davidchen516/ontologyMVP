@@ -1,4 +1,4 @@
-version: "0.1.1"
+version: "0.1.2"
 source_system: TUSHARE
 notes:
   - Interface availability and actual columns must be verified by Source Capability Probe.
@@ -483,7 +483,7 @@ datasets:
           P: PRODUCT
           I: INDUSTRY
           D: REGION
-          M: SALES_MODEL
+          M: SALES_MODE
       bz_sales:
         target: revenue
         transform: decimal_or_null
