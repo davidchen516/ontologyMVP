@@ -31,7 +31,7 @@ def test_upgrade_head_from_empty_database(admin_dsn) -> None:
     try:
         assert table_count(dsn) == 0
         run_alembic("upgrade", "head", dsn)
-        assert alembic_version(dsn) == "0006_document_pipeline"
+        assert alembic_version(dsn) == "0007_outbox_lease"
         assert table_count(dsn) == 31
         # 关键原生枚举存在
         with psycopg.connect(dsn) as conn:
@@ -86,7 +86,7 @@ def test_rerun_upgrade_head_is_noop(admin_dsn) -> None:
         run_alembic("upgrade", "head", dsn)
         run_alembic("upgrade", "head", dsn)  # 重复执行：幂等成功
         assert table_count(dsn) == 31
-        assert alembic_version(dsn) == "0006_document_pipeline"
+        assert alembic_version(dsn) == "0007_outbox_lease"
     finally:
         drop_db(admin_dsn, dbname)
 
@@ -140,7 +140,7 @@ def test_concurrent_upgrade_head_is_serialized_by_advisory_lock(admin_dsn) -> No
             assert proc.returncode == 0, f"并发升级失败:\n{out}\n{err}"
 
         assert table_count(dsn) == 31
-        assert alembic_version(dsn) == "0006_document_pipeline"
+        assert alembic_version(dsn) == "0007_outbox_lease"
     finally:
         drop_db(admin_dsn, dbname)
 

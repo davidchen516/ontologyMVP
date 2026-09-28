@@ -272,6 +272,21 @@ uv run pytest tests/db     # 迁移/约束/事务/并发/幂等/角色测试（C
   原子）；自动接受边界可配置关闭；
 - 只读审核 API：`GET /admin/review-tasks[?status=]`、`GET /admin/claims/{id}`。
 
+### Transactional Outbox 与 Neo4j 图投影（issue #8）
+
+- Outbox Worker（`src/projection/worker.py`）：`FOR UPDATE SKIP LOCKED`
+  批量领取事件 + 租约（0007 迁移增列）；租约过期自动恢复；毒性事件
+  连续失败达上限进 DEAD_LETTERED（不阻塞其他独立聚合）；
+- Neo4j 投影器（`src/projection/projector.py`）：参数化 Cypher + 批量
+  MERGE，幂等（重复消费零副作用）；所有节点/边用稳定业务 ID（UUID/IRI），
+  绝不暴露 Neo4j 内部 ID；经营类物化边必须携带 `claim_id`（缺失即拒绝）；
+  ACCEPTED → CONTRADICTED/SUPERSEDED 时失效物化边但保留 Claim 节点历史；
+- 对账报告（`src/projection/reconcile.py`）：Accepted Claim 节点覆盖率、
+  经营边 claim_id 比例（必须 100%）、实体抽样 Hash、Outbox 积压与最老等待；
+- 全量重建：从 PostgreSQL 事实主库重建整个图投影，含水位记录与回放
+  （重建期间增量事件不丢失）；
+- 测试用 `FakeGraphExecutor`（内存图，不写真实 Neo4j——CI 零外呼）。
+
 ### 日志与追踪
 
 - 所有日志为结构化 JSON；API 请求与 Worker 执行单元统一携带 `trace_id`（可通过 `X-Trace-Id` 透传）。
@@ -319,6 +334,7 @@ TuShare 概念成员
 - [x] SemanticRuntime 端口、Semantica 0.7.0 适配器与持久化 Provenance（见「语义运行时」）
 - [x] 官方披露文档采集、版本化解析与 EvidenceFragment（见「官方披露文档管道」）
 - [x] 证据化 Claim 抽取、校验、冲突与人工审核状态机（见「证据化 Claim 抽取与人工审核」）
+- [x] Transactional Outbox、Neo4j 幂等投影、对账与全量重建（见「Transactional Outbox 与 Neo4j 图投影」）
 - [x] PostgreSQL Schema 与 Alembic 迁移、事实事务边界（Neo4j 为可重建投影，无迁移需求）
 - [ ] 首个纵向场景开发
 
