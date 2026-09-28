@@ -93,12 +93,15 @@ class PostgresProvenanceStorage:
                 conn.execute("SELECT pg_advisory_xact_lock(%s)", (CHAIN_LOCK_KEY,))
                 # 幂等：同 (entity, activity, checksum) 已存在 → 返回既有
                 existing = conn.execute(
-                    "SELECT id FROM fact.provenance_entry "
+                    "SELECT id, entity_id, entity_type, activity_id, agent_id, source_quote, "
+                    "parent_entity_id, used_entities, confidence, checksum, sequence_id, "
+                    "previous_checksum, metadata, created_at "
+                    "FROM fact.provenance_entry "
                     "WHERE entity_id = %s AND activity_id = %s AND checksum = %s",
                     (entity_id, activity_id, checksum),
                 ).fetchone()
                 if existing is not None:
-                    return existing[0]
+                    return self._row_to_record(existing)
                 head = conn.execute(
                     "SELECT sequence_id, checksum FROM fact.provenance_entry "
                     "ORDER BY sequence_id DESC NULLS LAST LIMIT 1 FOR UPDATE"
@@ -114,7 +117,10 @@ class PostgresProvenanceStorage:
                          used_entities, confidence, checksum, sequence_id,
                          previous_checksum, metadata)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    RETURNING id, sequence_id, checksum, previous_checksum, created_at
+                    RETURNING id, entity_id, entity_type, activity_id, agent_id,
+                              source_quote, parent_entity_id, used_entities,
+                              confidence, checksum, sequence_id,
+                              previous_checksum, metadata, created_at
                     """,
                     (
                         entity_id, entity_type, activity_id, agent_id,
@@ -123,7 +129,14 @@ class PostgresProvenanceStorage:
                         previous_checksum, Json(metadata),
                     ),
                 ).fetchone()
-        return row[0]
+                # 显式序号写入后同步 BIGSERIAL 计数器：保证 #2 仓储默认路径
+                # （ProvenanceRepository.insert）与本存储不会产生重复序号
+                conn.execute(
+                    "SELECT setval(pg_get_serial_sequence('fact.provenance_entry', "
+                    "'sequence_id'), COALESCE((SELECT max(sequence_id) "
+                    "FROM fact.provenance_entry), 1))"
+                )
+        return self._row_to_record(row)
 
     # ---- 读取 ----
 
@@ -258,8 +271,8 @@ class PostgresProvenanceStorage:
                 "agent_id": agent_id,
                 "used_entities": used_entities,
                 "metadata": metadata,
-                "registered_at": dt.datetime.now(tz=dt.UTC).isoformat(),
             },
+            # 纯内容校验和：不含时间戳——幂等注册依赖确定性
             sort_keys=True, ensure_ascii=False, separators=(",", ":"), default=str,
         )
         return hashlib.sha256(payload.encode()).hexdigest()

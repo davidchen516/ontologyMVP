@@ -56,9 +56,8 @@ def run_quality_gate(graph: Graph) -> ValidationReport:
 
     classes = set(graph.subjects(RDF.type, OWL.Class))
     classes |= set(graph.subjects(RDF.type, RDFS.Class))
-    # 外部词汇（SKOS/PROV 等）与内置类：出现在任何 rdf:type 三元组或为内置即视为已定义
-    classes |= {obj for _, _, obj in graph.triples((None, RDF.type, None))
-                if isinstance(obj, URIRef)}
+    # 仅内置/外部词汇视为已定义：本地未声明类的引用必须报 UNRESOLVED_REFERENCE
+    # （防止"实例三元组掩盖幽灵类"的漏报——本地类必须显式声明）
     classes |= {
         OWL.Thing, RDFS.Resource, RDFS.Literal,
         URIRef("http://www.w3.org/2004/02/skos/core#Concept"),

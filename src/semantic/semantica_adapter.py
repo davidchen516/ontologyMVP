@@ -48,8 +48,9 @@ CYPHER_TEMPLATES: dict[QueryTemplate, str] = {
         "MATCH (c:Company)-[:TAGGED_AS]->(k:Concept {canonical_key: $concept}) "
         "RETURN c.canonical_key AS company",
     QueryTemplate.SUPPLY_CHAIN_NEIGHBORS:
-        "MATCH (c:Company {canonical_key: $company})-[r:PRODUCES|SUPPLIES_TO*1..$depth]-(n) "
-        "RETURN type(r) AS rel, n.canonical_key AS neighbor",
+        "MATCH path = (c:Company {canonical_key: $company})"
+        "-[:PRODUCES|SUPPLIES_TO*1..3]-(n) "
+        "RETURN [r IN relationships(path) | type(r)] AS rels, n.canonical_key AS neighbor",
     QueryTemplate.CLAIMS_FOR_SUBJECT:
         "MATCH (c:Company {canonical_key: $company})<-[rel:CLAIM {predicate_code: $predicate}]-(k) "
         "RETURN k.claim_id AS claim",
@@ -164,51 +165,159 @@ class SemanticaRuntimeAdapter:
     # ---- 冲突检测：Semantica 封装 + 项目时态/逻辑规则补充 ----
 
     def detect_conflicts(self, claims: list[dict[str, Any]]) -> list[ConflictFinding]:
+        """冲突检测：Semantica 封装（值冲突）+ 项目规则（类型/关系/逻辑/时态）。
+
+        框架喂参契约（semantica 0.7.0）：同一 entity_id 的实体按顶层属性值
+        分组检测 → 我们把同 (subject, predicate) 的 Claim 组映射为共享
+        entity_id 的实体，object/stage 等置于顶层，claim id 记入 source。
+        所有来源 Claim 保留在 findings 中，检测层绝不自动裁决。
+        """
         findings: list[ConflictFinding] = []
         if not claims:
             return findings
 
-        # 1) Semantica 冲突检测：值/类型/关系/时态（喂项目 Claim 实体字典）
+        # 按 (主体, 谓词) 分组——同一断言维度的不同来源
+        groups: dict[tuple[str, str], list[dict[str, Any]]] = {}
+        for claim in claims:
+            key = (str(claim.get("subject_entity_id")), str(claim.get("predicate_code")))
+            groups.setdefault(key, []).append(claim)
+
+        # 1) Semantica 值冲突（真实封装，喂参与框架分组契约对齐）
         try:
             from semantica.conflicts import ConflictDetector
 
-            entities = [
-                {
-                    "entity_id": str(c.get("id")),
-                    "entity_type": "Claim",
-                    "properties": {
-                        "subject": str(c.get("subject_entity_id")),
-                        "predicate": str(c.get("predicate_code")),
-                        "object": str(c.get("object_entity_id") or c.get("object_value")),
-                        "business_stage": c.get("business_stage"),
-                        "valid_from": c.get("valid_from"),
-                        "valid_to": c.get("valid_to"),
-                    },
-                }
-                for c in claims
-            ]
             detector = ConflictDetector()
-            detected = detector.detect_conflicts(entities)
-            for conflict in detected:
-                findings.append(
-                    ConflictFinding(
-                        kind=_CONFLICT_KIND_MAP.get(
-                            str(getattr(conflict, "conflict_type", "")),
-                            ConflictKind.LOGICAL,
+            for (subject, predicate), group in groups.items():
+                entities = [
+                    {
+                        "entity_id": f"{subject}:{predicate}",
+                        "entity_type": "ClaimGroup",
+                        # 顶层属性：框架按顶层键比较值
+                        "object": str(
+                            claim.get("object_entity_id")
+                            or claim.get("object_value")
+                            or ""
                         ),
-                        claim_ids=tuple(
-                            str(e) for e in (getattr(conflict, "entity_ids", None) or [])
-                        ),
-                        detail=str(getattr(conflict, "description", "") or "")[:300],
+                        "source": str(claim.get("id")),
+                    }
+                    for claim in group
+                ]
+                if len({e["object"] for e in entities}) < 2:
+                    continue
+                for conflict in detector.detect_conflicts(entities):
+                    findings.append(
+                        ConflictFinding(
+                            kind=_CONFLICT_KIND_MAP[conflict.conflict_type.name],
+                            claim_ids=tuple(
+                                str(s.get("document"))
+                                for s in (conflict.sources or [])
+                            ),
+                            detail=(
+                                f"{conflict.entity_id}.{conflict.property_name}: "
+                                f"conflicting values {conflict.conflicting_values} "
+                                f"(severity={conflict.severity})"
+                            )[:300],
+                        )
                     )
-                )
         except Exception as exc:  # noqa: BLE001 - 框架失败不伪成功
             raise SemanticCapabilityError(
                 f"conflict engine failure: {type(exc).__name__}: {str(exc)[:160]}"
             ) from exc
 
-        # 2) 项目规则：矛盾业务阶段 + 有效期重叠（DENIED vs MASS_PRODUCTION 等）
+        # 2) 项目规则：类型/关系/逻辑/时态
+        for (subject, predicate), group in groups.items():
+            findings.extend(self._type_conflicts(group, subject, predicate))
+        findings.extend(self._relation_conflicts(claims))
+        findings.extend(self._logical_conflicts(claims))
         findings.extend(self._temporal_stage_conflicts(claims))
+        return findings
+
+    @staticmethod
+    def _type_conflicts(
+        group: list[dict[str, Any]], subject: str, predicate: str
+    ) -> list[ConflictFinding]:
+        """同 (subject, predicate) 下对象实体类型不一致 → TYPE 冲突。"""
+        types = {
+            str(c.get("object_entity_type") or "")
+            for c in group
+            if c.get("object_entity_id") is not None
+        }
+        if len(types) < 2:
+            return []
+        return [
+            ConflictFinding(
+                kind=ConflictKind.TYPE,
+                claim_ids=tuple(str(c.get("id")) for c in group),
+                detail=(
+                    f"{subject}/{predicate}: conflicting object entity types "
+                    f"{sorted(types)} — all sources retained"
+                ),
+            )
+        ]
+
+    @staticmethod
+    def _relation_conflicts(claims: list[dict[str, Any]]) -> list[ConflictFinding]:
+        """同 (subject, object) 被断言了多种不同关系 → RELATION 冲突。"""
+        pairs: dict[tuple[str, str], set[str]] = {}
+        claim_by_pair: dict[tuple[str, str], list[dict]] = {}
+        for claim in claims:
+            if claim.get("object_entity_id") is None:
+                continue
+            key = (str(claim.get("subject_entity_id")), str(claim["object_entity_id"]))
+            pairs.setdefault(key, set()).add(str(claim.get("predicate_code")))
+            claim_by_pair.setdefault(key, []).append(claim)
+        findings: list[ConflictFinding] = []
+        for key, predicates in pairs.items():
+            if len(predicates) < 2:
+                continue
+            findings.append(
+                ConflictFinding(
+                    kind=ConflictKind.RELATION,
+                    claim_ids=tuple(str(c.get("id")) for c in claim_by_pair[key]),
+                    detail=(
+                        f"{key[0]} -> {key[1]}: multiple relations {sorted(predicates)} "
+                        "asserted — needs review, no auto resolution"
+                    ),
+                )
+            )
+        return findings
+
+    @staticmethod
+    def _logical_conflicts(claims: list[dict[str, Any]]) -> list[ConflictFinding]:
+        """同 (subject, predicate) 同时存在明确否认与肯定断言 → LOGICAL 冲突。"""
+        groups: dict[tuple[str, str], list[dict]] = {}
+        for claim in claims:
+            if str(claim.get("predicate_code")) == "DENIES_INVOLVEMENT":
+                key = (str(claim.get("subject_entity_id")), "")
+                groups.setdefault(key, []).append(claim)
+            elif claim.get("business_stage"):
+                key = (str(claim.get("subject_entity_id")), str(claim.get("predicate_code")))
+                groups.setdefault(key, []).append(claim)
+        findings: list[ConflictFinding] = []
+        denials_by_subject: dict[str, list[dict]] = {}
+        for claim in claims:
+            if str(claim.get("predicate_code")) == "DENIES_INVOLVEMENT":
+                denials_by_subject.setdefault(str(claim.get("subject_entity_id")), []).append(claim)
+        affirmations = [
+            c for c in claims
+            if str(c.get("predicate_code")) != "DENIES_INVOLVEMENT" and c.get("business_stage")
+        ]
+        for subject, denial_claims in denials_by_subject.items():
+            related = [c for c in affirmations if str(c.get("subject_entity_id")) == subject]
+            if not related:
+                continue
+            findings.append(
+                ConflictFinding(
+                    kind=ConflictKind.LOGICAL,
+                    claim_ids=tuple(
+                        str(c.get("id")) for c in denial_claims + related
+                    ),
+                    detail=(
+                        f"{subject}: explicit denial coexists with affirmative stage claims "
+                        "— logical conflict, all sources retained"
+                    ),
+                )
+            )
         return findings
 
     @staticmethod
@@ -307,11 +416,10 @@ class SemanticaRuntimeAdapter:
             checksum=entry.chain_key(),
             metadata=dict(entry.metadata),
         )
-        record_id = self._provenance.store(semantica_entry)
-        stored = self._provenance.retrieve(entry.entity_id)
+        stored = self._provenance.store(semantica_entry)
         if stored is None:
-            raise SemanticCapabilityError(f"provenance read-back failed for {entry.entity_id}")
-        return self._as_lineage(stored, fallback_id=record_id)
+            raise SemanticCapabilityError(f"provenance write failed for {entry.entity_id}")
+        return self._as_lineage(stored)
 
     def trace_lineage(
         self, entity_id: str, *, max_depth: int | None = None
@@ -324,7 +432,7 @@ class SemanticaRuntimeAdapter:
         ]
 
     @staticmethod
-    def _as_lineage(record: dict[str, Any], *, fallback_id: Any = None) -> LineageRecord:
+    def _as_lineage(record: dict[str, Any]) -> LineageRecord:
         used = record.get("used_entities") or []
         return LineageRecord(
             entity_id=str(record.get("entity_id") or ""),

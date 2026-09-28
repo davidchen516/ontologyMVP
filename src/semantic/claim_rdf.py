@@ -33,16 +33,38 @@ def _ts(value: Any) -> Literal:
     return Literal(str(value), datatype=XSD.dateTime)
 
 
+# 本体已声明的实体类型白名单：小写输入 → 规范类名；未知类型必须被
+# 质量门禁/SHACL 噪亮拒绝，而不是静默生成未定义类
+_KNOWN_ENTITY_TYPES = {
+    "company": "Company",
+    "security": "Security",
+    "exchange": "Exchange",
+    "concept": "Concept",
+    "product": "Product",
+    "theme": "Theme",
+    "industry": "Industry",
+}
+
+
+class UnknownEntityTypeError(Exception):
+    """Claim 引用了本体未声明的实体类型：进入拒绝/审核，不得静默。"""
+
+
 def _type_entity_node(
-    graph: Graph, node: URIRef, entity_type: str, entity_id: Any
+    graph: Graph, node: URIRef, entity_type: str, entity_id: Any,
+    *, fallback: str | None = None,
 ) -> None:
-    """实体节点需带 rdf:type 与 canonicalKey：满足 shapes 的对象类型约束
+    """实体节点带 rdf:type 与 canonicalKey：满足 shapes 的对象类型约束
     （如 PRODUCES 对象必须是 stock:Product）及目标类 Shape 的业务键要求。"""
-    type_name = str(entity_type or "Company").strip()
-    if type_name.lower() == "product":
-        type_name = "Product"
-    elif type_name.lower() == "company":
-        type_name = "Company"
+    raw = str(entity_type or "").strip().lower()
+    type_name = _KNOWN_ENTITY_TYPES.get(raw)
+    if type_name is None and fallback is not None:
+        raw = fallback.lower()
+        type_name = _KNOWN_ENTITY_TYPES.get(raw)
+    if type_name is None:
+        raise UnknownEntityTypeError(
+            f"entity type {entity_type!r} is not declared in the ontology"
+        )
     graph.add((node, RDF.type, URIRef(f"{STOCK}{type_name}")))
     graph.add((node, STOCK.canonicalKey, Literal(str(entity_id))))
 
@@ -64,7 +86,7 @@ def claim_to_graph(
         f"https://ontology.example.com/stock/{subject_kind}/{claim.get('subject_entity_id')}"
     )
     _type_entity_node(graph, subject, claim.get("subject_entity_type", "Company"),
-                      claim.get("subject_entity_id"))
+                      claim.get("subject_entity_id"), fallback="Company")
     graph.add((node, STOCK.claimSubject, subject))
 
     if claim.get("predicate_code"):
@@ -81,7 +103,10 @@ def claim_to_graph(
                           claim["object_entity_id"])
         graph.add((node, STOCK.claimObject, object_node))
     else:
+        # 值对象：HAS_REVENUE_FROM 等谓词的对象必须是 Product（ProducesObjectShape），
+        # 值节点按 Product 类型化（收入来源即产品），附带原始值字面量
         value_node = URIRef(f"{STOCK}claimObjectValue/{claim_id}")
+        _type_entity_node(graph, value_node, "Product", claim_id)
         graph.add((node, STOCK.claimObject, value_node))
         if claim.get("object_value") is not None:
             graph.add((value_node, STOCK.objectValue,

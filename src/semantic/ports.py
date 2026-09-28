@@ -126,6 +126,9 @@ class ProvenanceInput:
             "used": sorted(self.used_entities),
             "parent": self.parent_entity_id,
             "meta": self.metadata,
+            "source_quote": self.source_quote,
+            "source_location": self.source_location,
+            "confidence": self.confidence,
         }
         return hashlib.sha256(
             json.dumps(payload, sort_keys=True, ensure_ascii=False,

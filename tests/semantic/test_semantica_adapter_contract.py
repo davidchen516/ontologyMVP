@@ -308,3 +308,96 @@ def test_bitemporal_roundtrip_preserves_semantics(scenario):
     bifact = adapter.fact_to_bitemporal(fact)
     restored = adapter.bitemporal_to_fact(bifact, subject="s", predicate="p")
     assert restored == fact  # 往返后 valid_from/to、recorded_at、superseded_at 语义不变
+
+
+# ---- 四类冲突契约（BLOCKER 修复回归） ----
+
+
+def test_value_conflict_detected_with_all_source_claims():
+    """同 (subject, predicate) 不同对象 → Semantica 值冲突，claim_ids 保留全部来源。"""
+    adapter = make_adapter()
+    findings = adapter.detect_conflicts([
+        {"id": "v1", "subject_entity_id": "co-1", "predicate_code": "PRODUCES",
+         "claim_status": "ACCEPTED", "object_entity_id": "product-A"},
+        {"id": "v2", "subject_entity_id": "co-1", "predicate_code": "PRODUCES",
+         "claim_status": "ACCEPTED", "object_entity_id": "product-B"},
+    ])
+    value_findings = [f for f in findings if f.kind == ConflictKind.VALUE]
+    assert value_findings, "值冲突必须被 Semantica 检测器真实发现"
+    assert set(value_findings[0].claim_ids) == {"v1", "v2"}
+    assert value_findings[0].auto_resolved is False
+    assert "product-A" in value_findings[0].detail
+
+
+def test_type_conflict_detected():
+    """同 (subject, predicate) 对象实体类型不一致 → TYPE 冲突。"""
+    adapter = make_adapter()
+    findings = adapter.detect_conflicts([
+        {"id": "t1", "subject_entity_id": "co-1", "predicate_code": "PRODUCES",
+         "object_entity_id": "p-1", "object_entity_type": "Product"},
+        {"id": "t2", "subject_entity_id": "co-1", "predicate_code": "PRODUCES",
+         "object_entity_id": "th-1", "object_entity_type": "Theme"},
+    ])
+    type_findings = [f for f in findings if f.kind == ConflictKind.TYPE]
+    assert type_findings
+    assert set(type_findings[0].claim_ids) == {"t1", "t2"}
+
+
+def test_relation_conflict_detected():
+    """同 (subject, object) 被断言多种关系 → RELATION 冲突。"""
+    adapter = make_adapter()
+    findings = adapter.detect_conflicts([
+        {"id": "r1", "subject_entity_id": "co-1", "predicate_code": "PRODUCES",
+         "object_entity_id": "p-1"},
+        {"id": "r2", "subject_entity_id": "co-1", "predicate_code": "SUPPLIES_TO",
+         "object_entity_id": "p-1"},
+    ])
+    relation_findings = [f for f in findings if f.kind == ConflictKind.RELATION]
+    assert relation_findings
+    assert set(relation_findings[0].claim_ids) == {"r1", "r2"}
+
+
+def test_logical_conflict_denial_vs_affirmation():
+    """明确否认与肯定断言并存 → LOGICAL 冲突，绝不自动选择一方。"""
+    adapter = make_adapter()
+    findings = adapter.detect_conflicts([
+        {"id": "l1", "subject_entity_id": "co-1", "predicate_code": "DENIES_INVOLVEMENT",
+         "claim_status": "ACCEPTED"},
+        {"id": "l2", "subject_entity_id": "co-1", "predicate_code": "PRODUCES",
+         "claim_status": "ACCEPTED", "business_stage": "MASS_PRODUCTION"},
+    ])
+    logical = [f for f in findings if f.kind == ConflictKind.LOGICAL]
+    assert logical
+    assert {"l1", "l2"} <= set(logical[0].claim_ids)
+    assert logical[0].auto_resolved is False
+
+
+def test_no_value_conflict_when_objects_agree():
+    adapter = make_adapter()
+    findings = adapter.detect_conflicts([
+        {"id": "a1", "subject_entity_id": "co-1", "predicate_code": "PRODUCES",
+         "object_entity_id": "p-1"},
+        {"id": "a2", "subject_entity_id": "co-1", "predicate_code": "PRODUCES",
+         "object_entity_id": "p-1"},
+    ])
+    assert not [f for f in findings if f.kind == ConflictKind.VALUE]
+
+
+# ---- CONCERN 修复回归 ----
+
+
+def test_value_object_claim_conforms_for_revenue_predicate():
+    """object_value 型 Claim（如 HAS_REVENUE_FROM）值节点类型化为 Product，
+    满足 ProducesObjectShape。"""
+    report = make_adapter().validate_claim(claim_to_graph(claim(
+        predicate_code="HAS_REVENUE_FROM", object_entity_id=None,
+        object_value={"amount": 100000},
+    )))
+    assert report.conforms, [v.message for v in report.violations]
+
+
+def test_unknown_entity_type_is_rejected_loudly():
+    from src.semantic.claim_rdf import UnknownEntityTypeError
+
+    with pytest.raises(UnknownEntityTypeError):
+        claim_to_graph(claim(object_entity_id="x-1", object_entity_type="GhostType"))

@@ -146,3 +146,23 @@ def test_fake_provenance_unavailable_raises():
         fake.register_provenance(ProvenanceInput(
             entity_id="e", entity_type="Claim", activity_id="a"
         ))
+
+
+def test_ghost_class_with_instance_triple_still_reported(tmp_path):
+    """放宽收窄回归：实例三元组不得掩盖未声明类的引用。"""
+    source = tmp_path / "ghost.ttl"
+    source.write_text(
+        "@prefix owl: <http://www.w3.org/2002/07/owl#> .\n"
+        "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n"
+        "@prefix ex: <http://x.com/#> .\n"
+        "ex:hasPart a owl:ObjectProperty ; rdfs:domain ex:Company ; "
+        "rdfs:range ex:GhostProduct .\n"
+        "ex:co1 a ex:GhostProduct .\n",
+        encoding="utf-8",
+    )
+    graph = load_graphs([str(source)])
+    report = run_quality_gate(graph)
+    assert any(
+        v.constraint == "UNRESOLVED_REFERENCE" and "GhostProduct" in (v.message or "")
+        for v in report.violations
+    )

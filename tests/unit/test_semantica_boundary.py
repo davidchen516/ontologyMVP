@@ -11,14 +11,16 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SCAN_ROOTS = ("src", "apps", "tests")
 ALLOWED_RELATIVE = {Path("src/semantic/semantica_adapter.py")}
+# ADR-0003：适配器的契约测试允许导入 semantica——豁免收敛到具体文件
+ALLOWED_RELATIVE.update(
+    Path(p) for p in (
+        "tests/semantic/test_semantica_adapter_contract.py",
+    )
+)
 
 
 def _is_allowed(relative: Path) -> bool:
-    if relative in ALLOWED_RELATIVE:
-        return True
-    # ADR-0003：适配器的契约测试（tests/semantic/*）允许导入 semantica
-    parts = relative.parts
-    return len(parts) >= 2 and parts[0] == "tests" and parts[1] == "semantic"
+    return relative in ALLOWED_RELATIVE
 
 
 def semantica_imports(path: Path) -> list[int]:

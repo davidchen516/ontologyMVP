@@ -203,3 +203,60 @@ def test_adapter_conflicts_available_without_storage(main_dsn) -> None:
         adapter.register_provenance(ProvenanceInput(
             entity_id="e", entity_type="Claim", activity_id="a"
         ))
+
+
+def test_read_back_returns_registered_activity_row(main_dsn) -> None:
+    """CONCERN 修复回归：实体多活动后幂等重注册 A，返回的必须是 A 的记录
+    （不是该实体最新一条）。"""
+    storage = PostgresProvenanceStorage(main_dsn)
+    first = storage.store(SimpleEntry("multi-act", "act-A"))
+    storage.store(SimpleEntry("multi-act", "act-B"))
+    re_registered = storage.store(SimpleEntry("multi-act", "act-A"))
+
+    assert re_registered["activity_id"] == "act-A"
+    assert re_registered["sequence_id"] == first["sequence_id"]
+    assert re_registered["checksum"] == first["checksum"]
+
+
+def test_mixed_writers_no_sequence_collision(main_dsn) -> None:
+    """CONCERN 修复回归：#2 仓储默认序号路径与本存储显式序号路径混写，
+    setval 同步后不得出现重复序号。"""
+    import uuid as _uuid
+
+    from src.db.uow import UnitOfWorkFactory
+
+    factory = UnitOfWorkFactory(main_dsn)
+    with factory.transaction() as uow:
+        company = uow.companies.insert(canonical_name="溯源公司")
+        document = uow.documents.insert(
+            document_type="ANNUAL_REPORT", source_system="CNINFO",
+            title="年报", content_hash=_uuid.uuid4().hex,
+        )
+        uow.claim_evidence.insert_evidence_fragment(
+            document_id=document["id"], quote_text="q", checksum=_uuid.uuid4().hex
+        )
+        claim = uow.claims.insert(
+            subject_entity_type="Company", subject_entity_id=company["id"],
+            predicate_code="PRODUCES", content_hash=_uuid.uuid4().hex,
+            extraction_method="RULE", ontology_version="0.1.0",
+            confidence=0.9, object_value={"x": 1},
+        )
+        uow.provenance.insert(
+            entity_id=str(claim["id"]), entity_type="Claim",
+            activity_id="repo-writer", checksum=_uuid.uuid4().hex,
+        )
+    storage = PostgresProvenanceStorage(main_dsn)
+    storage.store(SimpleEntry("storage-writer-1", "act-1"))
+    with factory.transaction() as uow:
+        uow.provenance.insert(
+            entity_id="second-repo-writer", entity_type="Claim",
+            activity_id="repo-writer-2", checksum=_uuid.uuid4().hex,
+        )
+
+    with psycopg.connect(main_dsn) as conn:
+        rows = conn.execute(
+            "SELECT sequence_id FROM fact.provenance_entry ORDER BY sequence_id"
+        ).fetchall()
+    sequences = [r[0] for r in rows]
+    assert len(sequences) == len(set(sequences)), "双写者不得产生重复序号"
+    assert storage.verify_chain() == []
