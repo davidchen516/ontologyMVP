@@ -1,0 +1,80 @@
+name: ontology-mvp
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ontology}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-ontology}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # 不发布宿主机端口：API 走 compose 内部网络；本机调试可用
+    # `docker compose exec postgres psql -U ontology -d ontology`
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ontology} -d ${POSTGRES_DB:-ontology}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  neo4j:
+    image: neo4j:5.26
+    environment:
+      NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:?NEO4J_PASSWORD must be set in .env}
+    volumes:
+      - neo4j_data:/data
+    ports:
+      # 仅绑定回环地址：与 postgres 不发布宿主端口的边界保持一致
+      - "127.0.0.1:7474:7474"
+      - "127.0.0.1:7687:7687"
+    healthcheck:
+      # 同时探测 HTTP(7474) 与 Bolt(7687)：Bolt 晚于 HTTP 就绪，就绪门禁以两者为准
+      test: ["CMD-SHELL", "timeout 5 bash -c '</dev/tcp/localhost/7474 && </dev/tcp/localhost/7687' || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 15s
+
+  api:
+    build: .
+    environment: &app_env
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-ontology}
+      POSTGRES_USER: ${POSTGRES_USER:-ontology}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: ${NEO4J_USER:-neo4j}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD:?NEO4J_PASSWORD must be set in .env}
+      TUSHARE_TOKEN: ${TUSHARE_TOKEN:-}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      ENVIRONMENT: ${ENVIRONMENT:-local}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    healthcheck:
+      # readyz 最坏情况两探针串行 2×2s，探测超时给 6s（挂起场景不被误判为通过）
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/readyz', timeout=6)"]
+      interval: 10s
+      timeout: 8s
+      retries: 6
+      start_period: 5s
+
+  worker:
+    build: .
+    command: ["/app/.venv/bin/python", "-m", "apps.worker.main"]
+    environment: *app_env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  neo4j_data:

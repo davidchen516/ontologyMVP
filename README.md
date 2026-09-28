@@ -1,6 +1,7 @@
 # OntologyMVP
 
 [![Validate design assets](https://github.com/davidchen516/ontologyMVP/actions/workflows/validate-design.yml/badge.svg)](https://github.com/davidchen516/ontologyMVP/actions/workflows/validate-design.yml)
+[![Runtime CI](https://github.com/davidchen516/ontologyMVP/actions/workflows/runtime-ci.yml/badge.svg)](https://github.com/davidchen516/ontologyMVP/actions/workflows/runtime-ci.yml)
 
 本仓库代码仅用于验证本体论相关实现技术。
 
@@ -103,7 +104,66 @@ flowchart LR
 
 校验覆盖：必需文件、Turtle、YAML 以及仓库内 Markdown 链接。每次向 `main` 推送及每个 Pull Request 都自动执行。
 
-## 6. 首个纵向开发切片
+## 6. 本地启动与运行（工程基线）
+
+工程基线提供 API、Worker、PostgreSQL(pgvector)、Neo4j 的本地依赖拓扑（对应 issue #1）。
+
+### 前置条件
+
+- Docker Desktop（含 Compose v2）
+- 不使用 Docker 的本地开发：Python 3.11 与 [uv](https://docs.astral.sh/uv/)
+
+### 配置（Secret 边界）
+
+1. `cp .env.example .env` 并填入本地密码；`.env` 已被 gitignore，**真实 Secret 只通过环境变量注入，严禁提交仓库**。
+2. 必填配置缺失时，API/Worker 启动即失败，并逐项列出缺失变量（不使用危险默认值）。
+3. TuShare Token、LLM Key 为可选能力项：缺失时应用以 `DEGRADED` 运行、对应能力标记不可用，不伪装成可用。
+
+### 启动与停止
+
+```bash
+docker compose up --build -d --wait   # 启动 postgres/neo4j/api/worker 并等待健康检查
+docker compose ps                     # 查看服务与健康状态
+docker compose logs -f api worker     # 结构化 JSON 日志（均带 trace_id）
+docker compose down                   # 停止；默认保留数据卷
+```
+
+`docker compose down` 不会删除数据卷；删除卷属于显式人工操作（`docker compose down -v`），系统不会自动执行。应用启动时不执行任何隐式数据库变更。
+
+### 健康检查
+
+- `GET /healthz`：进程存活，恒为 200，**不隐含依赖健康**。
+- `GET /readyz`：核心依赖（PostgreSQL、Neo4j）与应用配置就绪检查：
+  - `OK`：核心依赖全部可用（HTTP 200）；
+  - `DEGRADED`：核心可用但可选能力缺失（HTTP 200，能力标记 `UNAVAILABLE`）；
+  - `FAIL`：PostgreSQL 或 Neo4j 不可达（HTTP 503，返回脱敏后的错误类型与诊断信息，不含密码/Token）。
+
+```bash
+curl -s http://localhost:8000/healthz
+curl -s http://localhost:8000/readyz    # 未配置 TuShare Token 时返回 DEGRADED，属预期行为
+```
+
+### 本地开发（无 Docker 运行时）
+
+```bash
+uv sync                                      # 按 uv.lock 精确安装（Python 3.11 + semantica==0.7.0）
+uv run pytest                                # 单元 + 集成测试（不依赖真实数据库）
+uv run ruff check .                          # 静态检查
+uv run uvicorn apps.api.main:app --port 8000 --no-access-log   # 配置来自 .env 或环境变量
+uv run python -m apps.worker.main                             # Worker 同样读取 .env
+```
+
+### 日志与追踪
+
+- 所有日志为结构化 JSON；API 请求与 Worker 执行单元统一携带 `trace_id`（可通过 `X-Trace-Id` 透传）。
+- `password`/`token`/`secret`/`api_key` 等字段在日志层强制脱敏，包括异常堆栈文本与 DSN 中的凭据。
+
+### CI
+
+- **Validate design assets**：Turtle/YAML/链接校验（见上方徽章）。
+- **Runtime CI**：锁文件安装（`uv sync --frozen`，解析失败即失败）→ ruff 静态检查 → pytest（单元+集成，故障用不可达端口注入）→ 设计资产校验 → gitleaks Secret 扫描。
+
+## 7. 首个纵向开发切片
 
 首个端到端场景固定为：
 
@@ -125,7 +185,7 @@ TuShare 概念成员
   -> 返回推理路径、证据和数据口径
 ```
 
-## 7. 当前状态
+## 8. 当前状态
 
 - [x] 可落地总体架构
 - [x] 领域模型和 Claim/Evidence 模型
@@ -134,12 +194,12 @@ TuShare 概念成员
 - [x] SQL、Cypher、本体与 SHACL 初始设计
 - [x] 查询、API、质量和实施路线
 - [x] 自动化设计资产校验
-- [ ] 可运行工程脚手架
+- [x] 可运行工程脚手架（API/Worker/Compose/CI/健康检查，见「本地启动与运行」）
 - [ ] TuShare 连接器实现
 - [ ] PostgreSQL/Neo4j 初始化与迁移
 - [ ] 首个纵向场景开发
 
-## 8. 参考
+## 9. 参考
 
 - Semantica: https://github.com/semantica-agi/semantica
 - TuShare Pro: https://tushare.pro/
