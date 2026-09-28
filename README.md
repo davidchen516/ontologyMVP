@@ -1,5 +1,7 @@
 # ontologyMVP
 
+[![Validate design assets](https://github.com/davidchen516/ontologyMVP/actions/workflows/validate-design.yml/badge.svg)](https://github.com/davidchen516/ontologyMVP/actions/workflows/validate-design.yml)
+
 基于 **TuShare + Semantica + PostgreSQL + Neo4j** 的股票本体查询系统 MVP。
 
 本仓库当前阶段用于固化可落地的技术设计，并作为后续代码实现的唯一工程基线。
@@ -24,7 +26,7 @@
 |---|---|---|
 | 结构化主数据 | TuShare（当前账户 6420 积分） | 股票、公司、行业、概念、主营构成、财务、股东、机构调研 |
 | 官方证据 | 巨潮资讯、上交所、深交所 | 年报、公告、招股书、互动回复 |
-| 语义与本体运行时 | Semantica 0.7.x（实施时锁定精确版本） | OWL、SKOS、SHACL、双时态、溯源、冲突和图谱适配 |
+| 语义与本体运行时 | Semantica 0.7.0（实施期精确锁版） | OWL、SKOS、SHACL、双时态、溯源、冲突和图谱适配 |
 | 事实主库 | PostgreSQL + pgvector | 原始数据、标准实体、Claim、Evidence、财务计算、任务状态 |
 | 图查询投影 | Neo4j | 多跳关系、路径解释、产业链查询 |
 | 服务接口 | FastAPI | 查询、筛选、审核和管理 API |
@@ -67,6 +69,8 @@ flowchart LR
 
 ## 5. 文档目录
 
+### 架构与开发设计
+
 - [总体架构](docs/architecture.md)
 - [领域与数据模型](docs/domain-model.md)
 - [TuShare 与数据接入](docs/data-sources-and-ingestion.md)
@@ -78,13 +82,29 @@ flowchart LR
 - [实施路线与验收标准](docs/delivery-plan.md)
 - [ADR-0001：事实库与图投影职责](docs/adr/0001-storage-responsibilities.md)
 - [ADR-0002：采用 Claim 中心模型](docs/adr/0002-claim-centered-model.md)
+
+### 本体与语义资产
+
 - [本体目录说明](ontology/README.md)
+- [股票核心本体](ontology/stock-core.ttl)
+- [经营与产业链关系扩展](ontology/stock-relations.ttl)
+- [人形机器人产品 SKOS 词表](ontology/product-skos.ttl)
+- [SHACL 约束](ontology/shapes.ttl)
+- [确定性推理规则](ontology/rules.yaml)
+- [TuShare 字段映射](ontology/mappings/tushare.yaml)
+
+### 自动校验
+
+- [设计资产校验脚本](scripts/validate_design.py)
+- [GitHub Actions 校验流水线](.github/workflows/validate-design.yml)
+
+校验覆盖：必需文件、Turtle、YAML 以及仓库内 Markdown 链接。每次向 `main` 推送及每个 Pull Request 都自动执行。
 
 ## 6. 首个纵向开发切片
 
 首个端到端场景固定为：
 
-> 查询人形机器人概念中，哪些公司已有核心零部件量产证据，并且最近三个完整财年经营现金流合计为正。
+> 查询人形机器人概念中，哪些公司已有核心零部件量产证据，并且最近三个完整财年经营活动现金流合计为正。
 
 处理链路：
 
@@ -110,6 +130,7 @@ TuShare 概念成员
 - [x] Semantica 适配方案
 - [x] SQL、Cypher、本体与 SHACL 初始设计
 - [x] 查询、API、质量和实施路线
+- [x] 自动化设计资产校验
 - [ ] 可运行工程脚手架
 - [ ] TuShare 连接器实现
 - [ ] PostgreSQL/Neo4j 初始化与迁移
