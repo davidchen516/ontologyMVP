@@ -242,6 +242,8 @@ ON master.product_term_mapping (normalized_term);
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS fact.document (
+    -- 注意：document.content_hash 的身份语义是"来源+官方ID+URL"的元数据 Hash
+    -- （稳定身份）；文件内容指纹在 fact.document_version.file_hash（issue #6）
     id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     document_type           VARCHAR(50) NOT NULL,
     source_system           VARCHAR(50) NOT NULL,
@@ -520,6 +522,7 @@ CREATE TABLE fact.document_version (
     file_size               BIGINT,
     mime_type               VARCHAR(100),
     download_status         download_status NOT NULL DEFAULT 'DISCOVERED',
+    parse_status            document_parse_status NOT NULL DEFAULT 'PENDING',
     downloaded_at           TIMESTAMPTZ,
     parser_version          VARCHAR(50),
     page_count              INTEGER,

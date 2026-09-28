@@ -70,6 +70,7 @@ class DocumentVersionRepository(Repository):
         )
         if existing is not None:
             return {**existing, "inserted": False}
+        # 并发收敛：ON CONFLICT 后重读既有行（多 Worker 只产生一组版本）
         row = self._fetchone(
             """
             INSERT INTO fact.document_version
@@ -78,11 +79,19 @@ class DocumentVersionRepository(Repository):
                     COALESCE((SELECT max(version) FROM fact.document_version
                               WHERE document_id = %s), 0) + 1,
                     %s, %s)
+            ON CONFLICT (document_id, content_hash) DO NOTHING
             RETURNING id, version
             """,
             (document_id, document_id, source_url, content_hash),
         )
-        assert row is not None
+        if row is None:
+            existing = self._fetchone(
+                "SELECT id, version FROM fact.document_version "
+                "WHERE document_id = %s AND content_hash = %s",
+                (document_id, content_hash),
+            )
+            assert existing is not None
+            return {**existing, "inserted": False}
         return {**row, "inserted": True}
 
     def mark_downloaded(
@@ -110,21 +119,72 @@ class DocumentVersionRepository(Repository):
     def mark_download_status(
         self, version_id: uuid.UUID, target: str, *, error: str | None = None
     ) -> None:
-        sets = "download_status = %s::download_status"
-        params: list[Any] = [target]
+        from src.domain.enums import ensure_transition
+
+        current = self._fetchone(
+            "SELECT download_status FROM fact.document_version WHERE id = %s",
+            (version_id,),
+        )
+        if current is None:
+            raise LookupError(f"document_version {version_id} not found")
+        ensure_transition("document_download", current["download_status"], target)
+        # 尝试计数语义：只在真实开始一次下载（DOWNLOADING）时自增，
+        # 状态推进（PENDING/恢复标记）不算尝试
+        if target != "DOWNLOADING":
+            self._execute(
+                "UPDATE fact.document_version SET download_status = %s::download_status "
+                + ("WHERE id = %s" if error is None else
+                   ", text_stats = text_stats || %s::jsonb WHERE id = %s"),
+                (target, version_id) if error is None
+                else (target, Json({"download_error": error[:300]}), version_id),
+            )
+            return
+        # 单表达式合并：尝试计数自增 + 错误信息（同一列只能出现一次）
         if error is not None:
-            sets += ", text_stats = text_stats || %s::jsonb"
-            params.append(Json({"download_error": error[:300]}))
+            sets = [
+                "download_status = %s::download_status",
+                "text_stats = jsonb_set("
+                "  COALESCE(text_stats, '{}'::jsonb) || %s::jsonb, "
+                "  '{download_attempts}', "
+                "  to_jsonb(COALESCE((text_stats->>'download_attempts')::int, 0) + 1)"
+                ")",
+            ]
+            params: list[Any] = [target, Json({"download_error": error[:300]})]
+        else:
+            sets = [
+                "download_status = %s::download_status",
+                "text_stats = jsonb_set("
+                "  COALESCE(text_stats, '{}'::jsonb), "
+                "  '{download_attempts}', "
+                "  to_jsonb(COALESCE((text_stats->>'download_attempts')::int, 0) + 1)"
+                ")",
+            ]
+            params = [target]
         params.append(version_id)
         self._execute(
-            f"UPDATE fact.document_version SET {sets} WHERE id = %s", tuple(params)
+            f"UPDATE fact.document_version SET {', '.join(sets)} WHERE id = %s",
+            tuple(params),
         )
+
+    def get_download_attempts(self, version_id: uuid.UUID) -> int:
+        row = self._fetchone(
+            "SELECT COALESCE((text_stats->>'download_attempts')::int, 0) AS attempts "
+            "FROM fact.document_version WHERE id = %s",
+            (version_id,),
+        )
+        return row["attempts"] if row else 0
+
+    def get_parse_status(self, version_id: uuid.UUID) -> str | None:
+        row = self._fetchone(
+            "SELECT parse_status FROM fact.document_version WHERE id = %s", (version_id,)
+        )
+        return row["parse_status"] if row else None
 
     def get_version(self, version_id: uuid.UUID) -> dict[str, Any] | None:
         return self._fetchone(
             "SELECT id, document_id, version, source_url, content_hash, file_hash, "
-            "storage_key, file_size, mime_type, download_status, downloaded_at, "
-            "parser_version, page_count, text_stats, created_at "
+            "storage_key, file_size, mime_type, download_status, parse_status, "
+            "downloaded_at, parser_version, page_count, text_stats, created_at "
             "FROM fact.document_version WHERE id = %s",
             (version_id,),
         )
@@ -145,6 +205,22 @@ class DocumentVersionRepository(Repository):
             "WHERE download_status = 'DOWNLOADED' AND storage_key IS NOT NULL"
         )
 
+    def mark_parse_status(self, version_id: uuid.UUID, target: str) -> None:
+        """解析状态机持久化：经唯一状态机校验后写入版本行。"""
+        from src.domain.enums import ensure_transition
+
+        current = self._fetchone(
+            "SELECT parse_status FROM fact.document_version WHERE id = %s", (version_id,)
+        )
+        if current is None:
+            raise LookupError(f"document_version {version_id} not found")
+        ensure_transition("document_parse", current["parse_status"], target)
+        self._execute(
+            "UPDATE fact.document_version SET parse_status = %s::document_parse_status "
+            "WHERE id = %s",
+            (target, version_id),
+        )
+
     def mark_parse_result(
         self,
         version_id: uuid.UUID,
@@ -154,6 +230,8 @@ class DocumentVersionRepository(Repository):
         page_count: int | None,
         text_stats: dict[str, Any],
     ) -> None:
+        """解析结果与最终解析状态一并落库（BLOCKER-1：状态必须持久化）。"""
+        self.mark_parse_status(version_id, parse_status)
         self._execute(
             """
             UPDATE fact.document_version SET

@@ -225,25 +225,24 @@ def build_admin_router(settings: Settings) -> APIRouter:
             raise HTTPException(status_code=422, detail="invalid document id") from None
 
         def fetch() -> dict[str, Any] | None:
-            with psycopg.connect(settings.postgres_dsn):
-                docs = _fetch_all_rows(
-                    settings.postgres_dsn,
-                    "SELECT id, document_type, source_system, external_id, company_id, "
-                    "title, published_at, source_url, content_hash, mime_type, "
-                    "parse_status, download_status FROM fact.document WHERE id = %s",
-                    (parsed_id,),
-                )
-                if not docs:
-                    return None
-                versions = _fetch_all_rows(
-                    settings.postgres_dsn,
-                    "SELECT id, version, source_url, content_hash, file_hash, "
-                    "storage_key, file_size, mime_type, download_status, "
-                    "parser_version, page_count, text_stats, created_at "
-                    "FROM fact.document_version WHERE document_id = %s ORDER BY version DESC",
-                    (parsed_id,),
-                )
-                return {"document": docs[0], "versions": versions}
+            docs = _fetch_all_rows(
+                settings.postgres_dsn,
+                "SELECT id, document_type, source_system, external_id, company_id, "
+                "title, published_at, source_url, content_hash, mime_type, "
+                "parse_status, download_status FROM fact.document WHERE id = %s",
+                (parsed_id,),
+            )
+            if not docs:
+                return None
+            versions = _fetch_all_rows(
+                settings.postgres_dsn,
+                "SELECT id, version, source_url, content_hash, file_hash, "
+                "storage_key, file_size, mime_type, download_status, parse_status, "
+                "parser_version, page_count, text_stats, created_at "
+                "FROM fact.document_version WHERE document_id = %s ORDER BY version DESC",
+                (parsed_id,),
+            )
+            return {"document": docs[0], "versions": versions}
 
         detail = await run_in_threadpool(fetch)
         if detail is None:
@@ -278,7 +277,27 @@ def build_admin_router(settings: Settings) -> APIRouter:
 
     @router.get("/data-freshness")
     async def data_freshness() -> dict[str, Any]:
+        def fetch_documents() -> dict[str, Any]:
+            fresh = _fetch_all_rows(
+                settings.postgres_dsn,
+                """
+                SELECT d.source_system,
+                       max(dv.downloaded_at) AS last_download_at,
+                       count(dv.id) AS downloaded_versions
+                FROM fact.document d
+                JOIN fact.document_version dv ON dv.document_id = d.id
+                GROUP BY d.source_system
+                """,
+            )
+            catalog = _fetch_all_rows(
+                settings.postgres_dsn,
+                "SELECT api_name, status, checked_at, detail "
+                "FROM ops.source_capability WHERE source_system = 'DOCUMENT_CATALOG'",
+            )
+            return {"documents_by_source": fresh, "catalog_selection": catalog}
+
         fresh = await run_in_threadpool(_freshness, settings.postgres_dsn)
-        return {"datasets": fresh}
+        documents = await run_in_threadpool(fetch_documents)
+        return {"datasets": fresh, **documents}
 
     return router

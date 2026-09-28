@@ -86,6 +86,22 @@ def download_version(
         raise LookupError(f"document_version {version_id} not found")
     if version["download_status"] == DownloadStatus.DOWNLOADED.value:
         return {"downloaded": True, "already": True, "storage_key": version["storage_key"]}
+    if version["download_status"] == DownloadStatus.DOWNLOAD_FAILED_FINAL.value:
+        # 终态不再自动派发（人工处理/目录重解析入口另行提供）
+        return {"downloaded": False, "rejected": "terminal download failure",
+                "retryable": False, "terminal": True}
+
+    if repo.get_download_attempts(version_id) >= 3:
+        # 瞬态重试上限：3 次真实尝试后收敛为终态，不得无限重试。
+        # 状态机无 FAILED_RETRYABLE→FINAL 直达边：经 PENDING→DOWNLOADING→FINAL
+        repo.mark_download_status(version_id, DownloadStatus.DOWNLOAD_PENDING.value)
+        repo.mark_download_status(version_id, DownloadStatus.DOWNLOADING.value)
+        repo.mark_download_status(
+            version_id, DownloadStatus.DOWNLOAD_FAILED_FINAL.value,
+            error="retry budget exhausted",
+        )
+        return {"downloaded": False, "rejected": "retry budget exhausted",
+                "retryable": False}
 
     current_status = version["download_status"]
     if current_status == DownloadStatus.DOWNLOADING.value:
@@ -109,7 +125,11 @@ def download_version(
             else DownloadStatus.DOWNLOAD_FAILED_FINAL.value
         )
         repo.mark_download_status(version_id, target, error=exc.reason)
-        return {"downloaded": False, "rejected": exc.reason, "retryable": exc.retryable}
+        expired = "url expired" in exc.reason
+        return {
+            "downloaded": False, "rejected": exc.reason,
+            "retryable": exc.retryable, "url_expired": expired,
+        }
 
     # 原子落盘成功 → 才置 DOWNLOADED（崩溃无"半文件被当完整"）
     storage_key = storage.put(result.data, expected_sha256=result.sha256)
@@ -142,6 +162,22 @@ def parse_version(
     if version["storage_key"] is None:
         raise ValueError(f"version {version_id} not downloaded yet")
 
+    # 解析状态机驱动（BLOCKER-1：状态必须落库）
+    parse_status_now = version["parse_status"]
+    if parse_status_now == DocumentParseStatus.PARSING.value:
+        # 崩溃残留的 PARSING：恢复语义 → FAILED_RETRYABLE → 重新排队
+        repo.mark_parse_status(version_id, DocumentParseStatus.FAILED_RETRYABLE.value)
+        repo.mark_parse_status(version_id, DocumentParseStatus.PENDING.value)
+        parse_status_now = DocumentParseStatus.PENDING.value
+    if parse_status_now == DocumentParseStatus.PARSED.value:
+        return {"parsed": True, "already": True, "needs_review": False,
+                "fragments": {"inserted": 0, "received": 0}}
+    if parse_status_now in (
+        DocumentParseStatus.FAILED_FINAL.value, DocumentParseStatus.SKIPPED.value
+    ):
+        return {"parsed": False, "needs_review": False, "terminal": True}
+
+    repo.mark_parse_status(version_id, DocumentParseStatus.PARSING.value)
     data = storage.get(version["storage_key"])
     try:
         parsed = parse_pdf(data)
@@ -157,8 +193,22 @@ def parse_version(
         DocumentParseStatus.PARSE_NEEDS_REVIEW if parsed.needs_review
         else DocumentParseStatus.PARSED
     )
+    # 需审核版本不写片段：纯扫描/低文本不得进入自动抽取池，
+    # 人工审核通过后重新解析才产生片段
+    if parsed.needs_review:
+        repo.mark_parse_result(
+            version_id, parse_status=status.value,
+            parser_version=parsed.parser_version, page_count=len(parsed.pages),
+            text_stats=parsed.quality,
+        )
+        log.info("document_needs_review", version_id=str(version_id),
+                 quality=parsed.quality)
+        return {
+            "parsed": False, "needs_review": True, "quality": parsed.quality,
+            "fragments": {"inserted": 0, "received": 0},
+        }
+
     drafts = build_fragments(parsed, document_version_id=version_id)
-    # 片段写入 + 版本解析结果 + 质量统计在调用方事务内一致提交（重放幂等）
     repo.mark_parse_result(
         version_id,
         parse_status=status.value,
@@ -173,8 +223,8 @@ def parse_version(
         quality=parsed.quality,
     )
     return {
-        "parsed": not parsed.needs_review,
-        "needs_review": parsed.needs_review,
+        "parsed": True,
+        "needs_review": False,
         "quality": parsed.quality,
         "fragments": fragment_stats,
     }

@@ -89,12 +89,20 @@ def safe_download(
                 raise DownloadRejected("redirect without location", retryable=True)
             redirects += 1
             if redirects > max_redirects:
+                # 重定向循环/超限是服务器侧持续状态：终态拒绝
                 raise DownloadRejected(f"too many redirects (> {max_redirects})",
-                                       retryable=True)
-            _assert_allowed(location, allowed_domains)  # 跨域/非 HTTPS 重定向拒绝
-            current_url = location
+                                       retryable=False)
+            # RFC 7231 允许相对 Location：先按 base URL 解析再校验白名单
+            from urllib.parse import urljoin
+
+            resolved = urljoin(current_url, location)
+            _assert_allowed(resolved, allowed_domains)  # 跨域/非 HTTPS 重定向拒绝
+            current_url = resolved
             continue
         if status != 200:
+            # 404/410：URL 过期/资源移除 → 终态，调用方必须重解析目录元数据
+            if status in (404, 410):
+                raise DownloadRejected(f"url expired (http {status})", retryable=False)
             raise DownloadRejected(f"http status {status}", retryable=True)
         break
 
@@ -103,10 +111,13 @@ def safe_download(
         raise DownloadRejected(f"unexpected content-type {content_type}")
 
     if len(body) > max_bytes:
-        raise DownloadRejected(f"file exceeds limit {max_bytes}", retryable=True)
+        # 超大必须隔离（终态拒绝），不得无限重试
+        raise DownloadRejected(f"file exceeds limit {max_bytes}", retryable=False)
 
-    if expected_mime == "application/pdf" and not body.startswith(PDF_MAGIC):
-        raise DownloadRejected("content is not a PDF (magic mismatch)")
+    if expected_mime == "application/pdf":
+        # PDF 规范允许头部前 ≤1024 字节杂讯：在窗口内寻找魔数
+        if PDF_MAGIC not in body[:1024]:
+            raise DownloadRejected("content is not a PDF (magic mismatch)")
 
     digest = hashlib.sha256(body).hexdigest()
     # 日志只含白名单域与大小，绝不含查询参数/签名 URL

@@ -49,6 +49,7 @@ def upgrade() -> None:
             file_size               BIGINT,
             mime_type               VARCHAR(100),
             download_status         download_status NOT NULL DEFAULT 'DISCOVERED',
+            parse_status            document_parse_status NOT NULL DEFAULT 'PENDING',
             downloaded_at           TIMESTAMPTZ,
             parser_version          VARCHAR(50),
             page_count              INTEGER,
@@ -74,6 +75,7 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.execute("ALTER TABLE fact.evidence_fragment DROP CONSTRAINT IF EXISTS evidence_fragment_version_fkey")
     op.execute("ALTER TABLE fact.evidence_fragment DROP COLUMN IF EXISTS document_version_id")
+    op.execute("ALTER TABLE fact.document_version DROP COLUMN IF EXISTS parse_status")
     op.execute("DROP INDEX IF EXISTS fact.idx_document_version_document")
     op.execute("DROP TABLE IF EXISTS fact.document_version")
     # 重建 parse 枚举去掉 PARSE_NEEDS_REVIEW（列未存该值时才可回退）
