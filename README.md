@@ -2,7 +2,7 @@
 
 [![Validate design assets](https://github.com/davidchen516/ontologyMVP/actions/workflows/validate-design.yml/badge.svg)](https://github.com/davidchen516/ontologyMVP/actions/workflows/validate-design.yml)
 
-本仓库代码仅用于验证本体论
+本仓库代码仅用于验证本体论相关实现技术。
 
 场景为 基于 **TuShare + Semantica + PostgreSQL + Neo4j** 的股票本体查询系统 MVP。
 
