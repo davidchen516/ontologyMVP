@@ -1,0 +1,733 @@
+version: "0.1.0"
+source_system: TUSHARE
+notes:
+  - Interface availability and actual columns must be verified by Source Capability Probe.
+  - Raw payloads retain every source field. This mapping only controls Standard/Fact projection.
+  - A missing optional field must not be interpreted as a negative business fact.
+  - Concept membership creates TAGGED_AS only; it never creates PRODUCES or DEVELOPS.
+  - Shareholding creates HOLDS only; it never creates CONTROLS without authoritative evidence.
+
+common:
+  null_values:
+    - null
+    - ""
+    - "None"
+    - "null"
+  date_formats:
+    - "%Y%m%d"
+    - "%Y-%m-%d"
+  ts_code_pattern: "^[0-9]{6}\\.(SH|SZ|BJ)$"
+  raw_retention: forever
+  content_hash: sha256_canonical_json
+
+capabilities:
+  - stock_basic
+  - stock_company
+  - namechange
+  - trade_cal
+  - index_classify
+  - index_member_all
+  - ths_index
+  - ths_member
+  - dc_index
+  - dc_member
+  - fina_mainbz
+  - fina_mainbz_vip
+  - income_vip
+  - balancesheet_vip
+  - cashflow_vip
+  - fina_indicator_vip
+  - top10_holders
+  - top10_floatholders
+  - stk_holdernumber
+  - stk_surv
+  - anns_d
+  - irm_qa_sh
+  - irm_qa_sz
+
+datasets:
+  stock_basic:
+    target: master.security
+    load_mode: full_snapshot
+    schedule: weekly
+    natural_key:
+      - ts_code
+    required_fields:
+      - ts_code
+      - symbol
+      - name
+      - exchange
+      - list_status
+    optional_fields:
+      - area
+      - industry
+      - fullname
+      - enname
+      - cnspell
+      - market
+      - curr_type
+      - list_date
+      - delist_date
+      - is_hs
+      - act_name
+      - act_ent_type
+    fields:
+      ts_code:
+        target: ts_code
+        transform: upper_trim
+      symbol:
+        target: symbol
+        transform: trim
+      name:
+        target: security_name
+        transform: trim
+      fullname:
+        target: source_full_name
+        transform: trim
+      exchange:
+        target: exchange_code
+        transform: normalize_exchange
+      market:
+        target: market
+        transform: trim
+      list_status:
+        target: list_status
+        transform: upper_trim
+      list_date:
+        target: list_date
+        transform: parse_date
+      delist_date:
+        target: delist_date
+        transform: parse_date
+      industry:
+        target: source_industry_text
+        transform: trim
+    entity_keys:
+      security: "security:{ts_code}"
+      exchange: "exchange:{exchange}"
+    validations:
+      - ts_code_matches_common_pattern
+      - exchange_in: [SSE, SZSE, BSE]
+      - list_date_lte_delist_date_when_both_present
+
+  stock_company:
+    target: master.company
+    load_mode: incremental_compare
+    schedule: weekly
+    natural_key:
+      - ts_code
+    required_fields:
+      - ts_code
+    optional_fields:
+      - exchange
+      - chairman
+      - manager
+      - secretary
+      - reg_capital
+      - setup_date
+      - province
+      - city
+      - introduction
+      - website
+      - email
+      - office
+      - employees
+      - main_business
+      - business_scope
+    fields:
+      ts_code:
+        target: security_ts_code
+        transform: upper_trim
+      chairman:
+        target: chairman_name
+        transform: trim
+      manager:
+        target: general_manager_name
+        transform: trim
+      secretary:
+        target: board_secretary_name
+        transform: trim
+      reg_capital:
+        target: registered_capital
+        transform: decimal_or_null
+      setup_date:
+        target: founded_date
+        transform: parse_date
+      province:
+        target: province
+        transform: trim
+      city:
+        target: city
+        transform: trim
+      introduction:
+        target: introduction
+        transform: normalize_whitespace
+      website:
+        target: website
+        transform: normalize_url
+      email:
+        target: public_email
+        transform: lower_trim
+      office:
+        target: office_address
+        transform: trim
+      employees:
+        target: employee_count
+        transform: integer_or_null
+      main_business:
+        target: main_business
+        transform: normalize_whitespace
+      business_scope:
+        target: business_scope
+        transform: normalize_whitespace
+    entity_keys:
+      company: "company:{ts_code}"
+    relations:
+      - predicate: ISSUES
+        subject: "company:{ts_code}"
+        object: "security:{ts_code}"
+        fact_layer: NORMALIZED_FACT
+        evidence_state: STRUCTURED_SOURCE
+
+  namechange:
+    target: master.company_name
+    load_mode: incremental
+    schedule: weekly
+    natural_key:
+      - ts_code
+      - name
+      - start_date
+    required_fields:
+      - ts_code
+      - name
+    optional_fields:
+      - start_date
+      - end_date
+      - ann_date
+      - change_reason
+    fields:
+      ts_code:
+        target: security_ts_code
+        transform: upper_trim
+      name:
+        target: name_value
+        transform: trim
+      start_date:
+        target: valid_from
+        transform: parse_date
+      end_date:
+        target: valid_to
+        transform: parse_date
+      ann_date:
+        target: announced_at
+        transform: parse_date
+      change_reason:
+        target: change_reason
+        transform: normalize_whitespace
+    defaults:
+      name_type: FORMER_NAME
+
+  index_classify:
+    target: master.industry
+    load_mode: full_by_version
+    schedule: monthly
+    natural_key:
+      - src
+      - index_code
+      - level
+    required_fields:
+      - index_code
+      - industry_name
+      - level
+    optional_fields:
+      - parent_code
+      - industry_code
+      - src
+    fields:
+      index_code:
+        target: industry_code
+        transform: trim
+      industry_name:
+        target: industry_name
+        transform: trim
+      level:
+        target: hierarchy_level
+        transform: normalize_industry_level
+      parent_code:
+        target: parent_industry_code
+        transform: trim
+      src:
+        target: classification_system
+        transform: upper_trim
+    defaults:
+      classification_system: SW
+
+  index_member_all:
+    target: master.industry_membership
+    load_mode: incremental_temporal
+    schedule: weekly
+    natural_key:
+      - l3_code
+      - ts_code
+      - in_date
+    required_fields:
+      - ts_code
+    optional_fields:
+      - l1_code
+      - l1_name
+      - l2_code
+      - l2_name
+      - l3_code
+      - l3_name
+      - in_date
+      - out_date
+      - is_new
+    fields:
+      ts_code:
+        target: security_ts_code
+        transform: upper_trim
+      l1_code:
+        target: level1_code
+        transform: trim
+      l2_code:
+        target: level2_code
+        transform: trim
+      l3_code:
+        target: level3_code
+        transform: trim
+      in_date:
+        target: valid_from
+        transform: parse_date
+      out_date:
+        target: valid_to
+        transform: parse_date
+      is_new:
+        target: is_current
+        transform: bool_from_source
+
+  ths_index:
+    target: master.concept
+    load_mode: full_snapshot
+    schedule: daily_after_market
+    natural_key:
+      - ts_code
+    required_fields:
+      - ts_code
+      - name
+    optional_fields:
+      - count
+      - exchange
+      - list_date
+      - type
+    fields:
+      ts_code:
+        target: concept_code
+        transform: upper_trim
+      name:
+        target: concept_name
+        transform: trim
+      type:
+        target: concept_type
+        transform: trim
+    defaults:
+      source_platform: THS
+    entity_keys:
+      concept: "concept:THS:{ts_code}"
+
+  ths_member:
+    target: master.concept_membership
+    load_mode: daily_snapshot
+    schedule: daily_after_market
+    natural_key:
+      - concept_code
+      - ts_code
+      - snapshot_date
+    required_fields:
+      - ts_code
+    optional_fields:
+      - name
+      - weight
+      - in_date
+      - out_date
+      - is_new
+    injected_fields:
+      - concept_code
+      - snapshot_date
+    fields:
+      ts_code:
+        target: security_ts_code
+        transform: upper_trim
+      in_date:
+        target: valid_from
+        transform: parse_date
+      out_date:
+        target: valid_to
+        transform: parse_date
+      is_new:
+        target: source_is_current
+        transform: bool_from_source
+    defaults:
+      source_platform: THS
+      predicate_code: TAGGED_AS
+      fact_layer: SOURCE_FACT
+      evidence_state: PLATFORM_TAG
+      business_stage: CONCEPT_ONLY
+
+  dc_index:
+    target: master.concept
+    load_mode: full_snapshot
+    schedule: daily_after_market
+    natural_key:
+      - ts_code
+    required_fields:
+      - ts_code
+      - name
+    optional_fields:
+      - trade_date
+      - publisher
+      - index_type
+    fields:
+      ts_code:
+        target: concept_code
+        transform: upper_trim
+      name:
+        target: concept_name
+        transform: trim
+      index_type:
+        target: concept_type
+        transform: trim
+    defaults:
+      source_platform: EASTMONEY
+    entity_keys:
+      concept: "concept:EASTMONEY:{ts_code}"
+
+  dc_member:
+    target: master.concept_membership
+    load_mode: daily_snapshot
+    schedule: daily_after_market
+    natural_key:
+      - concept_code
+      - con_code
+      - snapshot_date
+    required_fields:
+      - con_code
+    optional_fields:
+      - trade_date
+      - name
+      - weight
+      - in_date
+      - out_date
+    aliases:
+      security_code:
+        - con_code
+        - ts_code
+    injected_fields:
+      - concept_code
+      - snapshot_date
+    fields:
+      con_code:
+        target: security_ts_code
+        transform: upper_trim
+      trade_date:
+        target: source_trade_date
+        transform: parse_date
+      in_date:
+        target: valid_from
+        transform: parse_date
+      out_date:
+        target: valid_to
+        transform: parse_date
+    defaults:
+      source_platform: EASTMONEY
+      predicate_code: TAGGED_AS
+      fact_layer: SOURCE_FACT
+      evidence_state: PLATFORM_TAG
+      business_stage: CONCEPT_ONLY
+
+  fina_mainbz_vip:
+    target: master.business_segment
+    load_mode: report_period_batch
+    schedule: daily_during_reporting_season
+    natural_key:
+      - ts_code
+      - end_date
+      - bz_code
+      - bz_item
+      - curr_type
+    required_fields:
+      - ts_code
+      - end_date
+      - bz_item
+      - bz_code
+    optional_fields:
+      - bz_sales
+      - bz_profit
+      - bz_cost
+      - curr_type
+      - update_flag
+    fields:
+      ts_code:
+        target: security_ts_code
+        transform: upper_trim
+      end_date:
+        target: report_period
+        transform: parse_date
+      bz_item:
+        target: raw_segment_name
+        transform: normalize_whitespace_preserve_source
+      bz_code:
+        target: segment_type
+        transform: map_values
+        values:
+          P: PRODUCT
+          I: INDUSTRY
+          D: REGION
+          M: SALES_MODEL
+      bz_sales:
+        target: revenue
+        transform: decimal_or_null
+      bz_profit:
+        target: profit
+        transform: decimal_or_null
+      bz_cost:
+        target: cost
+        transform: decimal_or_null
+      curr_type:
+        target: currency
+        transform: normalize_currency
+      update_flag:
+        target: update_flag
+        transform: trim
+    post_process:
+      - create_product_mapping_candidate_when_segment_type_is_PRODUCT
+      - do_not_overwrite_raw_segment_name
+      - preserve_all_report_versions
+
+  income_vip:
+    target: finance.financial_observation
+    load_mode: report_period_batch
+    schedule: daily_during_reporting_season
+    natural_key:
+      - ts_code
+      - end_date
+      - report_type
+      - comp_type
+      - update_flag
+    required_fields:
+      - ts_code
+      - end_date
+    metadata_fields:
+      - ann_date
+      - f_ann_date
+      - report_type
+      - comp_type
+      - end_type
+      - update_flag
+    metrics:
+      total_revenue: REVENUE
+      revenue: OPERATING_REVENUE
+      operate_profit: OPERATING_PROFIT
+      n_income: NET_PROFIT
+      n_income_attr_p: NET_PROFIT_ATTRIBUTABLE_TO_PARENT
+      rd_exp: R_AND_D_EXPENSE
+    defaults:
+      currency: CNY
+      unit: CNY
+
+  balancesheet_vip:
+    target: finance.financial_observation
+    load_mode: report_period_batch
+    schedule: daily_during_reporting_season
+    natural_key:
+      - ts_code
+      - end_date
+      - report_type
+      - comp_type
+      - update_flag
+    required_fields:
+      - ts_code
+      - end_date
+    metadata_fields:
+      - ann_date
+      - f_ann_date
+      - report_type
+      - comp_type
+      - end_type
+      - update_flag
+    metrics:
+      total_assets: TOTAL_ASSETS
+      total_liab: TOTAL_LIABILITIES
+      inventories: INVENTORY
+      money_cap: CASH_AND_CASH_EQUIVALENTS
+    defaults:
+      currency: CNY
+      unit: CNY
+
+  cashflow_vip:
+    target: finance.financial_observation
+    load_mode: report_period_batch
+    schedule: daily_during_reporting_season
+    natural_key:
+      - ts_code
+      - end_date
+      - report_type
+      - comp_type
+      - update_flag
+    required_fields:
+      - ts_code
+      - end_date
+    metadata_fields:
+      - ann_date
+      - f_ann_date
+      - report_type
+      - comp_type
+      - end_type
+      - update_flag
+    metrics:
+      n_cashflow_act: NET_CASH_FLOWS_OPER_ACT
+      n_cashflow_inv_act: NET_CASH_FLOWS_INVEST_ACT
+      n_cash_flows_fnc_act: NET_CASH_FLOWS_FINANCING_ACT
+      c_cash_equ_end_period: CASH_EQUIVALENTS_END_PERIOD
+    defaults:
+      currency: CNY
+      unit: CNY
+
+  fina_indicator_vip:
+    target: finance.financial_observation
+    load_mode: report_period_batch
+    schedule: daily_during_reporting_season
+    natural_key:
+      - ts_code
+      - end_date
+      - ann_date
+    required_fields:
+      - ts_code
+      - end_date
+    metadata_fields:
+      - ann_date
+    metrics:
+      grossprofit_margin: GROSS_MARGIN
+      netprofit_margin: NET_MARGIN
+      roe: ROE
+      roe_waa: ROE_WEIGHTED
+      debt_to_assets: DEBT_TO_ASSETS
+      ocf_to_revenue: OPERATING_CASHFLOW_TO_REVENUE
+    defaults:
+      unit: PERCENT
+
+  top10_holders:
+    target: fact.shareholding_claim
+    load_mode: incremental_by_period
+    schedule: weekly_during_reporting_season
+    natural_key:
+      - ts_code
+      - end_date
+      - holder_name
+      - hold_ratio
+    required_fields:
+      - ts_code
+      - end_date
+      - holder_name
+    optional_fields:
+      - ann_date
+      - hold_amount
+      - hold_ratio
+      - holder_type
+    defaults:
+      predicate_code: HOLDS
+      fact_layer: SOURCE_FACT
+      evidence_state: STRUCTURED_SOURCE
+    prohibited_inferences:
+      - CONTROLS
+
+  stk_surv:
+    target: raw.research_record
+    load_mode: incremental
+    schedule: daily
+    natural_key:
+      - ts_code
+      - surv_date
+      - rece_org
+    required_fields:
+      - ts_code
+    optional_fields:
+      - name
+      - surv_date
+      - fund_visitors
+      - rece_place
+      - rece_mode
+      - rece_org
+      - org_type
+      - comp_rece
+      - content
+    processing:
+      - persist_raw
+      - create_document_metadata
+      - split_content_into_evidence_fragments
+      - extract_candidate_claims
+      - never_auto_accept_mass_production_without_grounded_quote
+
+  anns_d:
+    target: raw.document_index
+    load_mode: incremental_by_date
+    schedule: daily
+    permission_mode: separate_permission_possible
+    fallback:
+      - CNINFO
+      - SSE
+      - SZSE
+    processing:
+      - persist_announcement_metadata
+      - download_official_document_when_available
+      - verify_file_hash
+      - enqueue_document_parse
+
+  irm_qa_sh:
+    target: raw.interaction_record
+    load_mode: incremental
+    schedule: daily
+    permission_mode: separate_permission_possible
+    fallback:
+      - SSE_INTERACTION
+    processing:
+      - persist_question_and_answer
+      - create_document_metadata
+      - extract_candidate_claims
+      - source_credibility: 0.90
+
+  irm_qa_sz:
+    target: raw.interaction_record
+    load_mode: incremental
+    schedule: daily
+    permission_mode: separate_permission_possible
+    fallback:
+      - SZSE_INTERACTION
+    processing:
+      - persist_question_and_answer
+      - create_document_metadata
+      - extract_candidate_claims
+      - source_credibility: 0.90
+
+financial_version_selection:
+  default_query_policy:
+    statement_scope_preference:
+      - CONSOLIDATED
+      - PARENT
+      - UNKNOWN
+    version_preference:
+      - latest_announcement_date
+      - latest_update_flag
+    retain_all_versions: true
+    expose_selection_policy_in_query_response: true
+
+source_priority:
+  ANNUAL_REPORT: 100
+  SEMI_ANNUAL_REPORT: 98
+  PROSPECTUS: 98
+  EXCHANGE_ANNOUNCEMENT: 97
+  TUSHARE_STRUCTURED: 90
+  INTERACTION_REPLY: 90
+  SURVEY_RECORD: 82
+  COMPANY_WEBSITE: 78
+  PLATFORM_CONCEPT_TAG: 60
+  OTHER_THIRD_PARTY: 50
