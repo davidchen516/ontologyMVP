@@ -158,6 +158,35 @@ uv run uvicorn apps.api.main:app --port 8000 --no-access-log   # 配置来自 .e
 uv run python -m apps.worker.main                             # Worker 同样读取 .env
 ```
 
+### 数据库迁移（独立步骤）
+
+应用进程不执行迁移；迁移是独立步骤，由 Alembic 完成（advisory lock 串行化并发迁移）：
+
+```bash
+uv run alembic upgrade head       # 空库升级到最新（迁移历史在 migrations/versions）
+uv run alembic downgrade -1       # 回滚上一个版本（测试数据库）
+uv run alembic current            # 查看当前版本
+```
+
+数据库结构：`raw` / `master` / `fact` / `finance` / `ops` 五个 Schema、25 张表、
+五个关键状态机原生枚举（采集任务、Claim、审核任务、Graph Outbox、文档解析），
+与 `src/domain/enums.py`、`docs/database-schema.sql` 逐值一致。
+
+三类数据库角色的权限边界见 `scripts/db/roles.sql`：API 只读、Worker 受限写入
+（禁止 DELETE/DDL）、迁移专用；登录账号由 DBA 另行创建，密码只走环境变量。
+
+### 数据库测试（需要一次性 PostgreSQL）
+
+```bash
+docker run -d --name ontology-mvp-pgtest \
+  -e POSTGRES_USER=testuser -e POSTGRES_PASSWORD=testpass \
+  -p 55432:5432 pgvector/pgvector:pg16
+export TEST_DATABASE_DSN=postgresql://testuser:testpass@127.0.0.1:55432/postgres
+uv run pytest tests/db     # 迁移/约束/事务/并发/幂等/角色测试（CI 必跑）
+```
+
+未设置 `TEST_DATABASE_DSN` 时，`tests/db` 整套自动跳过（不影响其余测试）。
+
 ### 日志与追踪
 
 - 所有日志为结构化 JSON；API 请求与 Worker 执行单元统一携带 `trace_id`（可通过 `X-Trace-Id` 透传）。
@@ -166,7 +195,7 @@ uv run python -m apps.worker.main                             # Worker 同样读
 ### CI
 
 - **Validate design assets**：Turtle/YAML/链接校验（见上方徽章）。
-- **Runtime CI**：锁文件安装（`uv sync --frozen`，解析失败即失败）→ ruff 静态检查 → pytest（单元+集成，故障用不可达端口注入）→ 设计资产校验 → gitleaks Secret 扫描。
+- **Runtime CI**：锁文件安装（`uv sync --frozen`，解析失败即失败）→ ruff 静态检查 → pytest（单元+集成，故障用不可达端口注入）→ 设计资产校验；`db` job 用 pgvector 服务容器跑迁移/约束/事务/角色测试；gitleaks Secret 扫描。
 
 ## 7. 首个纵向开发切片
 
@@ -201,7 +230,7 @@ TuShare 概念成员
 - [x] 自动化设计资产校验
 - [x] 可运行工程脚手架（API/Worker/Compose/CI/健康检查，见「本地启动与运行」）
 - [ ] TuShare 连接器实现
-- [ ] PostgreSQL/Neo4j 初始化与迁移
+- [x] PostgreSQL Schema 与 Alembic 迁移、事实事务边界（Neo4j 为可重建投影，无迁移需求）
 - [ ] 首个纵向场景开发
 
 ## 9. 参考

@@ -1,0 +1,153 @@
+"""状态机唯一口径验证：代码枚举 ↔ PG 原生枚举 ↔ 文档三方一致 + 合法/非法迁移。"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import psycopg
+import pytest
+from src.domain.enums import (
+    CLAIM_TRANSITIONS,
+    DOCUMENT_PARSE_TRANSITIONS,
+    GRAPH_OUTBOX_TRANSITIONS,
+    INGEST_RUN_TRANSITIONS,
+    REVIEW_TASK_TRANSITIONS,
+    ClaimStatus,
+    DocumentParseStatus,
+    GraphOutboxStatus,
+    IllegalTransitionError,
+    IngestRunStatus,
+    ReviewTaskStatus,
+    ensure_transition,
+    transition_table,
+)
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+PG_ENUM_NAMES = {
+    "ingest_run": "ingest_run_status",
+    "claim": "claim_status",
+    "review_task": "review_task_status",
+    "graph_outbox": "graph_outbox_status",
+    "document_parse": "document_parse_status",
+}
+
+
+def test_pg_native_enums_match_python_enums(main_dsn) -> None:
+    """代码枚举与 DDL 原生枚举逐值一致（含顺序）。"""
+    machine_to_python = {
+        "ingest_run": IngestRunStatus,
+        "claim": ClaimStatus,
+        "review_task": ReviewTaskStatus,
+        "graph_outbox": GraphOutboxStatus,
+        "document_parse": DocumentParseStatus,
+    }
+    with psycopg.connect(main_dsn) as conn:
+        for machine, enum_cls in machine_to_python.items():
+            pg_values = [
+                row[0]
+                for row in conn.execute(
+                    f"SELECT unnest(enum_range(NULL::{PG_ENUM_NAMES[machine]}))"
+                ).fetchall()
+            ]
+            assert pg_values == [member.value for member in enum_cls], (
+                f"{machine}: PG {pg_values} != Python {[m.value for m in enum_cls]}"
+            )
+
+
+def test_status_enums_consistent_with_design_document() -> None:
+    """文档（docs/database-schema.sql）包含全部状态值（代码/DDL/文档一致）。"""
+    doc = (REPO_ROOT / "docs" / "database-schema.sql").read_text(encoding="utf-8")
+    for machine in (
+        INGEST_RUN_TRANSITIONS,
+        CLAIM_TRANSITIONS,
+        REVIEW_TASK_TRANSITIONS,
+        GRAPH_OUTBOX_TRANSITIONS,
+        DOCUMENT_PARSE_TRANSITIONS,
+    ):
+        for current, targets in machine.items():
+            assert current.value in doc, f"文档缺少状态值 {current.value}"
+            for target in targets:
+                assert target.value in doc, f"文档缺少状态值 {target.value}"
+
+
+@pytest.mark.parametrize("machine", list(PG_ENUM_NAMES))
+def test_all_legal_transitions_pass(machine: str) -> None:
+    for current, targets in transition_table(machine).items():
+        for target in targets:
+            assert ensure_transition(machine, current, target) == target
+
+
+@pytest.mark.parametrize("machine", list(PG_ENUM_NAMES))
+def test_all_illegal_transitions_fail(machine: str) -> None:
+    legal = transition_table(machine)
+    all_values = set(legal)
+    for current, targets in legal.items():
+        for illegal in all_values - {current} - set(targets):
+            with pytest.raises(IllegalTransitionError):
+                ensure_transition(machine, current, illegal)
+
+
+def test_claim_state_machine_matches_issue_specification() -> None:
+    """与 issue #2 给定的 Claim 状态机逐边核对。"""
+    assert CLAIM_TRANSITIONS[ClaimStatus.EXTRACTED] == frozenset(
+        {ClaimStatus.VALIDATED, ClaimStatus.NEEDS_REVIEW, ClaimStatus.REJECTED}
+    )
+    assert CLAIM_TRANSITIONS[ClaimStatus.VALIDATED] == frozenset(
+        {ClaimStatus.ACCEPTED, ClaimStatus.NEEDS_REVIEW}
+    )
+    assert CLAIM_TRANSITIONS[ClaimStatus.NEEDS_REVIEW] == frozenset(
+        {ClaimStatus.ACCEPTED, ClaimStatus.REJECTED}
+    )
+    assert CLAIM_TRANSITIONS[ClaimStatus.ACCEPTED] == frozenset(
+        {ClaimStatus.CONTRADICTED, ClaimStatus.SUPERSEDED}
+    )
+    assert CLAIM_TRANSITIONS[ClaimStatus.CONTRADICTED] == frozenset(
+        {ClaimStatus.ACCEPTED, ClaimStatus.SUPERSEDED}
+    )
+    for terminal in (ClaimStatus.REJECTED, ClaimStatus.SUPERSEDED):
+        assert CLAIM_TRANSITIONS[terminal] == frozenset()
+
+
+def test_ingest_run_state_machine_matches_issue_specification() -> None:
+    assert INGEST_RUN_TRANSITIONS[IngestRunStatus.CREATED] == frozenset(
+        {IngestRunStatus.RUNNING}
+    )
+    assert INGEST_RUN_TRANSITIONS[IngestRunStatus.RUNNING] == frozenset(
+        {
+            IngestRunStatus.PARTIAL_SUCCESS,
+            IngestRunStatus.SUCCEEDED,
+            IngestRunStatus.FAILED_RETRYABLE,
+            IngestRunStatus.FAILED_FINAL,
+            IngestRunStatus.CANCELLED,
+        }
+    )
+    assert INGEST_RUN_TRANSITIONS[IngestRunStatus.FAILED_RETRYABLE] == frozenset(
+        {IngestRunStatus.RUNNING, IngestRunStatus.FAILED_FINAL, IngestRunStatus.CANCELLED}
+    )
+    assert INGEST_RUN_TRANSITIONS[IngestRunStatus.PARTIAL_SUCCESS] == frozenset(
+        {IngestRunStatus.RUNNING, IngestRunStatus.SUCCEEDED, IngestRunStatus.FAILED_FINAL}
+    )
+    for terminal in (
+        IngestRunStatus.SUCCEEDED,
+        IngestRunStatus.FAILED_FINAL,
+        IngestRunStatus.CANCELLED,
+    ):
+        assert INGEST_RUN_TRANSITIONS[terminal] == frozenset()
+
+
+def test_repository_rejects_illegal_ingest_transition_without_partial_write(
+    uow_factory,
+) -> None:
+    """非法迁移失败且不产生部分写入（状态保持 CREATED）。"""
+    with uow_factory.transaction() as uow:
+        run = uow.ingest_runs.create(
+            dataset_name="tushare:stock_basic", source_system="TUSHARE", trace_id="t-1"
+        )
+        run_id = run["id"]
+        with pytest.raises(IllegalTransitionError):
+            uow.ingest_runs.transition(run_id, IngestRunStatus.SUCCEEDED)  # CREATED -> SUCCEEDED
+        # 事务回滚后状态仍是 CREATED
+    with uow_factory.transaction() as uow:
+        current = uow.ingest_runs.get(run_id)
+        assert current["status"] == "CREATED"

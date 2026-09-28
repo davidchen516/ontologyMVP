@@ -1,6 +1,13 @@
 -- ontologyMVP PostgreSQL schema baseline
 -- Target: PostgreSQL 15+ with pgcrypto and pgvector
--- This file is a design baseline. Production should apply it through Alembic migrations.
+-- This file is a design baseline and must stay consistent with:
+--   - migrations/versions/0001_base_schemas_raw_master.py
+--   - migrations/versions/0002_fact_finance_ops.py
+--   - src/domain/enums.py (key status machines)
+-- Production applies it through Alembic migrations, never by hand.
+-- Key status columns use PostgreSQL native enum types (created in migration 0001):
+--   ingest_run_status / claim_status / review_task_status /
+--   graph_outbox_status / document_parse_status
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE EXTENSION IF NOT EXISTS vector;
@@ -40,7 +47,13 @@ CREATE TABLE IF NOT EXISTS ops.ingest_run (
     source_system           VARCHAR(50) NOT NULL,
     started_at              TIMESTAMPTZ NOT NULL DEFAULT now(),
     finished_at             TIMESTAMPTZ,
-    status                  VARCHAR(30) NOT NULL,
+    -- 采集任务状态机（与 src/domain/enums.py IngestRunStatus 一致）：
+    -- CREATED -> RUNNING -> {PARTIAL_SUCCESS | SUCCEEDED | FAILED_RETRYABLE
+    --                         | FAILED_FINAL | CANCELLED}
+    -- FAILED_RETRYABLE -> RUNNING | FAILED_FINAL | CANCELLED
+    -- PARTIAL_SUCCESS -> RUNNING | SUCCEEDED | FAILED_FINAL
+    -- 重试保留前次错误与游标；终态无审计不回 RUNNING
+    status                  ingest_run_status NOT NULL DEFAULT 'CREATED',
     cursor_state            JSONB NOT NULL DEFAULT '{}'::jsonb,
     request_count           INTEGER NOT NULL DEFAULT 0,
     rows_received           INTEGER NOT NULL DEFAULT 0,
@@ -48,8 +61,7 @@ CREATE TABLE IF NOT EXISTS ops.ingest_run (
     rows_updated            INTEGER NOT NULL DEFAULT 0,
     rows_rejected           INTEGER NOT NULL DEFAULT 0,
     error_detail            JSONB,
-    trace_id                VARCHAR(64) NOT NULL,
-    CHECK (status IN ('RUNNING', 'SUCCEEDED', 'PARTIAL', 'FAILED', 'CANCELLED'))
+    trace_id                VARCHAR(64) NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_ingest_run_dataset_started
@@ -89,6 +101,8 @@ CREATE TABLE IF NOT EXISTS master.company (
     first_source_record_id          UUID REFERENCES raw.source_record(id),
     created_at                      TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at                      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    -- 注意：NULLS NOT DISTINCT 意味着全库最多一家"无统一社会信用代码"的公司；
+    -- 尚未取得信用代码的主体需由标准化层（#4）先分配占位值再落库
     UNIQUE NULLS NOT DISTINCT (unified_social_credit_code)
 );
 
@@ -232,7 +246,9 @@ CREATE TABLE IF NOT EXISTS fact.document (
     content_hash            CHAR(64) NOT NULL,
     local_object_key        TEXT,
     mime_type               VARCHAR(100),
-    parse_status            VARCHAR(30) NOT NULL DEFAULT 'PENDING',
+    -- 解析状态机 document_parse_status：PENDING/PARSING/PARSED/
+    -- FAILED_RETRYABLE/FAILED_FINAL/SKIPPED
+    parse_status            document_parse_status NOT NULL DEFAULT 'PENDING',
     parser_version          VARCHAR(50),
     created_at              TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (source_system, content_hash)
@@ -274,7 +290,14 @@ CREATE TABLE IF NOT EXISTS fact.claim (
     object_value            JSONB,
     business_stage          VARCHAR(50),
     evidence_state          VARCHAR(50),
-    claim_status            VARCHAR(30) NOT NULL,
+    -- Claim 状态机（ADR-0002，与 claim_status 原生枚举一致）：
+    -- EXTRACTED -> VALIDATED | NEEDS_REVIEW | REJECTED
+    -- VALIDATED -> ACCEPTED | NEEDS_REVIEW
+    -- NEEDS_REVIEW -> ACCEPTED | REJECTED
+    -- ACCEPTED -> CONTRADICTED | SUPERSEDED
+    -- CONTRADICTED -> ACCEPTED | SUPERSEDED
+    -- 历史 Claim 不物理删除；ACCEPTED 与 Graph Outbox 同事务产生
+    claim_status            claim_status NOT NULL,
     valid_from              TIMESTAMPTZ,
     valid_to                TIMESTAMPTZ,
     temporal_precision      VARCHAR(20) NOT NULL DEFAULT 'UNKNOWN',
@@ -294,10 +317,6 @@ CREATE TABLE IF NOT EXISTS fact.claim (
     CHECK (confidence >= 0 AND confidence <= 1),
     CHECK (valid_to IS NULL OR valid_from IS NULL OR valid_to > valid_from),
     CHECK (superseded_at IS NULL OR superseded_at >= recorded_at),
-    CHECK (claim_status IN (
-        'EXTRACTED', 'VALIDATED', 'NEEDS_REVIEW', 'ACCEPTED',
-        'CONTRADICTED', 'SUPERSEDED', 'REJECTED'
-    )),
     CHECK (
         object_entity_id IS NOT NULL
         OR object_value IS NOT NULL
@@ -349,7 +368,8 @@ CREATE TABLE IF NOT EXISTS fact.review_task (
     id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     task_type               VARCHAR(50) NOT NULL,
     claim_id                UUID REFERENCES fact.claim(id),
-    status                  VARCHAR(30) NOT NULL DEFAULT 'OPEN',
+    -- 审核任务状态机 review_task_status：OPEN/IN_PROGRESS/COMPLETED/CANCELLED
+    status                  review_task_status NOT NULL DEFAULT 'OPEN',
     priority                VARCHAR(20) NOT NULL DEFAULT 'NORMAL',
     assigned_to             VARCHAR(200),
     reason_codes            JSONB NOT NULL DEFAULT '[]'::jsonb,
@@ -357,7 +377,6 @@ CREATE TABLE IF NOT EXISTS fact.review_task (
     decision_reason         TEXT,
     created_at              TIMESTAMPTZ NOT NULL DEFAULT now(),
     completed_at            TIMESTAMPTZ,
-    CHECK (status IN ('OPEN', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED')),
     CHECK (priority IN ('LOW', 'NORMAL', 'HIGH', 'CRITICAL'))
 );
 
@@ -434,6 +453,9 @@ CREATE TABLE IF NOT EXISTS ops.graph_outbox (
     event_type              VARCHAR(80) NOT NULL,
     payload                 JSONB NOT NULL,
     idempotency_key         VARCHAR(200) NOT NULL UNIQUE,
+    -- Outbox 状态机（与 graph_outbox_status 原生枚举一致）：
+    -- PENDING -> PROCESSING -> {PROCESSED | PENDING(重试) | DEAD_LETTERED}
+    status                  graph_outbox_status NOT NULL DEFAULT 'PENDING',
     created_at              TIMESTAMPTZ NOT NULL DEFAULT now(),
     available_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
     locked_at               TIMESTAMPTZ,
@@ -447,6 +469,20 @@ CREATE TABLE IF NOT EXISTS ops.graph_outbox (
 CREATE INDEX IF NOT EXISTS idx_graph_outbox_pending
 ON ops.graph_outbox (available_at, created_at)
 WHERE processed_at IS NULL AND dead_lettered_at IS NULL;
+
+-- 审计事件：与 Claim 状态变更同事务写入（issue #2 事务边界）
+CREATE TABLE IF NOT EXISTS ops.audit_event (
+    id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    entity_type             VARCHAR(80) NOT NULL,
+    entity_id               UUID NOT NULL,
+    event_type              VARCHAR(100) NOT NULL,
+    payload                 JSONB NOT NULL DEFAULT '{}'::jsonb,
+    trace_id                VARCHAR(64),
+    created_at              TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_event_entity
+ON ops.audit_event (entity_type, entity_id, created_at DESC);
 
 -- ---------------------------------------------------------------------------
 -- Required application-level invariants

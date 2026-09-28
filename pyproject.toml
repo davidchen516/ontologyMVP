@@ -14,6 +14,8 @@ dependencies = [
     "structlog>=24.1,<26",
     "psycopg[binary]>=3.2,<4",
     "neo4j>=5.23,<6",
+    "alembic>=1.13,<2",
+    "sqlalchemy>=2,<3",
 ]
 
 [dependency-groups]
@@ -39,6 +41,9 @@ src = ["src", "apps", "scripts", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+"migrations/versions/*" = ["E501"]  # DDL 列定义与设计文档逐列对齐
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

@@ -18,6 +18,8 @@ RUN uv sync --frozen --no-dev --no-install-project
 
 COPY src ./src
 COPY apps ./apps
+COPY alembic.ini ./
+COPY migrations ./migrations
 RUN uv sync --frozen --no-dev --no-editable
 
 RUN useradd --create-home appuser && chown -R appuser:appuser /app
