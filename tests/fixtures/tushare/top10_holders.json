@@ -1,0 +1,26 @@
+{
+ "code": 0,
+ "msg": "",
+ "data": {
+  "fields": [
+   "ts_code",
+   "end_date",
+   "holder_name",
+   "hold_ratio"
+  ],
+  "items": [
+   [
+    "000001.SZ",
+    "20251231",
+    "样本holder_name-一",
+    1000000.5
+   ],
+   [
+    "600519.SH",
+    "20250930",
+    "样本holder_name-二",
+    2000000.25
+   ]
+  ]
+ }
+}

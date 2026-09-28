@@ -171,6 +171,19 @@ uv run alembic current            # 查看当前版本
 数据库结构：`raw` / `master` / `fact` / `finance` / `ops` 五个 Schema、25 张表、
 五个关键状态机原生枚举（采集任务、Claim、审核任务、Graph Outbox、文档解析），
 与 `src/domain/enums.py`、`docs/database-schema.sql` 逐值一致。
+0003 增补采集支持列（Raw `schema_signature`、IngestRun 租约与父运行关联）。
+
+### TuShare 采集与能力探针（issue #3）
+
+- 每数据集独立 Connector（`src/connectors/`），数据集注册表以
+  `ontology/mappings/tushare.yaml` 为唯一事实源；
+- 能力探针 7 态（可用/无权限/独立权限/限流/Schema 变化/网络错误/未知），
+  Token 缺失返回明确状态；限流按指数退避+抖动有界重试；
+- Raw 层幂等：行级 payload_hash 唯一，重放/崩溃恢复不产生重复记录；
+- 断点续跑（持久化游标 + 父运行关联）、租约恢复器、Schema 熔断；
+- CI 全部使用 `tests/fixtures/tushare/` Fixture，不消耗真实调用额度；
+- 只读管理接口：`GET /admin/capabilities`、`GET /admin/ingest-runs`、
+  `GET /admin/ingest-runs/{id}`、`GET /admin/data-freshness`。
 
 三类数据库角色的权限边界见 `scripts/db/roles.sql`：API 只读、Worker 受限写入
 （禁止 DELETE/DDL）、迁移专用；登录账号由 DBA 另行创建，密码只走环境变量。
@@ -229,7 +242,7 @@ TuShare 概念成员
 - [x] 查询、API、质量和实施路线
 - [x] 自动化设计资产校验
 - [x] 可运行工程脚手架（API/Worker/Compose/CI/健康检查，见「本地启动与运行」）
-- [ ] TuShare 连接器实现
+- [x] TuShare 能力探针 + Connector 框架 + Raw 层幂等采集（见「TuShare 采集与能力探针」）
 - [x] PostgreSQL Schema 与 Alembic 迁移、事实事务边界（Neo4j 为可重建投影，无迁移需求）
 - [ ] 首个纵向场景开发
 

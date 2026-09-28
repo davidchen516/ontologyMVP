@@ -1,0 +1,23 @@
+{
+ "code": 0,
+ "msg": "",
+ "data": {
+  "fields": [
+   "ts_code",
+   "surv_date",
+   "receive_obj"
+  ],
+  "items": [
+   [
+    "000001.SZ",
+    "20251231",
+    "样本receive_obj-一"
+   ],
+   [
+    "600519.SH",
+    "20250930",
+    "样本receive_obj-二"
+   ]
+  ]
+ }
+}

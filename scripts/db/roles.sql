@@ -48,6 +48,9 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA finance
     GRANT SELECT, INSERT, UPDATE ON TABLES TO ontology_worker_writer;
 ALTER DEFAULT PRIVILEGES IN SCHEMA ops
     GRANT SELECT, INSERT, UPDATE ON TABLES TO ontology_worker_writer;
+-- 审计事件不可被 Worker 改写（只允许追加与查询）
+REVOKE UPDATE ON ops.audit_event FROM ontology_worker_writer;
+
 -- 刻意不授予：DELETE（历史 Claim/Evidence/Provenance 不物理删除）、
 -- TRUNCATE、DDL、alembic_version 写权限
 

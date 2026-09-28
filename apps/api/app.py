@@ -49,6 +49,10 @@ def create_app(settings: Settings) -> FastAPI:
     app = FastAPI(title="ontologyMVP API", version="0.1.0", lifespan=lifespan)
     app.state.settings = settings
 
+    from apps.api.admin import build_admin_router
+
+    app.include_router(build_admin_router(settings))
+
     # 后添加者在外层：TraceId 最外层，请求日志随 trace_id 输出
     app.add_middleware(RequestLoggingMiddleware)
     app.add_middleware(TraceIdMiddleware)

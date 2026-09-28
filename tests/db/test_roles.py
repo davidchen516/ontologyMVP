@@ -103,6 +103,9 @@ def test_worker_can_insert_business_rows_but_not_ddm_or_migrations(role_dsn, mai
             conn.execute("UPDATE alembic_version SET version_num = '999'")
         with pytest.raises(InsufficientPrivilege):
             conn.execute("DELETE FROM fact.claim")  # 历史不物理删除
+        with pytest.raises(InsufficientPrivilege):
+            # 审计事件不可被 Worker 改写（roles.sql 显式 REVOKE UPDATE）
+            conn.execute("UPDATE ops.audit_event SET payload = '{\"forged\": true}'")
 
 
 def test_migrator_can_manage_schema(role_dsn, main_dsn) -> None:

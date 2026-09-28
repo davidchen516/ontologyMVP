@@ -23,6 +23,7 @@ from src.db.repositories import (
     ProvenanceRepository,
     ReviewTaskRepository,
     SecurityRepository,
+    SourceCapabilityRepository,
     SourceRecordRepository,
 )
 
@@ -34,6 +35,7 @@ class UnitOfWork:
         self._conn = conn
         self.ingest_runs = IngestRunRepository(conn)
         self.source_records = SourceRecordRepository(conn)
+        self.source_capabilities = SourceCapabilityRepository(conn)
         self.companies = CompanyRepository(conn)
         self.securities = SecurityRepository(conn)
         self.claims = ClaimRepository(conn)
@@ -69,7 +71,7 @@ class UnitOfWorkFactory:
 
     @contextmanager
     def transaction(self) -> Iterator[UnitOfWork]:
-        """事务作用域：正常退出提交，异常回滚后重抛。"""
+        """事务作用域：正常退出提交，异常回滚后重抛；连接确保关闭。"""
         uow = self.open()
         try:
             yield uow
@@ -78,6 +80,8 @@ class UnitOfWorkFactory:
             raise
         else:
             uow.commit()
+        finally:
+            uow.close()
 
 
 def new_uuid() -> uuid.UUID:

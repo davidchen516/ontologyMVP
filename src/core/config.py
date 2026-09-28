@@ -72,6 +72,22 @@ class Settings(PostgresConnectionSettings):
     log_level: LogLevel = "INFO"
     ready_connect_timeout_seconds: float = 2.0
 
+    # ---- TuShare 客户端（非敏感参数） ----
+    tushare_base_url: str = "https://api.tushare.pro"
+    tushare_timeout_seconds: float = 10.0
+    tushare_max_retries: int = 3
+    tushare_rate_per_minute: int = 60
+    tushare_backoff_base_seconds: float = 1.0
+    tushare_backoff_cap_seconds: float = 30.0
+    ingest_lease_ttl_seconds: int = 600
+
+    @field_validator("tushare_base_url")
+    @classmethod
+    def _tushare_url(cls, value: str) -> str:
+        if not value.startswith(("http://", "https://")):
+            raise ValueError("tushare_base_url must start with http:// or https://")
+        return value
+
     # ---- 可选能力项：缺失 → 能力不可用 ----
     tushare_token: SecretStr | None = None
     llm_api_key: SecretStr | None = None
