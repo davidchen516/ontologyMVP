@@ -26,6 +26,7 @@ from src.db.repositories import (
     SourceCapabilityRepository,
     SourceRecordRepository,
 )
+from src.documents.repositories import DocumentVersionRepository
 
 
 class UnitOfWork:
@@ -45,6 +46,7 @@ class UnitOfWork:
         self.graph_outbox = GraphOutboxRepository(conn)
         self.audit_events = AuditEventRepository(conn)
         self.documents = DocumentRepository(conn)
+        self.document_versions = DocumentVersionRepository(conn)
 
     def commit(self) -> None:
         self._conn.commit()

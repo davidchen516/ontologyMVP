@@ -233,6 +233,26 @@ uv run pytest tests/db     # 迁移/约束/事务/并发/幂等/角色测试（C
   双时态字段与 Semantica `BiTemporalFact` 往返语义不变；
 - `FakeSemanticRuntime` 支撑不依赖 Semantica/DB 的业务单元测试。
 
+### 官方披露文档管道（issue #6）
+
+- Document 身份 = 来源+官方 ID+URL 的元数据 Hash；同 URL 内容变化 →
+  同一 Document 下新 DocumentVersion（旧版本与原始文件永不覆盖）；
+- 安全下载：官方渠道域名白名单（巨潮/沪/深）、仅 HTTPS、逐跳重定向校验、
+  Content-Type + PDF 魔数、50MB 上限、SHA-256 完整性、临时文件原子落盘；
+- PDF 解析（pypdf，解析器版本落库）：页码/章节/段落/字符偏移全保留；
+  空白页比例/最小字符数质量门禁——纯扫描文档显式 `PARSE_NEEDS_REVIEW`
+  进人工审核，绝不进入自动 Claim 抽取；
+- EvidenceFragment 引用 DocumentVersion，(document, checksum) 幂等去重，
+  重放不重复；Prompt 注入红线：文档正文一律按数据处理，解析层无任何
+  执行/网络代码路径；
+- 崩溃恢复：下载/解析状态机（download_status / document_parse_status 原生
+  枚举）+ 残留 DOWNLOADING 恢复语义；对账：DB 记录缺失文件自动重新排队、
+  孤儿文件可枚举；
+- 只读接口：`GET /admin/documents`、`GET /admin/documents/{id}`（含版本与
+  解析质量）、`GET /admin/evidence?document_version_id=`；
+  解析状态的权威字段是 `fact.document_version.parse_status`
+  （`fact.document.parse_status` 为文档级显示位，不随版本解析推进）。
+
 ### 日志与追踪
 
 - 所有日志为结构化 JSON；API 请求与 Worker 执行单元统一携带 `trace_id`（可通过 `X-Trace-Id` 透传）。
@@ -278,6 +298,7 @@ TuShare 概念成员
 - [x] TuShare 能力探针 + Connector 框架 + Raw 层幂等采集（见「TuShare 采集与能力探针」）
 - [x] 主数据/概念/主营构成/财务观察值标准化管道（见「标准化管道」）
 - [x] SemanticRuntime 端口、Semantica 0.7.0 适配器与持久化 Provenance（见「语义运行时」）
+- [x] 官方披露文档采集、版本化解析与 EvidenceFragment（见「官方披露文档管道」）
 - [x] PostgreSQL Schema 与 Alembic 迁移、事实事务边界（Neo4j 为可重建投影，无迁移需求）
 - [ ] 首个纵向场景开发
 

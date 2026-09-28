@@ -14,6 +14,7 @@ from src.domain.enums import (
     REVIEW_TASK_TRANSITIONS,
     ClaimStatus,
     DocumentParseStatus,
+    DownloadStatus,
     GraphOutboxStatus,
     IllegalTransitionError,
     IngestRunStatus,
@@ -30,6 +31,7 @@ PG_ENUM_NAMES = {
     "review_task": "review_task_status",
     "graph_outbox": "graph_outbox_status",
     "document_parse": "document_parse_status",
+    "document_download": "download_status",
 }
 
 
@@ -41,6 +43,7 @@ def test_pg_native_enums_match_python_enums(main_dsn) -> None:
         "review_task": ReviewTaskStatus,
         "graph_outbox": GraphOutboxStatus,
         "document_parse": DocumentParseStatus,
+        "document_download": DownloadStatus,
     }
     with psycopg.connect(main_dsn) as conn:
         for machine, enum_cls in machine_to_python.items():

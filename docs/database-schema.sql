@@ -242,6 +242,8 @@ ON master.product_term_mapping (normalized_term);
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS fact.document (
+    -- 注意：document.content_hash 的身份语义是"来源+官方ID+URL"的元数据 Hash
+    -- （稳定身份）；文件内容指纹在 fact.document_version.file_hash（issue #6）
     id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     document_type           VARCHAR(50) NOT NULL,
     source_system           VARCHAR(50) NOT NULL,
@@ -253,8 +255,10 @@ CREATE TABLE IF NOT EXISTS fact.document (
     content_hash            CHAR(64) NOT NULL,
     local_object_key        TEXT,
     mime_type               VARCHAR(100),
+    -- 下载状态机（migration 0006）
+    download_status         download_status NOT NULL DEFAULT 'DISCOVERED',
     -- 解析状态机 document_parse_status：PENDING/PARSING/PARSED/
-    -- FAILED_RETRYABLE/FAILED_FINAL/SKIPPED
+    -- FAILED_RETRYABLE/FAILED_FINAL/SKIPPED/PARSE_NEEDS_REVIEW(0006 追加)
     parse_status            document_parse_status NOT NULL DEFAULT 'PENDING',
     parser_version          VARCHAR(50),
     created_at              TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -493,6 +497,45 @@ CREATE TABLE IF NOT EXISTS ops.audit_event (
 
 CREATE INDEX IF NOT EXISTS idx_audit_event_entity
 ON ops.audit_event (entity_type, entity_id, created_at DESC);
+
+-- ---------------------------------------------------------------------------
+-- Document pipeline (migration 0006, issue #6)
+-- ---------------------------------------------------------------------------
+
+-- 下载状态机（原生枚举）
+CREATE TYPE download_status AS ENUM (
+    'DISCOVERED', 'DOWNLOAD_PENDING', 'DOWNLOADING', 'DOWNLOADED',
+    'DOWNLOAD_FAILED_RETRYABLE', 'DOWNLOAD_FAILED_FINAL'
+);
+-- 解析状态机 document_parse_status 追加 PARSE_NEEDS_REVIEW（纯扫描→人工审核，
+-- 不进自动抽取）；ALTER TYPE ADD VALUE 追加于末尾
+
+-- 文档版本：同 URL 内容 Hash 变化 → 新版本，旧版本与文件不覆盖
+CREATE TABLE fact.document_version (
+    id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    document_id             UUID NOT NULL REFERENCES fact.document(id),
+    version                 INTEGER NOT NULL,
+    source_url              TEXT NOT NULL,
+    content_hash            CHAR(64) NOT NULL,
+    file_hash               CHAR(64),
+    storage_key             TEXT,
+    file_size               BIGINT,
+    mime_type               VARCHAR(100),
+    download_status         download_status NOT NULL DEFAULT 'DISCOVERED',
+    parse_status            document_parse_status NOT NULL DEFAULT 'PENDING',
+    downloaded_at           TIMESTAMPTZ,
+    parser_version          VARCHAR(50),
+    page_count              INTEGER,
+    text_stats              JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at              TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (document_id, version),
+    UNIQUE (document_id, content_hash)
+);
+CREATE INDEX idx_document_version_document
+ON fact.document_version (document_id, version DESC);
+
+-- 片段引用具体解析版本（0006 增列）
+-- fact.evidence_fragment.document_version_id UUID REFERENCES fact.document_version(id)
 
 -- ---------------------------------------------------------------------------
 -- Standardization layer (migration 0004, issue #4)
