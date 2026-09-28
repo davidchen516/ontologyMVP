@@ -492,6 +492,113 @@ CREATE INDEX IF NOT EXISTS idx_audit_event_entity
 ON ops.audit_event (entity_type, entity_id, created_at DESC);
 
 -- ---------------------------------------------------------------------------
+-- Standardization layer (migration 0004, issue #4)
+-- ---------------------------------------------------------------------------
+
+-- 标准化运行：复用 ingest_run_status 状态机；水位/租约/父运行与映射版本
+CREATE TABLE IF NOT EXISTS ops.normalization_run (
+    id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    dataset_name            VARCHAR(100) NOT NULL,
+    source_system           VARCHAR(50) NOT NULL,
+    mapping_version         VARCHAR(50) NOT NULL,
+    status                  ingest_run_status NOT NULL DEFAULT 'CREATED',
+    started_at              TIMESTAMPTZ NOT NULL DEFAULT now(),
+    finished_at             TIMESTAMPTZ,
+    rows_read               INTEGER NOT NULL DEFAULT 0,
+    rows_written            INTEGER NOT NULL DEFAULT 0,
+    rows_rejected           INTEGER NOT NULL DEFAULT 0,
+    error_detail            JSONB,
+    watermark               JSONB NOT NULL DEFAULT '{}'::jsonb,
+    trace_id                VARCHAR(64) NOT NULL,
+    lease_owner             VARCHAR(200),
+    lease_expires_at        TIMESTAMPTZ,
+    parent_run_id           UUID REFERENCES ops.normalization_run(id)
+);
+
+-- 审计事件流：VERSION_APPLIED / REJECTED / MAPPED / CORRECTION
+CREATE TABLE IF NOT EXISTS ops.normalization_event (
+    id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    run_id                  UUID NOT NULL REFERENCES ops.normalization_run(id),
+    event_type              VARCHAR(30) NOT NULL,
+    entity_type             VARCHAR(80),
+    entity_ref              VARCHAR(300),
+    detail                  JSONB NOT NULL DEFAULT '{}'::jsonb,
+    source_record_id        UUID,
+    created_at              TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CHECK (event_type IN ('VERSION_APPLIED', 'REJECTED', 'MAPPED', 'CORRECTION'))
+);
+
+-- namechange → 历史别名
+CREATE TABLE IF NOT EXISTS master.security_name_history (
+    security_id             UUID NOT NULL REFERENCES master.security(id),
+    name                    VARCHAR(300) NOT NULL,
+    start_date              DATE,
+    end_date                DATE,
+    ann_date                DATE,
+    source_record_id        UUID NOT NULL REFERENCES raw.source_record(id),
+    recorded_at             TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (security_id, name, start_date)
+);
+
+-- stock_company 画像字段（chairman 等映射目标）
+CREATE TABLE IF NOT EXISTS master.company_profile (
+    id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_id              UUID NOT NULL UNIQUE REFERENCES master.company(id),
+    chairman_name           VARCHAR(200),
+    general_manager_name    VARCHAR(200),
+    board_secretary_name    VARCHAR(200),
+    registered_capital      NUMERIC,
+    founded_date            DATE,
+    province                VARCHAR(100),
+    city                    VARCHAR(100),
+    employees               NUMERIC,
+    main_part_business      TEXT,
+    source_record_id        UUID NOT NULL REFERENCES raw.source_record(id),
+    recorded_at             TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at              TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- 股东持有观察：仅 HOLDS 候选/事实，绝不产生 CONTROLS
+CREATE TABLE IF NOT EXISTS fact.holding_observation (
+    id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    security_id             UUID NOT NULL REFERENCES master.security(id),
+    holder_name             VARCHAR(300) NOT NULL,
+    holder_type             VARCHAR(50),
+    hold_amount             NUMERIC,
+    hold_ratio              NUMERIC(10,6),
+    end_date                DATE NOT NULL,
+    source_record_id        UUID NOT NULL REFERENCES raw.source_record(id),
+    recorded_at             TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE NULLS NOT DISTINCT (security_id, holder_name, end_date, hold_ratio)
+);
+
+-- 标准化幂等键：同一公司/报告期/分部类型/原始披露名收敛为一条
+CREATE UNIQUE INDEX IF NOT EXISTS idx_business_segment_identity
+ON finance.business_segment_observation (company_id, period_end, segment_type, raw_segment_name);
+
+-- 确定性"当前有效财务值"视图（选择规则 = tushare.yaml financial_version_selection：
+-- 保留全部版本；口径 CONSOLIDATED > PARENT > UNKNOWN；最新公告日期优先，再最新 update_flag）
+CREATE OR REPLACE VIEW finance.v_financial_observation_current AS
+SELECT o.*
+FROM (
+    SELECT fo.*,
+           row_number() OVER (
+               PARTITION BY fo.security_id, fo.metric_code, fo.period_end
+               ORDER BY
+                   CASE fo.report_type
+                       WHEN '1' THEN 1 WHEN '4' THEN 1
+                       WHEN '2' THEN 2 WHEN '5' THEN 2
+                       ELSE 3
+                   END ASC,
+                   fo.announced_at DESC NULLS LAST,
+                   fo.update_flag DESC NULLS LAST,
+                   fo.recorded_at DESC
+           ) AS version_rank
+    FROM finance.financial_observation fo
+) o
+WHERE o.version_rank = 1;
+
+-- ---------------------------------------------------------------------------
 -- Required application-level invariants
 -- ---------------------------------------------------------------------------
 -- 1. ACCEPTED operating claims require at least one Evidence or SourceRecord.

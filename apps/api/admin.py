@@ -97,6 +97,95 @@ def build_admin_router(settings: Settings) -> APIRouter:
             raise HTTPException(status_code=404, detail="ingest run not found")
         return rows[0]
 
+    @router.get("/normalization-runs")
+    async def normalization_runs(
+        dataset: str | None = Query(default=None, max_length=100),
+        limit: int = Query(default=50, ge=1, le=200),
+    ) -> dict[str, Any]:
+        from src.standardize.repositories import NormalizationRunRepository
+
+        def fetch() -> dict[str, Any]:
+            with psycopg.connect(settings.postgres_dsn) as conn:
+                repo = NormalizationRunRepository(conn)
+                return {"runs": repo.list_runs(dataset=dataset, limit=limit),
+                        "count": len(repo.list_runs(dataset=dataset, limit=limit))}
+
+        return await run_in_threadpool(fetch)
+
+    @router.get("/normalization-runs/{run_id}")
+    async def normalization_run_detail(run_id: str) -> dict[str, Any]:
+        from src.standardize.repositories import (
+            NormalizationEventRepository,
+            NormalizationRunRepository,
+        )
+
+        def fetch() -> dict[str, Any] | None:
+            with psycopg.connect(settings.postgres_dsn) as conn:
+                try:
+                    runs = NormalizationRunRepository(conn)
+                    detail = runs.get(run_id)
+                except Exception:  # noqa: BLE001 - 非法 uuid 视为不存在
+                    return None
+                if detail is None:
+                    return None
+                events = NormalizationEventRepository(conn).list_for_run(detail["id"])
+                return {"run": detail, "events": events}
+
+        detail = await run_in_threadpool(fetch)
+        if detail is None:
+            raise HTTPException(status_code=404, detail="normalization run not found")
+        return detail
+
+    @router.get("/normalization/rejections")
+    async def normalization_rejections(
+        run_id: str | None = Query(default=None), limit: int = Query(default=100, ge=1, le=500)
+    ) -> dict[str, Any]:
+        from src.standardize.repositories import NormalizationEventRepository
+
+        def fetch() -> dict[str, Any]:
+            with psycopg.connect(settings.postgres_dsn) as conn:
+                events = NormalizationEventRepository(conn).list_rejections(
+                    run_id=run_id, limit=limit
+                )
+                return {"rejections": events, "count": len(events)}
+
+        return await run_in_threadpool(fetch)
+
+    @router.get("/financial/current/{security_id}")
+    async def financial_current(
+        security_id: str, metric: str | None = Query(default=None)
+    ) -> dict[str, Any]:
+        from src.db.uow import UnitOfWorkFactory
+        from src.standardize.financial import current_financial_observations
+
+        def fetch() -> dict[str, Any]:
+            factory = UnitOfWorkFactory(settings.postgres_dsn)
+            with factory.transaction() as uow:
+                return current_financial_observations(
+                    uow, security_id=security_id, metric_code=metric
+                )
+
+        try:
+            return await run_in_threadpool(fetch)
+        except psycopg.errors.InvalidTextRepresentation:
+            raise HTTPException(status_code=422, detail="invalid security id") from None
+
+    @router.get("/financial/operating-cashflow/{security_id}")
+    async def operating_cashflow(security_id: str) -> dict[str, Any]:
+        """最近三个完整财年经营现金流（可复现查询；含选择策略与充足性判定）。"""
+        from src.db.uow import UnitOfWorkFactory
+        from src.standardize.financial import recent_three_fy_operating_cashflow
+
+        def fetch() -> dict[str, Any]:
+            factory = UnitOfWorkFactory(settings.postgres_dsn)
+            with factory.transaction() as uow:
+                return recent_three_fy_operating_cashflow(uow, security_id=security_id)
+
+        try:
+            return await run_in_threadpool(fetch)
+        except psycopg.errors.InvalidTextRepresentation:
+            raise HTTPException(status_code=422, detail="invalid security id") from None
+
     @router.get("/data-freshness")
     async def data_freshness() -> dict[str, Any]:
         fresh = await run_in_threadpool(_freshness, settings.postgres_dsn)

@@ -89,9 +89,15 @@ def uow_factory(main_dsn: str):
 
 
 @pytest.fixture(autouse=True)
-def _clean_tables(main_dsn):
-    """每个测试后清空业务表（保留 alembic_version），测试互不污染。"""
+def _clean_tables(request, main_dsn):
+    """每个测试后清空业务表（保留 alembic_version），测试互不污染。
+
+    声明 PRESERVE_STANDARDIZATION_DATA = True 的测试模块跳过清库
+    （该模块自管一次性种子，跨多个断言测试复用）。
+    """
     yield
+    if getattr(request.module, "PRESERVE_STANDARDIZATION_DATA", False):
+        return
     with psycopg.connect(main_dsn) as conn:
         row = conn.execute(_all_tables_sql).fetchone()
         if row and row[0]:

@@ -200,6 +200,24 @@ uv run pytest tests/db     # 迁移/约束/事务/并发/幂等/角色测试（C
 
 未设置 `TEST_DATABASE_DSN` 时，`tests/db` 整套自动跳过（不影响其余测试）。
 
+### 标准化管道（issue #4）
+
+- Raw → 标准实体：Security/Exchange、Company（证券锚定受控键，同名不合并）、
+  历史别名、申万行业树与时态成员、THS/DC 概念与快照成员、主营分部
+  （`bz_item` 原样保留）、财务观察值（缺值保持 NULL、币种未知不默认 CNY、
+  重述/口径全保留）、股东持有观察（仅 HOLDS，无 CONTROLS）；
+- 可版本化/可重放/可审计：映射版本来自 `ontology/mappings/tushare.yaml`，
+  每次运行生成 `ops.normalization_event`（VERSION_APPLIED/REJECTED/MAPPED），
+  拒绝行可查询，绝无静默纠正；
+- 水位续跑 + 租约恢复；默认只处理新增 Raw，`replay_from_scratch` 全量重放；
+- 快照型概念成员按 (数据集, 快照日期) 原子提交，不暴露半个快照；
+- "当前有效财务值"：`finance.v_financial_observation_current` 确定性视图 +
+  近三个完整财年经营现金流服务（不足 3 个有效 FY 明确返回数据不足）；
+- 管理接口：`GET /admin/normalization-runs[?dataset=]`、
+  `GET /admin/normalization-runs/{id}`、`GET /admin/normalization/rejections`、
+  `GET /admin/financial/current/{security_id}`、
+  `GET /admin/financial/operating-cashflow/{security_id}`（均只读，含选择策略）。
+
 ### 日志与追踪
 
 - 所有日志为结构化 JSON；API 请求与 Worker 执行单元统一携带 `trace_id`（可通过 `X-Trace-Id` 透传）。
@@ -243,6 +261,7 @@ TuShare 概念成员
 - [x] 自动化设计资产校验
 - [x] 可运行工程脚手架（API/Worker/Compose/CI/健康检查，见「本地启动与运行」）
 - [x] TuShare 能力探针 + Connector 框架 + Raw 层幂等采集（见「TuShare 采集与能力探针」）
+- [x] 主数据/概念/主营构成/财务观察值标准化管道（见「标准化管道」）
 - [x] PostgreSQL Schema 与 Alembic 迁移、事实事务边界（Neo4j 为可重建投影，无迁移需求）
 - [ ] 首个纵向场景开发
 
