@@ -16,6 +16,10 @@ BASE: dict[str, object] = {
     "neo4j_password": "unit-test-password",
     "environment": "ci",
     "log_level": "INFO",
+    # 显式固定可选能力为缺失：init 参数优先级最高，保证测试不受
+    # 开发机环境变量 / .env 中 Token 影响（独立审查遗留观察项）
+    "tushare_token": None,
+    "llm_api_key": None,
 }
 
 ENV_NAMES = {

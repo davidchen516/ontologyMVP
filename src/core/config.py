@@ -4,6 +4,11 @@
 - 连接密码等敏感字段使用 SecretStr，禁止被日志/序列化泄露；
 - TuShare Token、LLM Key 为可选能力项，缺失时能力标记为不可用（DEGRADED），
   不得伪装成可用。
+
+分层：
+- PostgresConnectionSettings：仅需 PostgreSQL 连接的入口（Alembic 迁移、
+  DB 测试）使用，避免迁移步骤被迫提供 Neo4j 配置；
+- Settings：API/Worker 运行时完整配置。
 """
 
 from __future__ import annotations
@@ -17,7 +22,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 
 
-class Settings(BaseSettings):
+class PostgresConnectionSettings(BaseSettings):
+    """PostgreSQL 连接配置（迁移与测试的最小必需集）。"""
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
@@ -25,17 +32,42 @@ class Settings(BaseSettings):
         frozen=True,
     )
 
-    # ---- 必填：缺失时启动即失败（ValidationError，逐项列出缺失字段） ----
     postgres_host: str
     postgres_db: str
     postgres_user: str
     postgres_password: SecretStr
+    postgres_port: int = 5432
+
+    @field_validator("postgres_host", "postgres_db", "postgres_user")
+    @classmethod
+    def _not_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("must not be blank")
+        return value
+
+    @property
+    def postgres_dsn(self) -> str:
+        password = self.postgres_password.get_secret_value()
+        return (
+            f"postgresql://{self.postgres_user}:{quote_plus(password)}"
+            f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
+        )
+
+
+class Settings(PostgresConnectionSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        frozen=True,
+    )
+
+    # ---- 运行时必填（缺失时启动即失败，逐项列出缺失字段） ----
     neo4j_uri: str
     neo4j_user: str
     neo4j_password: SecretStr
 
     # ---- 非敏感、安全默认值 ----
-    postgres_port: int = 5432
     environment: Literal["local", "ci", "production"] = "local"
     log_level: LogLevel = "INFO"
     ready_connect_timeout_seconds: float = 2.0
@@ -52,9 +84,9 @@ class Settings(BaseSettings):
             return None
         return value
 
-    @field_validator("postgres_host", "postgres_db", "postgres_user", "neo4j_user")
+    @field_validator("neo4j_user")
     @classmethod
-    def _not_blank(cls, value: str) -> str:
+    def _neo4j_user_not_blank(cls, value: str) -> str:
         if not value.strip():
             raise ValueError("must not be blank")
         return value
@@ -65,14 +97,6 @@ class Settings(BaseSettings):
         if not (value.startswith("bolt://") or value.startswith("neo4j://")):
             raise ValueError("neo4j_uri must start with bolt:// or neo4j://")
         return value
-
-    @property
-    def postgres_dsn(self) -> str:
-        password = self.postgres_password.get_secret_value()
-        return (
-            f"postgresql://{self.postgres_user}:{quote_plus(password)}"
-            f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
-        )
 
     def capability_states(self) -> dict[str, bool]:
         """可选能力可用性；缺失对应 Secret 时为 False，不伪装可用。"""
