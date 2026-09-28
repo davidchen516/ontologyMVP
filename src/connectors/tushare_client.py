@@ -37,7 +37,7 @@ RATE_LIMIT_HINTS = ("频率", "每分钟", "rate", "limit", "429")
 
 
 class RateLimiter:
-    """每 Connector 独立的简单令牌桶（每分钟 N 个请求）。"""
+    """每 Connector 独立的固定间隔限速器（每分钟 N 个请求，间隔 60/N 秒）。"""
 
     def __init__(self, per_minute: int, *, clock: Callable[[], float] = time.monotonic):
         if per_minute <= 0:
@@ -182,6 +182,7 @@ class TushareClient:
                 self._sleep(backoff)
 
         assert last_transient is not None
+        last_transient.attempts = attempts
         raise last_transient
 
     @property

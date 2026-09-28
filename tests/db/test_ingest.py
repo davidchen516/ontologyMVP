@@ -12,6 +12,7 @@ from src.connectors.datasets import load_datasets
 from src.connectors.ingest import (
     ActiveRunExistsError,
     DatasetFusedError,
+    ProbeOnlyDatasetError,
     ingest_dataset,
     recover_stale_runs,
     start_run,
@@ -350,3 +351,88 @@ def test_rejected_rows_make_run_partial_success(uow_factory) -> None:
     assert outcome.status == IngestRunStatus.PARTIAL_SUCCESS  # 有拒绝行 → 不得 SUCCEEDED
     assert outcome.rows_rejected == 1
     assert outcome.rows_inserted == 0
+
+
+# ---- 独立审查 BLOCKER-1 回归：终态错误不得逃逸或被误标可重试 ----
+
+
+@pytest.mark.parametrize(
+    "error_fixture",
+    ["error_invalid_request", "error_unknown"],
+)
+def test_terminal_connector_error_is_failed_final_with_reason(
+    uow_factory, error_fixture
+) -> None:
+    """INVALID_REQUEST/UNKNOWN 是确定性终态错误：FAILED_FINAL、原因保留、
+    绝不允许运行卡 RUNNING 再被租约恢复器误标为 FAILED_RETRYABLE。"""
+    connector = make_connector("stock_basic", lambda req: fixture_response(error_fixture))
+    run = begin_run(uow_factory, "stock_basic")
+
+    outcome = ingest_dataset(uow_factory, connector, run_id=run["id"],
+                             lease_ttl_seconds=LEASE_TTL)
+
+    assert outcome.status == IngestRunStatus.FAILED_FINAL
+    with uow_factory.transaction() as uow:
+        detail = uow.ingest_runs.get(run["id"])
+    assert detail["status"] == "FAILED_FINAL"  # 不得卡 RUNNING、不得 RETRYABLE
+    reason = detail["error_detail"]["reason"]
+    assert "TerminalConnectorError" in reason
+    assert detail["request_count"] == 1  # 外呼如实入账
+
+    # 恢复器不应把终态运行误判为可恢复
+    recovered = recover_stale_runs(uow_factory)
+    assert not any(item["run_id"] == run["id"] for item in recovered)
+
+
+def test_terminal_schema_changed_error_fuses_dataset(uow_factory) -> None:
+    """客户端分类的 SCHEMA_CHANGED 终态错误同样走熔断路径。"""
+    def transport(request):
+        if (request.get("params") or {}).get("offset") in (None, 0):
+            return fixture_response("stock_basic")
+        return {"code": -4001, "msg": "接口字段布局已变更"}
+
+    connector = make_connector("stock_basic", transport, page_size=2)
+    run = begin_run(uow_factory, "stock_basic")
+    outcome = ingest_dataset(uow_factory, connector, run_id=run["id"],
+                             lease_ttl_seconds=LEASE_TTL)
+    assert outcome.status == IngestRunStatus.FAILED_FINAL
+    with uow_factory.transaction() as uow:
+        capability = uow.source_capabilities.get_status("TUSHARE", "stock_basic")
+    assert capability["status"] == "SCHEMA_CHANGED"
+
+
+def test_probe_only_dataset_refuses_raw_ingestion(uow_factory) -> None:
+    """anns_d/互动等 probe_only 数据集只做权限探测，禁止 Raw 采集。"""
+    connector = make_connector("anns_d", lambda req: fixture_response("anns_d"))
+    run = begin_run(uow_factory, "anns_d")
+    with pytest.raises(ProbeOnlyDatasetError):
+        ingest_dataset(uow_factory, connector, run_id=run["id"],
+                       lease_ttl_seconds=LEASE_TTL)
+
+
+def test_resume_from_nonempty_cursor_skips_consumed_pages(uow_factory) -> None:
+    """断点续跑：从持久化非空游标（offset>0）继续，不重拉已消费页。"""
+    page0 = fixture_response("income_vip")
+    page0["data"]["items"] = [["000001.SZ", "20251231", 1.0], ["000002.SZ", "20251231", 2.0]]
+    page1 = fixture_response("income_vip")
+    page1["data"]["items"] = [["000006.SZ", "20251231", 6.0], ["000007.SZ", "20251231", 7.0]]
+    calls = {"n": 0}
+
+    def counting_transport(request):
+        calls["n"] += 1
+        return _paged_transport("income_vip", [page0, page1])(request)
+
+    connector = make_connector("income_vip", counting_transport, page_size=2)
+    # 游标指向第 2 页：断点续跑
+    run = begin_run(uow_factory, "income_vip",
+                    cursor={"offset": 2, "schema_signature": None})
+    outcome = ingest_dataset(uow_factory, connector, run_id=run["id"],
+                             lease_ttl_seconds=LEASE_TTL)
+
+    assert outcome.status == IngestRunStatus.SUCCEEDED
+    assert outcome.request_count == 2  # 第 2 页 + 末页空确认；第 1 页未重拉
+    with uow_factory.transaction() as uow:
+        codes = {row[0] for row in uow._conn.execute(
+            "SELECT raw_payload->>'ts_code' FROM raw.source_record"
+        ).fetchall()}
+    assert codes == {"000006.SZ", "000007.SZ"}  # 第 1 页未被重放

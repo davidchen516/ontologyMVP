@@ -277,3 +277,13 @@ def test_recording_and_replay_round_trip(tmp_path):
     assert recorded_file.exists()
     replayed = FixtureTransport(tmp_path)({"api_name": "stock_basic", "params": {}})
     assert replayed == fixture_response("stock_basic")
+
+
+def test_probe_separate_permission_via_message_hint():
+    """非 probe-only 接口：msg 含"单独申请"提示 → SEPARATE_PERMISSION_REQUIRED。"""
+    connector = make_connector(
+        lambda req: fixture_response("error_separate_permission"),
+        api_name="stock_basic",
+    )
+    result = connector.probe()
+    assert result.status == CapabilityStatus.SEPARATE_PERMISSION_REQUIRED

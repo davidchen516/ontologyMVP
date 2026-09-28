@@ -25,6 +25,7 @@ from src.connectors.ports import (
     RateLimitedError,
     SchemaChangedError,
     SourceConnector,
+    TerminalConnectorError,
 )
 from src.connectors.tushare_connectors import SOURCE_SYSTEM
 from src.db.uow import UnitOfWork, UnitOfWorkFactory
@@ -43,6 +44,10 @@ class ActiveRunExistsError(Exception):
 
 class DatasetFusedError(Exception):
     """数据集因 Schema 变化被熔断；必须先解除能力状态才允许再采集。"""
+
+
+class ProbeOnlyDatasetError(Exception):
+    """probe_only 数据集（anns_d/互动等）只做权限探测，不做 Raw 采集。"""
 
 
 def _now() -> dt.datetime:
@@ -144,6 +149,12 @@ def ingest_dataset(
         assert run is not None
         cursor: dict[str, Any] = run["cursor_state"] or {}
 
+    config = getattr(connector, "config", None)
+    if config is not None and not config.ingested:
+        raise ProbeOnlyDatasetError(
+            f"{connector.dataset_name} is probe-only; raw ingestion is not allowed"
+        )
+
     required_fields = getattr(connector.config, "required_fields", ())
     stats = {"rows_received": 0, "rows_inserted": 0, "rows_rejected": 0, "request_count": 0}
     anomalies: list[str] = []
@@ -164,15 +175,29 @@ def ingest_dataset(
         try:
             batch = connector.fetch(cursor)  # 外部调用，不在事务内
         except (RateLimitedError, NetworkError) as exc:
-            _finish_failed(uow_factory, run_id, IngestRunStatus.FAILED_RETRYABLE,
-                            f"{type(exc).__name__}: {exc}", stats)
+            # 瞬态失败：外部尝试次数如实入账（退避重试也消耗额度，不得低报）
+            attempts = getattr(exc, "attempts", 1)
+            stats["request_count"] += attempts
+            _finish_transient(uow_factory, run_id, attempts, exc, stats)
             return IngestOutcome(run_id, IngestRunStatus.FAILED_RETRYABLE, **stats)
         except SchemaChangedError as exc:
+            stats["request_count"] += 1
             _fuse_dataset(uow_factory, connector.dataset_name, str(exc), run_id, stats)
             return IngestOutcome(run_id, IngestRunStatus.FAILED_FINAL, **stats)
         except PermissionDeniedError as exc:
+            stats["request_count"] += 1
             _finish_failed(uow_factory, run_id, IngestRunStatus.FAILED_FINAL,
                            f"{type(exc).__name__}: {exc}", stats)
+            return IngestOutcome(run_id, IngestRunStatus.FAILED_FINAL, **stats)
+        except TerminalConnectorError as exc:
+            # BLOCKER 修复：确定性终态错误（INVALID_REQUEST/UNKNOWN/SCHEMA_CHANGED）
+            # 不得逃逸把运行卡在 RUNNING、再被租约恢复器误标为可重试
+            stats["request_count"] += 1
+            if exc.code == "SCHEMA_CHANGED":
+                _fuse_dataset(uow_factory, connector.dataset_name, str(exc), run_id, stats)
+            else:
+                _finish_failed(uow_factory, run_id, IngestRunStatus.FAILED_FINAL,
+                               f"{type(exc).__name__}[{exc.code}]: {exc}", stats)
             return IngestOutcome(run_id, IngestRunStatus.FAILED_FINAL, **stats)
 
         stats["request_count"] += 1
@@ -180,9 +205,11 @@ def ingest_dataset(
         stats["rows_received"] += len(batch.rows)
         stats["rows_rejected"] += rejected
 
-        # 重复页/游标倒退检测：停止而非无限循环
+        # 重复页/游标倒退检测：停止而非无限循环；该次外呼如实入账
         if _is_duplicate_page(cursor, batch, connector):
             anomalies.append("duplicate_page")
+            with uow_factory.transaction() as uow:
+                uow.ingest_runs.update_counts(run_id, request_count=1)
             break
 
         # 批次事务：写入 + 计数 + 游标 + 租约心跳（崩溃 → 全回滚，重放幂等）
@@ -270,6 +297,30 @@ def _finish(
         )
 
 
+def _finish_transient(
+    uow_factory: UnitOfWorkFactory,
+    run_id: Any,
+    attempts: int,
+    exc: Exception,
+    stats: dict[str, int],
+) -> None:
+    """瞬态失败：外部尝试次数如实入账（含退避重试消耗的额度）。"""
+    with uow_factory.transaction() as uow:
+        uow.ingest_runs.update_counts(run_id, request_count=attempts)
+        uow.ingest_runs.transition(
+            run_id,
+            IngestRunStatus.FAILED_RETRYABLE,
+            finished_at=_now(),
+            error_detail={"reason": f"{type(exc).__name__}: {exc}"[:300],
+                          "external_attempts": attempts},
+        )
+        log.warning(
+            "ingest_failed", run_id=str(run_id),
+            status=IngestRunStatus.FAILED_RETRYABLE.value,
+            external_attempts=attempts, **stats,
+        )
+
+
 def _finish_failed(
     uow_factory: UnitOfWorkFactory,
     run_id: Any,
@@ -278,6 +329,8 @@ def _finish_failed(
     stats: dict[str, int],
 ) -> None:
     with uow_factory.transaction() as uow:
+        # 失败时的外呼次数（含失败的那一次）如实入账，管理接口不得低报
+        uow.ingest_runs.update_counts(run_id, request_count=stats["request_count"])
         uow.ingest_runs.transition(
             run_id,
             status,
@@ -305,6 +358,7 @@ def _fuse_dataset(
             status="SCHEMA_CHANGED",
             detail={"reason": reason[:300], "fused_run_id": str(run_id)},
         )
+        uow.ingest_runs.update_counts(run_id, request_count=stats["request_count"])
         uow.ingest_runs.transition(
             run_id,
             IngestRunStatus.FAILED_FINAL,

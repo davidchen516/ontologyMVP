@@ -85,7 +85,7 @@ def test_admin_endpoints_readonly_shape_and_no_secrets(uow_factory, main_dsn) ->
     assert any(row["api_name"] == "stock_basic" and row["status"] == "AVAILABLE"
                for row in body)
     assert "SHOULDNOTAPPEAR" not in capabilities.text
-    assert "probe-token" not in capabilities.text
+    assert "db-test-token" not in capabilities.text  # 实际使用的 token 不得出现
 
     runs = client.get("/admin/ingest-runs", params={"dataset": "stock_basic"})
     assert runs.status_code == 200

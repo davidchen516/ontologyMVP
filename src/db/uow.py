@@ -71,7 +71,7 @@ class UnitOfWorkFactory:
 
     @contextmanager
     def transaction(self) -> Iterator[UnitOfWork]:
-        """事务作用域：正常退出提交，异常回滚后重抛。"""
+        """事务作用域：正常退出提交，异常回滚后重抛；连接确保关闭。"""
         uow = self.open()
         try:
             yield uow
@@ -80,6 +80,8 @@ class UnitOfWorkFactory:
             raise
         else:
             uow.commit()
+        finally:
+            uow.close()
 
 
 def new_uuid() -> uuid.UUID:

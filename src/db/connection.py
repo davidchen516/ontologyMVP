@@ -9,10 +9,6 @@ from sqlalchemy.engine import URL
 from src.core.config import PostgresConnectionSettings
 
 
-def psycopg_dsn(settings: PostgresConnectionSettings) -> str:
-    return settings.postgres_dsn
-
-
 def sqlalchemy_url(settings: PostgresConnectionSettings) -> URL:
     """Alembic（SQLAlchemy 引擎）使用的 psycopg3 驱动 URL。"""
     return URL.create(

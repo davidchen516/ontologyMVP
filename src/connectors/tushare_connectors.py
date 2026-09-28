@@ -198,6 +198,8 @@ class TushareConnector:
         if not self.config.paginated:
             return None
         if len(batch.rows) < self.config.page_size:
+            # 已知边界：offset 分页把"短页"视为末页——若源端按 page_size 截断返回，
+            # 会静默漏数。末页之后运行结束为 SUCCEEDED/PARTIAL，由对账机制兜底。
             return None  # 末页
         next_offset = (batch.request_params.get("offset") or 0) + len(batch.rows)
         return {
