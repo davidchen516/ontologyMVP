@@ -81,6 +81,9 @@ class Settings(PostgresConnectionSettings):
     tushare_backoff_cap_seconds: float = 30.0
     ingest_lease_ttl_seconds: int = 600
 
+    # ---- Claim 自动接受边界（issue #7 回滚要求：可配置关闭，全部转人工）----
+    claim_auto_accept: bool = True
+
     @field_validator("tushare_base_url")
     @classmethod
     def _tushare_url(cls, value: str) -> str:

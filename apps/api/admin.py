@@ -275,6 +275,47 @@ def build_admin_router(settings: Settings) -> APIRouter:
         rows = await run_in_threadpool(_fetch_all_rows, settings.postgres_dsn, query, tuple(params))
         return {"fragments": rows, "count": len(rows)}
 
+    @router.get("/review-tasks")
+    async def review_tasks(
+        status: str | None = Query(default=None, max_length=30),
+        limit: int = Query(default=50, ge=1, le=200),
+    ) -> dict[str, Any]:
+        query = (
+            "SELECT id, task_type, claim_id, status, priority, assigned_to, "
+            "reason_codes, decision, decision_reason, created_at, completed_at "
+            "FROM fact.review_task"
+        )
+        params: list[Any] = []
+        if status:
+            query += " WHERE status = %s"
+            params.append(status)
+        query += " ORDER BY created_at DESC LIMIT %s"
+        params.append(limit)
+        rows = await run_in_threadpool(_fetch_all_rows, settings.postgres_dsn, query, tuple(params))
+        return {"review_tasks": rows, "count": len(rows)}
+
+    @router.get("/claims/{claim_id}")
+    async def claim_detail(claim_id: str) -> dict[str, Any]:
+        import uuid as _uuid
+
+        try:
+            parsed_id = _uuid.UUID(claim_id)
+        except ValueError:
+            raise HTTPException(status_code=422, detail="invalid claim id") from None
+
+        rows = await run_in_threadpool(
+            _fetch_all_rows,
+            settings.postgres_dsn,
+            "SELECT id, subject_entity_type, subject_entity_id, predicate_code, "
+            "claim_status, business_stage, evidence_state, confidence, "
+            "content_hash, reviewed_by, reviewed_at, created_at, updated_at "
+            "FROM fact.claim WHERE id = %s",
+            (parsed_id,),
+        )
+        if not rows:
+            raise HTTPException(status_code=404, detail="claim not found")
+        return rows[0]
+
     @router.get("/data-freshness")
     async def data_freshness() -> dict[str, Any]:
         def fetch_documents() -> dict[str, Any]:
