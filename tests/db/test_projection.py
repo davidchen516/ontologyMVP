@@ -130,28 +130,25 @@ def test_crash_after_neo4j_before_mark(uow_factory) -> None:
 # ---- 验收 5：乱序拒绝 ----
 
 
-def test_stale_event_does_not_overwrite(uow_factory) -> None:
-    """旧版本事件不能覆盖新版本图状态。"""
+def test_stale_event_does_not_overwrite() -> None:
+    """旧版本事件不能覆盖新版本图状态——project_claim_node 内置 recorded_at 守卫。"""
     projector, executor = make_projector()
-    aggregate_id = uuid.uuid4()
+    claim_id = "claim-stale-1"
 
-    # 新版本（recorded_at 2027）
-    projector.project_entity("Claim", str(aggregate_id), {
-        "active": True, "recorded_at": "2027-01-01T00:00:00+00:00",
-    })
-    # 旧版本事件到达（recorded_at 2026）
-    # 投影器 MERGE SET 会覆盖——需要乱序拒绝逻辑
-    # 在真实场景中，Worker 按事件 payload 中的 recorded_at 与当前节点比较
-    # 简化：如果新 props 的 recorded_at < 当前节点的 recorded_at，拒绝
-    existing = executor.nodes.get(str(aggregate_id), {})
-    existing_time = existing.get("recorded_at", "")
-    new_time = "2026-01-01T00:00:00+00:00"
-    if existing_time and new_time < existing_time:
-        pass  # 旧事件被拒绝
-    else:
-        projector.project_entity("Claim", str(aggregate_id), {"active": True})
+    # 新版本（recorded_at 2027）先写入
+    assert projector.project_claim_node({
+        "id": claim_id, "claim_status": "ACCEPTED", "predicate_code": "PRODUCES",
+        "recorded_at": "2027-06-01T00:00:00+00:00",
+    }) is True
+
+    # 旧版本事件到达（recorded_at 2026）——必须被拒绝
+    assert projector.project_claim_node({
+        "id": claim_id, "claim_status": "ACCEPTED", "predicate_code": "PRODUCES",
+        "recorded_at": "2026-01-01T00:00:00+00:00",
+    }) is False
+
     # 节点仍是新版本
-    assert executor.nodes[str(aggregate_id)]["recorded_at"] == "2027-01-01T00:00:00+00:00"
+    assert executor.nodes[claim_id]["recorded_at"] == "2027-06-01T00:00:00+00:00"
 
 
 # ---- 验收 6：毒丸死信 ----
@@ -231,8 +228,16 @@ def test_full_rebuild_from_postgres(uow_factory) -> None:
         graph_executor=executor,
         project_entity_fn=project_entity,
         project_claim_fn=project_claim,
+        project_edge_fn=lambda cd: projector.project_business_edge(
+            rel_type=cd["predicate_code"] if cd["predicate_code"] in
+            ("PRODUCES", "DEVELOPS", "SUPPLIES_TO") else "PRODUCES",
+            source_id=str(cd["subject_entity_id"]),
+            target_id=str(cd["object_entity_id"]) if cd["object_entity_id"]
+            else str(cd["id"]),
+            claim_id=str(cd["id"]),
+        ),
     )
-    assert result["companies_rebuilt"] >= 1
+    assert result["entities_rebuilt"]["Company"] >= 1
     assert result["claims_rebuilt"] >= 1
     assert str(company["id"]) in executor.nodes
 

@@ -316,6 +316,38 @@ def build_admin_router(settings: Settings) -> APIRouter:
             raise HTTPException(status_code=404, detail="claim not found")
         return rows[0]
 
+    @router.get("/projection/status")
+    async def projection_status() -> dict[str, Any]:
+        """图投影新鲜度与 Outbox 积压（issue #8 管理接口）。"""
+        def fetch() -> dict[str, Any]:
+            outbox = _fetch_all_rows(
+                settings.postgres_dsn,
+                "SELECT status, count(*) AS n, "
+                "COALESCE(EXTRACT(EPOCH FROM max(now() - created_at)), 0) AS oldest_s "
+                "FROM ops.graph_outbox GROUP BY status",
+            )
+            dead_letter = _fetch_all_rows(
+                settings.postgres_dsn,
+                "SELECT id, event_type, retry_count, last_error, dead_lettered_at "
+                "FROM ops.graph_outbox WHERE status = 'DEAD_LETTERED' "
+                "ORDER BY dead_lettered_at DESC LIMIT 50",
+            )
+            processed = _fetch_all_rows(
+                settings.postgres_dsn,
+                "SELECT COALESCE(max(processed_at), NULL) AS last_processed "
+                "FROM ops.graph_outbox WHERE status = 'PROCESSED'",
+            )
+            pending = sum(r["n"] for r in outbox if r["status"] in
+                          ("PENDING", "PROCESSING", "FAILED_RETRYABLE"))
+            return {
+                "outbox_by_status": outbox,
+                "outbox_pending": pending,
+                "dead_letter_events": dead_letter,
+                "last_processed_at": processed[0]["last_processed"] if processed else None,
+            }
+
+        return await run_in_threadpool(fetch)
+
     @router.get("/data-freshness")
     async def data_freshness() -> dict[str, Any]:
         def fetch_documents() -> dict[str, Any]:

@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import os
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -71,6 +72,7 @@ def claim_batch(
     columns = ["id", "aggregate_type", "aggregate_id", "event_type",
                "payload", "idempotency_key", "retry_count"]
     events = [dict(zip(columns, row, strict=True)) for row in rows]
+    worker_id = f"worker-{os.getpid()}-{uuid.uuid4().hex[:8]}"
     for event in events:
         uow._conn.execute(  # noqa: SLF001
             """
@@ -78,9 +80,14 @@ def claim_batch(
             SET status = 'PROCESSING', locked_at = now(),
                 locked_by = %s, lease_expires_at = %s
             WHERE id = %s
+              AND (locked_by IS NULL OR locked_by != %s)
             """,
-            (f"worker-{os.getpid()}", lease_expiry, event["id"]),
+            (worker_id, lease_expiry, event["id"], worker_id),
         )
+    # 附加 fencing token 到每个事件供后续 UPDATE 守卫
+    for event in events:
+        event["worker_id"] = worker_id
+        event["lease_expiry"] = lease_expiry.isoformat()
     return events
 
 
@@ -98,30 +105,39 @@ def process_event(
         project_fn(uow, event)
         if not verify_fn(uow, event):
             raise OutboxWorkerError("post-write verification failed")
-        # 校验通过 → PROCESSED
-        uow._conn.execute(  # noqa: SLF001
+        # 校验通过 → PROCESSED（fencing：只允许当前持有者标记）
+        rowcount = uow._conn.execute(  # noqa: SLF001
             "UPDATE ops.graph_outbox SET status = 'PROCESSED', processed_at = now(), "
-            "last_error = NULL WHERE id = %s", (event_id,),
-        )
+            "last_error = NULL WHERE id = %s AND locked_by = %s",
+            (event_id, event.get("worker_id")),
+        ).rowcount
+        if rowcount == 0:
+            # 租约已被其他 Worker 接管——本事件由新持有者处理
+            return ProjectionResult(event_id, "SUPERSEDED")
         return ProjectionResult(event_id, "PROCESSED")
     except Exception as exc:  # noqa: BLE001 - 投影失败必须分类处理
         error_msg = f"{type(exc).__name__}: {str(exc)[:200]}"
         retry_count = int(event.get("retry_count") or 0) + 1
+        # fencing：只允许当前持有者更新状态
+        fencing_clause = " AND locked_by = %s"
+        fencing_params = (event.get("worker_id"),)
         if retry_count >= max_retries:
             uow._conn.execute(  # noqa: SLF001
                 "UPDATE ops.graph_outbox SET status = 'DEAD_LETTERED', "
                 "dead_lettered_at = now(), retry_count = %s, last_error = %s "
-                "WHERE id = %s",
-                (retry_count, error_msg, event_id),
+                "WHERE id = %s" + fencing_clause,
+                (retry_count, error_msg, event_id, *fencing_params),
             )
+            log.warning("outbox_dead_lettered", event_id=str(event_id),
+                        retry_count=retry_count, error=error_msg)
             return ProjectionResult(event_id, "DEAD_LETTERED", retry_count, error_msg)
         # PROCESSING → PENDING 重试（retry_count 递增）
         uow._conn.execute(  # noqa: SLF001
             "UPDATE ops.graph_outbox SET status = 'PENDING', "
             "retry_count = %s, last_error = %s, lease_expires_at = NULL, "
             "locked_at = NULL, locked_by = NULL "
-            "WHERE id = %s",
-            (retry_count, error_msg, event_id),
+            "WHERE id = %s" + fencing_clause,
+            (retry_count, error_msg, event_id, *fencing_params),
         )
         return ProjectionResult(event_id, "PENDING", retry_count, error_msg)
 
@@ -148,4 +164,3 @@ def run_worker_cycle(
     return results
 
 
-import os  # noqa: E402 - claim_batch 用 os.getpid()
