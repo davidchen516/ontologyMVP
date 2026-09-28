@@ -5,12 +5,16 @@
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
 
-# These Shapes validate the RDF/graph projection. PostgreSQL-only literal
-# claims are validated by Pydantic and database constraints before projection.
+<https://ontology.example.com/stock/shapes>
+    a owl:Ontology ;
+    rdfs:label "股票本体MVP SHACL约束"@zh ;
+    rdfs:comment "校验RDF/图投影；PostgreSQL专用字面值由Pydantic和数据库约束补充校验。"@zh .
 
 # ---------------------------------------------------------------------------
-# Security and company shapes
+# Company, security and platform concept
 # ---------------------------------------------------------------------------
 
 stock:CompanyShape
@@ -77,7 +81,7 @@ stock:ConceptShape
     ] .
 
 # ---------------------------------------------------------------------------
-# Product/SKOS shapes
+# Product/SKOS taxonomy
 # ---------------------------------------------------------------------------
 
 stock:ProductConceptShape
@@ -122,7 +126,7 @@ stock:ProductHierarchyCycleShape
     ] .
 
 # ---------------------------------------------------------------------------
-# Claim shapes
+# Claim
 # ---------------------------------------------------------------------------
 
 stock:ClaimShape
@@ -151,9 +155,12 @@ stock:ClaimShape
         sh:datatype xsd:string ;
         sh:in (
             "ISSUES" "LISTED_ON" "CLASSIFIED_AS" "TAGGED_AS"
-            "PRODUCES" "DEVELOPS" "SAMPLES_TO" "SUPPLIES_TO"
+            "PRODUCES" "DEVELOPS" "HAS_TECHNOLOGY_RESERVE"
+            "SAMPLES_TO" "SUPPLIES_TO" "USES_TECHNOLOGY"
+            "HAS_REVENUE_FROM" "DENIES_INVOLVEMENT"
             "CONTROLS" "HOLDS" "HAS_SEGMENT" "MAPPED_TO_PRODUCT"
-            "DIRECT_EXPOSURE_TO" "SECOND_ORDER_EXPOSURE_TO"
+            "VERIFIED_RELEVANT_TO" "DIRECT_EXPOSURE_TO"
+            "SECOND_ORDER_EXPOSURE_TO"
         ) ;
         sh:message "Claim谓词必须在MVP白名单内。"@zh
     ] ;
@@ -180,24 +187,29 @@ stock:ClaimShape
         sh:maxCount 1 ;
         sh:datatype xsd:string ;
         sh:in (
-            "CONCEPT_ONLY" "TECHNOLOGY_RESERVE" "RESEARCH" "PROTOTYPE"
+            "TECHNOLOGY_RESERVE" "RESEARCH" "PROTOTYPE"
             "SAMPLE_VALIDATION" "SMALL_BATCH" "MASS_PRODUCTION"
-            "REVENUE_DISCLOSED" "DENIED" "UNKNOWN"
+            "UNKNOWN"
         ) ;
-        sh:message "业务成熟阶段值无效。"@zh
+        sh:message "业务阶段值无效。收入披露和公司否认属于证据状态，不属于业务阶段。"@zh
     ] ;
     sh:property [
         sh:path stock:evidenceState ;
         sh:maxCount 1 ;
         sh:datatype xsd:string ;
         sh:in (
-            "STRUCTURED_SOURCE" "TEXT_EVIDENCE" "PLATFORM_TAG"
-            "INFERRED" "EVIDENCE_INSUFFICIENT"
+            "STRUCTURED_SOURCE"
+            "PLATFORM_CLASSIFICATION_ONLY"
+            "PRODUCT_DISCLOSED"
+            "REVENUE_DISCLOSED"
+            "COMPANY_DENIAL"
+            "EVIDENCE_INSUFFICIENT"
         ) ;
         sh:message "证据状态值无效。"@zh
     ] ;
     sh:property [
         sh:path stock:confidence ;
+        sh:minCount 1 ;
         sh:maxCount 1 ;
         sh:datatype xsd:decimal ;
         sh:minInclusive 0 ;
@@ -255,13 +267,14 @@ stock:AcceptedClaimEvidenceShape
     sh:targetClass stock:Claim ;
     sh:sparql [
         a sh:SPARQLConstraint ;
-        sh:message "ACCEPTED经营Claim必须至少有一个证据片段或明确结构化来源。"@zh ;
+        sh:message "ACCEPTED Claim必须至少有一个证据片段或明确结构化来源。"@zh ;
         sh:select """
             SELECT $this
             WHERE {
                 $this stock:claimStatus "ACCEPTED" .
-                FILTER NOT EXISTS { $this stock:supportedBy ?e . }
-                FILTER NOT EXISTS { $this stock:evidenceState "STRUCTURED_SOURCE" . }
+                FILTER NOT EXISTS { $this stock:supportedBy ?evidence }
+                FILTER NOT EXISTS { $this prov:wasDerivedFrom ?source }
+                FILTER NOT EXISTS { $this stock:evidenceState "STRUCTURED_SOURCE" }
             }
         """
     ] .
@@ -271,13 +284,27 @@ stock:ProductionClaimEvidenceShape
     sh:targetClass stock:Claim ;
     sh:sparql [
         a sh:SPARQLConstraint ;
-        sh:message "量产或已披露收入的Claim不能仅由平台概念标签支持。"@zh ;
+        sh:message "量产Claim不能只由平台概念标签支持。"@zh ;
         sh:select """
             SELECT $this
             WHERE {
-                $this stock:businessStage ?stage .
-                FILTER (?stage IN ("MASS_PRODUCTION", "REVENUE_DISCLOSED"))
-                $this stock:evidenceState "PLATFORM_TAG" .
+                $this stock:businessStage "MASS_PRODUCTION" ;
+                      stock:evidenceState "PLATFORM_CLASSIFICATION_ONLY" .
+            }
+        """
+    ] .
+
+stock:RevenueDisclosureShape
+    a sh:NodeShape ;
+    sh:targetClass stock:Claim ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "REVENUE_DISCLOSED必须记录报告期。"@zh ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this stock:evidenceState "REVENUE_DISCLOSED" .
+                FILTER NOT EXISTS { $this stock:reportPeriod ?period }
             }
         """
     ] .
@@ -287,19 +314,65 @@ stock:PlatformTagClaimShape
     sh:targetClass stock:Claim ;
     sh:sparql [
         a sh:SPARQLConstraint ;
-        sh:message "TAGGED_AS只能表示平台标签，不得被标记为量产或收入阶段。"@zh ;
+        sh:message "TAGGED_AS必须保持平台分类语义，不能带非UNKNOWN业务阶段。"@zh ;
         sh:select """
             SELECT $this
             WHERE {
-                $this stock:predicateCode "TAGGED_AS" ;
-                      stock:businessStage ?stage .
-                FILTER (?stage != "CONCEPT_ONLY" && ?stage != "UNKNOWN")
+                $this stock:predicateCode "TAGGED_AS" .
+                {
+                    FILTER NOT EXISTS {
+                        $this stock:evidenceState "PLATFORM_CLASSIFICATION_ONLY"
+                    }
+                }
+                UNION
+                {
+                    $this stock:businessStage ?stage .
+                    FILTER (?stage != "UNKNOWN")
+                }
+            }
+        """
+    ] .
+
+stock:DenialClaimShape
+    a sh:NodeShape ;
+    sh:targetClass stock:Claim ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "DENIES_INVOLVEMENT必须使用COMPANY_DENIAL证据状态并保存文本证据。"@zh ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this stock:predicateCode "DENIES_INVOLVEMENT" .
+                {
+                    FILTER NOT EXISTS { $this stock:evidenceState "COMPANY_DENIAL" }
+                }
+                UNION
+                {
+                    FILTER NOT EXISTS { $this stock:supportedBy ?evidence }
+                }
+            }
+        """
+    ] .
+
+stock:ProducesObjectShape
+    a sh:NodeShape ;
+    sh:targetClass stock:Claim ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "PRODUCES和DEVELOPS的对象必须是Product。"@zh ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this stock:predicateCode ?predicate ;
+                      stock:claimObject ?object .
+                FILTER (?predicate IN ("PRODUCES", "DEVELOPS", "HAS_REVENUE_FROM"))
+                FILTER NOT EXISTS { ?object a stock:Product }
             }
         """
     ] .
 
 # ---------------------------------------------------------------------------
-# Evidence and financial shapes
+# Evidence and financial observations
 # ---------------------------------------------------------------------------
 
 stock:EvidenceFragmentShape
