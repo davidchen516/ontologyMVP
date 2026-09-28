@@ -48,3 +48,6 @@ jobs:
 
       - name: Gitleaks secret scan
         uses: gitleaks/gitleaks-action@v2
+        env:
+          # v2 破坏性更新：扫描 PR 必须显式提供 GITHUB_TOKEN
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
