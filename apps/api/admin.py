@@ -195,6 +195,87 @@ def build_admin_router(settings: Settings) -> APIRouter:
         except psycopg.errors.InvalidTextRepresentation:
             raise HTTPException(status_code=422, detail="invalid security id") from None
 
+    @router.get("/documents")
+    async def documents(
+        source_system: str | None = Query(default=None, max_length=50),
+        limit: int = Query(default=50, ge=1, le=200),
+    ) -> dict[str, Any]:
+        query = (
+            "SELECT d.id, d.document_type, d.source_system, d.external_id, "
+            "d.company_id, d.title, d.published_at, d.source_url, "
+            "d.content_hash, d.mime_type, d.parse_status, d.download_status "
+            "FROM fact.document d"
+        )
+        params: list[Any] = []
+        if source_system:
+            query += " WHERE d.source_system = %s"
+            params.append(source_system)
+        query += " ORDER BY d.created_at DESC LIMIT %s"
+        params.append(limit)
+        rows = await run_in_threadpool(_fetch_all_rows, settings.postgres_dsn, query, tuple(params))
+        return {"documents": rows, "count": len(rows)}
+
+    @router.get("/documents/{document_id}")
+    async def document_detail(document_id: str) -> dict[str, Any]:
+        import uuid as _uuid
+
+        try:
+            parsed_id = _uuid.UUID(document_id)
+        except ValueError:
+            raise HTTPException(status_code=422, detail="invalid document id") from None
+
+        def fetch() -> dict[str, Any] | None:
+            with psycopg.connect(settings.postgres_dsn):
+                docs = _fetch_all_rows(
+                    settings.postgres_dsn,
+                    "SELECT id, document_type, source_system, external_id, company_id, "
+                    "title, published_at, source_url, content_hash, mime_type, "
+                    "parse_status, download_status FROM fact.document WHERE id = %s",
+                    (parsed_id,),
+                )
+                if not docs:
+                    return None
+                versions = _fetch_all_rows(
+                    settings.postgres_dsn,
+                    "SELECT id, version, source_url, content_hash, file_hash, "
+                    "storage_key, file_size, mime_type, download_status, "
+                    "parser_version, page_count, text_stats, created_at "
+                    "FROM fact.document_version WHERE document_id = %s ORDER BY version DESC",
+                    (parsed_id,),
+                )
+                return {"document": docs[0], "versions": versions}
+
+        detail = await run_in_threadpool(fetch)
+        if detail is None:
+            raise HTTPException(status_code=404, detail="document not found")
+        return detail
+
+    @router.get("/evidence")
+    async def evidence_fragments(
+        document_version_id: str | None = Query(default=None),
+        limit: int = Query(default=100, ge=1, le=500),
+    ) -> dict[str, Any]:
+        import uuid as _uuid
+
+        query = (
+            "SELECT ef.id, ef.document_id, ef.document_version_id, ef.page_number, "
+            "ef.section_title, ef.paragraph_index, ef.char_start, ef.char_end, "
+            "ef.quote_text, ef.checksum, ef.created_at "
+            "FROM fact.evidence_fragment ef"
+        )
+        params: list[Any] = []
+        if document_version_id is not None:
+            try:
+                version_uuid = _uuid.UUID(document_version_id)
+            except ValueError:
+                raise HTTPException(status_code=422, detail="invalid version id") from None
+            query += " WHERE ef.document_version_id = %s"
+            params.append(version_uuid)
+        query += " ORDER BY ef.document_id, ef.page_number, ef.paragraph_index LIMIT %s"
+        params.append(limit)
+        rows = await run_in_threadpool(_fetch_all_rows, settings.postgres_dsn, query, tuple(params))
+        return {"fragments": rows, "count": len(rows)}
+
     @router.get("/data-freshness")
     async def data_freshness() -> dict[str, Any]:
         fresh = await run_in_threadpool(_freshness, settings.postgres_dsn)

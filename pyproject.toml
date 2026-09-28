@@ -21,6 +21,7 @@ dependencies = [
     "httpx>=0.27,<1",
     "PyYAML>=6,<7",
     "rdflib>=7,<8",
+    "pypdf>=4,<7",
 ]
 
 [dependency-groups]
