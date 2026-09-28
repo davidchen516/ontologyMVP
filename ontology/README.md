@@ -7,6 +7,7 @@
 ```text
 ontology/
 ├── stock-core.ttl          核心实体、关系和Claim模型
+├── stock-relations.ttl     组成、收入证据、否认和主题相关性关系扩展
 ├── product-skos.ttl        产品与产业链SKOS词表
 ├── shapes.ttl              SHACL数据质量约束
 ├── rules.yaml              可执行推理规则定义
@@ -23,6 +24,7 @@ ontology/
 - 平台概念标签、经营事实和推理事实使用不同谓词和`factLayer`。
 - 本体IRI稳定；显示名称可以修改，IRI不得随中文名称变化。
 - 原始披露名称保留在数据层，通过映射表连接标准产品概念。
+- `rules.yaml`引用的关系必须在`stock-core.ttl`或`stock-relations.ttl`中显式声明。
 
 ## 命名空间
 
@@ -73,6 +75,7 @@ sh:      http://www.w3.org/ns/shacl#
 - 不能出现分类环。
 - SHACL错误数必须为0。
 - 孤立类、孤立属性和未解析关系端点需要告警。
+- 规则文件引用的类、关系、阶段和证据状态必须能够解析。
 
 ## Semantica集成
 
