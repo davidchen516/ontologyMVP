@@ -348,6 +348,27 @@ def build_admin_router(settings: Settings) -> APIRouter:
 
         return await run_in_threadpool(fetch)
 
+    @router.get("/projection/reconciliation")
+    async def projection_reconciliation() -> dict[str, Any]:
+        """图对账报告（issue #8 范围项：对账报告的管理接口/指标）。"""
+        def fetch() -> dict[str, Any]:
+            from src.db.uow import UnitOfWorkFactory
+            from src.projection.reconcile import reconciliation_report
+
+            factory = UnitOfWorkFactory(settings.postgres_dsn)
+            with factory.transaction() as uow:
+                # MVP：图侧用空执行器（生产接真实 Neo4j driver 后有图侧数据）
+                from src.projection.projector import FakeGraphExecutor
+
+                return reconciliation_report(uow, FakeGraphExecutor())
+
+        try:
+            return await run_in_threadpool(fetch)
+        except Exception as exc:  # noqa: BLE001
+            raise HTTPException(
+                status_code=503, detail=f"reconciliation unavailable: {type(exc).__name__}"
+            ) from exc
+
     @router.get("/data-freshness")
     async def data_freshness() -> dict[str, Any]:
         def fetch_documents() -> dict[str, Any]:

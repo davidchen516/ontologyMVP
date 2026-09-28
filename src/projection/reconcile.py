@@ -130,10 +130,11 @@ def full_rebuild(
     4. 返回统计。
     """
     with uow_factory.transaction() as uow:
+        # 水位用 bigserial seq（严格单调递增——UUIDv4 字典序无时间含义）
         watermark_row = uow._conn.execute(  # noqa: SLF001
-            "SELECT COALESCE(max(id::text), '') FROM ops.graph_outbox"
+            "SELECT COALESCE(max(seq), 0) FROM ops.graph_outbox"
         ).fetchone()
-        watermark = watermark_row[0] if watermark_row else ""
+        watermark = int(watermark_row[0]) if watermark_row else 0
 
         # 重建全部标准实体
         entity_tables = [
@@ -200,7 +201,7 @@ def full_rebuild(
         with uow_factory.transaction() as uow:
             newer = uow._conn.execute(  # noqa: SLF001
                 "SELECT id, aggregate_type, aggregate_id, event_type, payload "
-                "FROM ops.graph_outbox WHERE id::text > %s AND status = 'PENDING'",
+                "FROM ops.graph_outbox WHERE seq > %s AND status = 'PENDING'",
                 (watermark,),
             ).fetchall()
         for row in newer:
