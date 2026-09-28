@@ -253,6 +253,25 @@ uv run pytest tests/db     # 迁移/约束/事务/并发/幂等/角色测试（C
   解析状态的权威字段是 `fact.document_version.parse_status`
   （`fact.document.parse_status` 为文档级显示位，不随版本解析推进）。
 
+### 证据化 Claim 抽取与人工审核（issue #7）
+
+- 候选 Claim 严格 Schema（`src/claims/schemas.py`）：阶段
+  （TECHNOLOGY_RESERVE…MASS_PRODUCTION/UNKNOWN）与证据状态
+  （PLATFORM_CLASSIFICATION_ONLY…EVIDENCE_INSUFFICIENT）严格分离；
+  否定性语义必须用 DENIES_INVOLVEMENT + COMPANY_DENIAL（禁止否定谓词）；
+- Schema-guided 抽取端口（`Extractor`）：模型供应商可替换，输出只填充
+  Schema 字段；规则抽取器覆盖六类业务语义；Prompt 注入内容一律按数据
+  拒收，无执行路径；
+- Evidence Grounding：引文必须逐字映射回 DocumentVersion+片段+页码+范围，
+  编造/错页/范围不符进 REJECTED/NEEDS_REVIEW，绝不接受；
+- 实体解析：证券锚定优先（不凭名称猜）；产品别名低于阈值或不唯一进审核；
+- 状态机（EXTRACTED→VALIDATED/NEEDS_REVIEW/REJECTED→ACCEPTED/…）+
+  ReviewTask + 审计事件（前后状态/审核人/理由全留痕）；
+- 冲突检测经 #5 SemanticaRuntimeAdapter（矛盾阶段+重叠有效期→CRITICAL
+  审核任务，不自动裁决）；接受事务复用 #2（Evidence/Provenance/审计/Outbox
+  原子）；自动接受边界可配置关闭；
+- 只读审核 API：`GET /admin/review-tasks[?status=]`、`GET /admin/claims/{id}`。
+
 ### 日志与追踪
 
 - 所有日志为结构化 JSON；API 请求与 Worker 执行单元统一携带 `trace_id`（可通过 `X-Trace-Id` 透传）。
@@ -299,6 +318,7 @@ TuShare 概念成员
 - [x] 主数据/概念/主营构成/财务观察值标准化管道（见「标准化管道」）
 - [x] SemanticRuntime 端口、Semantica 0.7.0 适配器与持久化 Provenance（见「语义运行时」）
 - [x] 官方披露文档采集、版本化解析与 EvidenceFragment（见「官方披露文档管道」）
+- [x] 证据化 Claim 抽取、校验、冲突与人工审核状态机（见「证据化 Claim 抽取与人工审核」）
 - [x] PostgreSQL Schema 与 Alembic 迁移、事实事务边界（Neo4j 为可重建投影，无迁移需求）
 - [ ] 首个纵向场景开发
 
