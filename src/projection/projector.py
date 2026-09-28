@@ -109,11 +109,12 @@ class Neo4jProjector:
         （旧版本事件不得覆盖新版本图状态——issue #8 验收 5）。
         Returns True if projected, False if rejected as stale.
         """
+        claim_id_str = str(claim["id"])
         new_recorded_at = str(claim.get("recorded_at") or "")
         if new_recorded_at:
             existing = self._executor.execute(
                 "MATCH (n:Claim {id: $id}) RETURN n.recorded_at AS rat",
-                {"id": claim["id"]},
+                {"id": claim_id_str},
             ) if hasattr(self._executor, "execute") else []
             if existing and existing[0].get("rat"):
                 existing_rat = str(existing[0]["rat"])
@@ -123,7 +124,7 @@ class Neo4jProjector:
                         incoming=new_recorded_at, existing=existing_rat,
                     )
                     return False
-        self.project_entity("Claim", claim["id"], {
+        self.project_entity("Claim", claim_id_str, {
             "claim_status": claim.get("claim_status"),
             "business_stage": claim.get("business_stage"),
             "evidence_state": claim.get("evidence_state"),

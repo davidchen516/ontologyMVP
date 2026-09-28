@@ -135,8 +135,7 @@ def run_projection_worker(
 ) -> int:
     """Worker 入口：循环领取→投影→标记。single_pass=True 时跑一轮即返回。
 
-    生产部署：docker compose 运行 `python -m src.projection.dispatcher`。
-    测试/手动：single_pass=True 单轮消费。
+    executor 必须提供（GraphExecutor Protocol）。无执行器时 fail-fast。
     """
     from src.projection.worker import claim_batch, process_event
 
@@ -147,7 +146,8 @@ def run_projection_worker(
         dispatcher.dispatch(uow, event)
 
     def verify_fn(uow, event):
-        # 读后校验：实体事件检查节点存在；Claim 事件检查 Claim 节点存在
+        # 读后校验：实体事件检查节点存在；Claim 事件检查 Claim 节点存在。
+        # ID 统一 str() 归一化——PG 返回 UUID 对象，Cypher 参数和 FakeGraphExecutor 键为 str
         entity_id = str(event.get("aggregate_id", ""))
         if event.get("aggregate_type") == "Claim":
             return projector.verify_entity("Claim", entity_id)
@@ -186,5 +186,13 @@ if __name__ == "__main__":
     configure_logging(settings)
     factory = UnitOfWorkFactory(settings.postgres_dsn)
     # 生产：真实 Neo4j driver（此处预留适配点；MVP 用 FakeGraphExecutor 测试）
+    executor = None  # 生产接真实 driver 后替换此行
+    if executor is None:
+        import sys
+
+        print("ERROR: no graph executor configured. "
+              "Set NEO4J_URI or configure executor before starting worker.",
+              file=sys.stderr)
+        sys.exit(1)
     log.info("projection_worker_started")
-    run_projection_worker(factory, executor=None)
+    run_projection_worker(factory, executor=executor)

@@ -326,3 +326,89 @@ def test_contradicted_claim_invalidates_edge() -> None:
     assert invalidated >= 1
     # 历史 Claim 节点仍在
     assert projector.verify_entity("Claim", claim_id)
+
+
+# ---- 审查者要求的端到端测试 ----
+
+
+def test_dispatcher_end_to_end_accepted_claim_processed(uow_factory) -> None:
+    """CLAIM_ACCEPTED → PROCESSED：节点+经营边经真实分发器投影并校验。"""
+    from src.projection.dispatcher import run_projection_worker
+    from src.projection.projector import FakeGraphExecutor
+
+    executor = FakeGraphExecutor()
+    # 种子：公司 + ACCEPTED Claim + Outbox 事件
+    with uow_factory.transaction() as uow:
+        company = uow.companies.insert(canonical_name="端到端测试公司")
+        product = uow._conn.execute(  # noqa: SLF001
+            "INSERT INTO master.product (iri, canonical_name, ontology_version, active) "
+            "VALUES (%s, '减速器', '0.1.0', true) RETURNING id",
+            (f"urn:product:{uuid.uuid4().hex[:8]}",),
+        ).fetchone()[0]
+        claim = uow.claims.insert(
+            subject_entity_type="Company", subject_entity_id=company["id"],
+            predicate_code="PRODUCES", content_hash=uuid.uuid4().hex,
+            extraction_method="manual", ontology_version="0.1.0",
+            confidence=0.9, status=ClaimStatus.ACCEPTED,
+            object_entity_id=product,
+            business_stage="MASS_PRODUCTION",
+        )
+        uow.graph_outbox.insert_idempotent(
+            aggregate_type="Claim", aggregate_id=claim["id"],
+            event_type="CLAIM_ACCEPTED", payload={"claim_id": str(claim["id"])},
+            idempotency_key=f"e2e-{claim['id']}",
+        )
+
+    processed = run_projection_worker(
+        uow_factory, executor, single_pass=True,
+    )
+    assert processed >= 1, "至少一个事件应成功 PROCESSED"
+    # 节点已投影
+    assert str(claim["id"]) in executor.nodes
+    # 经营边已投影（claim_id 归一化为 str）
+    business_edges = [k for k in executor.edges if k[2] == str(claim["id"])]
+    assert len(business_edges) >= 1, "经营边应已投影"
+
+
+def test_dispatcher_contradicted_claim_invalidates_edge(uow_factory) -> None:
+    """CLAIM_CONTRADICTED → PROCESSED：物化边失效。"""
+    from src.projection.dispatcher import run_projection_worker
+    from src.projection.projector import FakeGraphExecutor
+
+    executor = FakeGraphExecutor()
+    # 种子：公司 + ACCEPTED Claim（含经营边已投影）+ CONTRADICTED 事件
+    with uow_factory.transaction() as uow:
+        company = uow.companies.insert(canonical_name="矛盾测试公司")
+        claim = uow.claims.insert(
+            subject_entity_type="Company", subject_entity_id=company["id"],
+            predicate_code="PRODUCES", content_hash=uuid.uuid4().hex,
+            extraction_method="manual", ontology_version="0.1.0",
+            confidence=0.9, status=ClaimStatus.ACCEPTED,
+            object_value={"x": 1},
+        )
+        uow.graph_outbox.insert_idempotent(
+            aggregate_type="Claim", aggregate_id=claim["id"],
+            event_type="CLAIM_ACCEPTED",
+            payload={"claim_id": str(claim["id"])},
+            idempotency_key=f"e2e-accept-{claim['id']}",
+        )
+
+    # 先投影 ACCEPTED
+    run_projection_worker(uow_factory, executor, single_pass=True)
+
+    # 现在发 CONTRADICTED 事件
+    with uow_factory.transaction() as uow:
+        uow.claims.update_status(claim["id"], ClaimStatus.CONTRADICTED)
+        uow.graph_outbox.insert_idempotent(
+            aggregate_type="Claim", aggregate_id=claim["id"],
+            event_type="CLAIM_CONTRADICTED",
+            payload={"claim_id": str(claim["id"]),
+                     "predicate_code": "PRODUCES"},
+            idempotency_key=f"e2e-contradict-{claim['id']}",
+        )
+
+    # 再投影 CONTRADICTED
+    processed = run_projection_worker(
+        uow_factory, executor, single_pass=True,
+    )
+    assert processed >= 1, "CONTRADICTED 事件应成功 PROCESSED"
