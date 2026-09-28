@@ -108,6 +108,7 @@ stock:ProductNoSelfBroaderShape
         a sh:SPARQLConstraint ;
         sh:message "产品概念不能将自身作为broader节点。"@zh ;
         sh:select """
+            PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
             SELECT $this
             WHERE { $this skos:broader $this . }
         """
@@ -120,6 +121,7 @@ stock:ProductHierarchyCycleShape
         a sh:SPARQLConstraint ;
         sh:message "产品分类层级存在循环。"@zh ;
         sh:select """
+            PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
             SELECT $this
             WHERE { $this skos:broader+ $this . }
         """
@@ -239,6 +241,7 @@ stock:ClaimValidTimeShape
         a sh:SPARQLConstraint ;
         sh:message "Claim的validTo必须晚于validFrom。"@zh ;
         sh:select """
+            PREFIX stock: <https://ontology.example.com/stock#>
             SELECT $this
             WHERE {
                 $this stock:validFrom ?start ; stock:validTo ?end .
@@ -254,6 +257,7 @@ stock:ClaimSystemTimeShape
         a sh:SPARQLConstraint ;
         sh:message "Claim的supersededAt必须晚于recordedAt。"@zh ;
         sh:select """
+            PREFIX stock: <https://ontology.example.com/stock#>
             SELECT $this
             WHERE {
                 $this stock:recordedAt ?start ; stock:supersededAt ?end .
@@ -269,6 +273,8 @@ stock:AcceptedClaimEvidenceShape
         a sh:SPARQLConstraint ;
         sh:message "ACCEPTED Claim必须至少有一个证据片段或明确结构化来源。"@zh ;
         sh:select """
+            PREFIX stock: <https://ontology.example.com/stock#>
+            PREFIX prov: <http://www.w3.org/ns/prov#>
             SELECT $this
             WHERE {
                 $this stock:claimStatus "ACCEPTED" .
@@ -286,6 +292,7 @@ stock:ProductionClaimEvidenceShape
         a sh:SPARQLConstraint ;
         sh:message "量产Claim不能只由平台概念标签支持。"@zh ;
         sh:select """
+            PREFIX stock: <https://ontology.example.com/stock#>
             SELECT $this
             WHERE {
                 $this stock:businessStage "MASS_PRODUCTION" ;
@@ -301,6 +308,7 @@ stock:RevenueDisclosureShape
         a sh:SPARQLConstraint ;
         sh:message "REVENUE_DISCLOSED必须记录报告期。"@zh ;
         sh:select """
+            PREFIX stock: <https://ontology.example.com/stock#>
             SELECT $this
             WHERE {
                 $this stock:evidenceState "REVENUE_DISCLOSED" .
@@ -316,6 +324,7 @@ stock:PlatformTagClaimShape
         a sh:SPARQLConstraint ;
         sh:message "TAGGED_AS必须保持平台分类语义，不能带非UNKNOWN业务阶段。"@zh ;
         sh:select """
+            PREFIX stock: <https://ontology.example.com/stock#>
             SELECT $this
             WHERE {
                 $this stock:predicateCode "TAGGED_AS" .
@@ -340,6 +349,7 @@ stock:DenialClaimShape
         a sh:SPARQLConstraint ;
         sh:message "DENIES_INVOLVEMENT必须使用COMPANY_DENIAL证据状态并保存文本证据。"@zh ;
         sh:select """
+            PREFIX stock: <https://ontology.example.com/stock#>
             SELECT $this
             WHERE {
                 $this stock:predicateCode "DENIES_INVOLVEMENT" .
@@ -361,6 +371,7 @@ stock:ProducesObjectShape
         a sh:SPARQLConstraint ;
         sh:message "PRODUCES和DEVELOPS的对象必须是Product。"@zh ;
         sh:select """
+            PREFIX stock: <https://ontology.example.com/stock#>
             SELECT $this
             WHERE {
                 $this stock:predicateCode ?predicate ;
