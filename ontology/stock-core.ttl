@@ -1,0 +1,458 @@
+@prefix stock: <https://ontology.example.com/stock#> .
+@prefix product: <https://ontology.example.com/product#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+<https://ontology.example.com/stock>
+    a owl:Ontology ;
+    owl:versionInfo "0.1.0" ;
+    dcterms:title "股票业务事实核心本体"@zh ;
+    dcterms:description "用于股票主体、产品、概念、财务、Claim、Evidence、时态和溯源的MVP本体。"@zh ;
+    dcterms:created "2026-09-28"^^xsd:date .
+
+# ---------------------------------------------------------------------------
+# Core classes
+# ---------------------------------------------------------------------------
+
+stock:Organization
+    a owl:Class ;
+    rdfs:label "组织"@zh ;
+    rdfs:comment "公司、交易所、股东、研究机构等组织主体。"@zh .
+
+stock:Company
+    a owl:Class ;
+    rdfs:subClassOf stock:Organization ;
+    rdfs:label "公司"@zh ;
+    rdfs:comment "具有稳定法人或经营主体身份的公司实体。"@zh .
+
+stock:ListedCompany
+    a owl:Class ;
+    rdfs:subClassOf stock:Company ;
+    rdfs:label "上市公司"@zh .
+
+stock:Exchange
+    a owl:Class ;
+    rdfs:subClassOf stock:Organization ;
+    rdfs:label "证券交易所"@zh .
+
+stock:Person
+    a owl:Class ;
+    rdfs:label "自然人"@zh .
+
+stock:Security
+    a owl:Class ;
+    rdfs:label "证券"@zh ;
+    rdfs:comment "股票、B股、H股、ADR等可交易证券，与公司主体分离建模。"@zh .
+
+stock:Industry
+    a owl:Class ;
+    rdfs:label "行业"@zh ;
+    rdfs:comment "属于某个版本化行业分类体系的行业节点。"@zh .
+
+stock:Concept
+    a owl:Class ;
+    rdfs:label "平台概念"@zh ;
+    rdfs:comment "由东方财富、同花顺等平台提供的概念分类，不等于企业经营事实。"@zh .
+
+stock:Theme
+    a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "研究主题"@zh .
+
+stock:Product
+    a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "产品"@zh .
+
+stock:ProductCategory
+    a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "产品分类"@zh .
+
+stock:Technology
+    a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "技术"@zh .
+
+stock:Commodity
+    a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "原材料或商品"@zh .
+
+stock:BusinessSegment
+    a owl:Class ;
+    rdfs:label "主营业务分部"@zh ;
+    rdfs:comment "公司按产品、行业、地区或销售模式披露的主营构成。"@zh .
+
+stock:FinancialMetric
+    a owl:Class ;
+    rdfs:label "财务指标"@zh .
+
+stock:FinancialObservation
+    a owl:Class ;
+    rdfs:label "财务观察值"@zh ;
+    rdfs:comment "某证券或公司在特定报告期的指标值。"@zh .
+
+stock:Document
+    a owl:Class ;
+    rdfs:subClassOf prov:Entity ;
+    rdfs:label "来源文档"@zh .
+
+stock:EvidenceFragment
+    a owl:Class ;
+    rdfs:subClassOf prov:Entity ;
+    rdfs:label "证据片段"@zh ;
+    rdfs:comment "带页码、章节或文本位置的原文片段。"@zh .
+
+stock:Claim
+    a owl:Class ;
+    rdfs:subClassOf prov:Entity ;
+    rdfs:label "事实主张"@zh ;
+    rdfs:comment "带主体、谓词、对象、双时态、证据、状态和置信度的事实主张。"@zh .
+
+stock:Event
+    a owl:Class ;
+    rdfs:label "事件"@zh .
+
+stock:SourceFact
+    a owl:Class ;
+    rdfs:subClassOf stock:Claim ;
+    rdfs:label "来源事实"@zh .
+
+stock:NormalizedFact
+    a owl:Class ;
+    rdfs:subClassOf stock:Claim ;
+    rdfs:label "标准化事实"@zh .
+
+stock:InferredFact
+    a owl:Class ;
+    rdfs:subClassOf stock:Claim ;
+    rdfs:label "推理事实"@zh .
+
+[] a owl:AllDisjointClasses ;
+   owl:members (
+       stock:Security
+       stock:Industry
+       stock:Concept
+       stock:BusinessSegment
+       stock:FinancialObservation
+       stock:Document
+       stock:EvidenceFragment
+       stock:Claim
+   ) .
+
+# ---------------------------------------------------------------------------
+# Identity and classification properties
+# ---------------------------------------------------------------------------
+
+stock:issuesSecurity
+    a owl:ObjectProperty ;
+    rdfs:domain stock:Company ;
+    rdfs:range stock:Security ;
+    rdfs:label "发行证券"@zh .
+
+stock:issuedBy
+    a owl:ObjectProperty ;
+    owl:inverseOf stock:issuesSecurity ;
+    rdfs:domain stock:Security ;
+    rdfs:range stock:Company ;
+    rdfs:label "由公司发行"@zh .
+
+stock:listedOn
+    a owl:ObjectProperty ;
+    rdfs:domain stock:Security ;
+    rdfs:range stock:Exchange ;
+    rdfs:label "上市于"@zh .
+
+stock:classifiedAs
+    a owl:ObjectProperty ;
+    rdfs:domain stock:Company ;
+    rdfs:range stock:Industry ;
+    rdfs:label "被分类为行业"@zh .
+
+stock:taggedAs
+    a owl:ObjectProperty ;
+    rdfs:domain stock:Company ;
+    rdfs:range stock:Concept ;
+    rdfs:label "被平台标记为概念"@zh ;
+    rdfs:comment "只表示平台分类，不推出公司生产相关产品。"@zh .
+
+stock:hasBusinessSegment
+    a owl:ObjectProperty ;
+    rdfs:domain stock:Company ;
+    rdfs:range stock:BusinessSegment ;
+    rdfs:label "拥有主营业务分部"@zh .
+
+stock:mappedToProduct
+    a owl:ObjectProperty ;
+    rdfs:domain stock:BusinessSegment ;
+    rdfs:range stock:Product ;
+    rdfs:label "映射到标准产品"@zh .
+
+# ---------------------------------------------------------------------------
+# Business relations
+# ---------------------------------------------------------------------------
+
+stock:produces
+    a owl:ObjectProperty ;
+    rdfs:domain stock:Company ;
+    rdfs:range stock:Product ;
+    rdfs:label "生产"@zh .
+
+stock:develops
+    a owl:ObjectProperty ;
+    rdfs:domain stock:Company ;
+    rdfs:range stock:Product ;
+    rdfs:label "研发"@zh .
+
+stock:samplesTo
+    a owl:ObjectProperty ;
+    rdfs:domain stock:Company ;
+    rdfs:range stock:Organization ;
+    rdfs:label "向客户送样"@zh .
+
+stock:suppliesTo
+    a owl:ObjectProperty ;
+    rdfs:domain stock:Company ;
+    rdfs:range stock:Organization ;
+    rdfs:label "供应给"@zh .
+
+stock:controls
+    a owl:ObjectProperty ;
+    rdfs:domain owl:Thing ;
+    rdfs:range stock:Company ;
+    rdfs:label "控制"@zh ;
+    rdfs:comment "不能仅依据最大持股比例自动推出。"@zh .
+
+stock:holdsEquityIn
+    a owl:ObjectProperty ;
+    rdfs:domain owl:Thing ;
+    rdfs:range stock:Company ;
+    rdfs:label "持有股权"@zh .
+
+stock:partOfTheme
+    a owl:ObjectProperty ;
+    rdfs:domain skos:Concept ;
+    rdfs:range stock:Theme ;
+    rdfs:label "属于研究主题"@zh .
+
+stock:usesTechnology
+    a owl:ObjectProperty ;
+    rdfs:domain stock:Product ;
+    rdfs:range stock:Technology ;
+    rdfs:label "使用技术"@zh .
+
+stock:usesCommodity
+    a owl:ObjectProperty ;
+    rdfs:domain stock:Product ;
+    rdfs:range stock:Commodity ;
+    rdfs:label "使用原材料"@zh .
+
+stock:directExposureTo
+    a owl:ObjectProperty ;
+    rdfs:domain stock:Company ;
+    rdfs:range stock:Theme ;
+    rdfs:label "直接经营暴露于"@zh ;
+    rdfs:comment "推理关系，不代表股价方向。"@zh .
+
+stock:secondOrderExposureTo
+    a owl:ObjectProperty ;
+    rdfs:domain stock:Company ;
+    rdfs:range stock:Theme ;
+    rdfs:label "二阶经营暴露于"@zh ;
+    rdfs:comment "推理关系，不代表股价方向。"@zh .
+
+# ---------------------------------------------------------------------------
+# Claim and evidence relations
+# ---------------------------------------------------------------------------
+
+stock:claimSubject
+    a owl:ObjectProperty, owl:FunctionalProperty ;
+    rdfs:domain stock:Claim ;
+    rdfs:range owl:Thing ;
+    rdfs:label "主张主体"@zh .
+
+stock:claimObject
+    a owl:ObjectProperty ;
+    rdfs:domain stock:Claim ;
+    rdfs:range owl:Thing ;
+    rdfs:label "主张对象"@zh .
+
+stock:supportedBy
+    a owl:ObjectProperty ;
+    rdfs:subPropertyOf prov:wasDerivedFrom ;
+    rdfs:domain stock:Claim ;
+    rdfs:range stock:EvidenceFragment ;
+    rdfs:label "由证据支持"@zh .
+
+stock:contradictedBy
+    a owl:ObjectProperty ;
+    rdfs:domain stock:Claim ;
+    rdfs:range stock:EvidenceFragment ;
+    rdfs:label "由证据反驳"@zh .
+
+stock:partOfDocument
+    a owl:ObjectProperty ;
+    rdfs:domain stock:EvidenceFragment ;
+    rdfs:range stock:Document ;
+    rdfs:label "属于文档"@zh .
+
+stock:contradictsClaim
+    a owl:ObjectProperty, owl:SymmetricProperty ;
+    rdfs:domain stock:Claim ;
+    rdfs:range stock:Claim ;
+    rdfs:label "与主张冲突"@zh .
+
+stock:supersedesClaim
+    a owl:ObjectProperty ;
+    rdfs:domain stock:Claim ;
+    rdfs:range stock:Claim ;
+    rdfs:label "替代主张"@zh .
+
+stock:corroboratesClaim
+    a owl:ObjectProperty, owl:SymmetricProperty ;
+    rdfs:domain stock:Claim ;
+    rdfs:range stock:Claim ;
+    rdfs:label "佐证主张"@zh .
+
+# ---------------------------------------------------------------------------
+# Financial relations
+# ---------------------------------------------------------------------------
+
+stock:observedFor
+    a owl:ObjectProperty ;
+    rdfs:domain stock:FinancialObservation ;
+    rdfs:range stock:Security ;
+    rdfs:label "观察对象"@zh .
+
+stock:observesMetric
+    a owl:ObjectProperty ;
+    rdfs:domain stock:FinancialObservation ;
+    rdfs:range stock:FinancialMetric ;
+    rdfs:label "观察指标"@zh .
+
+# ---------------------------------------------------------------------------
+# Datatype properties
+# ---------------------------------------------------------------------------
+
+stock:canonicalKey
+    a owl:DatatypeProperty, owl:FunctionalProperty ;
+    rdfs:domain owl:Thing ;
+    rdfs:range xsd:string ;
+    rdfs:label "稳定业务键"@zh .
+
+stock:tsCode
+    a owl:DatatypeProperty, owl:FunctionalProperty ;
+    rdfs:domain stock:Security ;
+    rdfs:range xsd:string ;
+    rdfs:label "TuShare证券代码"@zh .
+
+stock:sourceSystem
+    a owl:DatatypeProperty ;
+    rdfs:range xsd:string ;
+    rdfs:label "来源系统"@zh .
+
+stock:sourcePlatform
+    a owl:DatatypeProperty ;
+    rdfs:domain stock:Concept ;
+    rdfs:range xsd:string ;
+    rdfs:label "概念来源平台"@zh .
+
+stock:predicateCode
+    a owl:DatatypeProperty, owl:FunctionalProperty ;
+    rdfs:domain stock:Claim ;
+    rdfs:range xsd:string ;
+    rdfs:label "谓词代码"@zh .
+
+stock:businessStage
+    a owl:DatatypeProperty ;
+    rdfs:domain stock:Claim ;
+    rdfs:range xsd:string ;
+    rdfs:label "业务成熟阶段"@zh .
+
+stock:claimStatus
+    a owl:DatatypeProperty, owl:FunctionalProperty ;
+    rdfs:domain stock:Claim ;
+    rdfs:range xsd:string ;
+    rdfs:label "主张状态"@zh .
+
+stock:evidenceState
+    a owl:DatatypeProperty ;
+    rdfs:domain stock:Claim ;
+    rdfs:range xsd:string ;
+    rdfs:label "证据状态"@zh .
+
+stock:confidence
+    a owl:DatatypeProperty ;
+    rdfs:domain stock:Claim ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "置信度"@zh .
+
+stock:validFrom
+    a owl:DatatypeProperty ;
+    rdfs:domain stock:Claim ;
+    rdfs:range xsd:dateTime ;
+    rdfs:label "业务有效开始时间"@zh .
+
+stock:validTo
+    a owl:DatatypeProperty ;
+    rdfs:domain stock:Claim ;
+    rdfs:range xsd:dateTime ;
+    rdfs:label "业务有效结束时间"@zh .
+
+stock:recordedAt
+    a owl:DatatypeProperty ;
+    rdfs:domain stock:Claim ;
+    rdfs:range xsd:dateTime ;
+    rdfs:label "系统记录时间"@zh .
+
+stock:supersededAt
+    a owl:DatatypeProperty ;
+    rdfs:domain stock:Claim ;
+    rdfs:range xsd:dateTime ;
+    rdfs:label "系统替代时间"@zh .
+
+stock:ontologyVersion
+    a owl:DatatypeProperty ;
+    rdfs:range xsd:string ;
+    rdfs:label "本体版本"@zh .
+
+stock:reportPeriod
+    a owl:DatatypeProperty ;
+    rdfs:range xsd:date ;
+    rdfs:label "报告期"@zh .
+
+stock:metricValue
+    a owl:DatatypeProperty ;
+    rdfs:domain stock:FinancialObservation ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "指标值"@zh .
+
+stock:currency
+    a owl:DatatypeProperty ;
+    rdfs:domain stock:FinancialObservation ;
+    rdfs:range xsd:string ;
+    rdfs:label "币种"@zh .
+
+stock:unit
+    a owl:DatatypeProperty ;
+    rdfs:domain stock:FinancialObservation ;
+    rdfs:range xsd:string ;
+    rdfs:label "单位"@zh .
+
+stock:quoteText
+    a owl:DatatypeProperty ;
+    rdfs:domain stock:EvidenceFragment ;
+    rdfs:range xsd:string ;
+    rdfs:label "证据原文"@zh .
+
+stock:pageNumber
+    a owl:DatatypeProperty ;
+    rdfs:domain stock:EvidenceFragment ;
+    rdfs:range xsd:integer ;
+    rdfs:label "页码"@zh .
