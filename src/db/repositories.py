@@ -431,6 +431,9 @@ class ClaimEvidenceRepository(Repository):
 
 
 class ProvenanceRepository(Repository):
+    # Provenance Hash 链统一 advisory lock 键（与 PostgresProvenanceStorage 共享）
+    CHAIN_LOCK_KEY = 0x50524F56
+
     def insert(
         self,
         *,
@@ -440,6 +443,17 @@ class ProvenanceRepository(Repository):
         checksum: str,
         **fields: Any,
     ) -> dict[str, Any]:
+        # 统一链语义：未显式给出 previous_checksum 时咬合当前链头
+        # （共享 advisory lock，与 PostgresProvenanceStorage 并发不分叉）
+        if fields.get("previous_checksum") is None:
+            self._conn.execute(
+                "SELECT pg_advisory_xact_lock(%s)", (self.CHAIN_LOCK_KEY,)
+            )
+            head = self._fetchone(
+                "SELECT checksum FROM fact.provenance_entry "
+                "ORDER BY sequence_id DESC NULLS LAST LIMIT 1"
+            )
+            fields["previous_checksum"] = head["checksum"] if head else None
         row = self._fetchone(
             """
             INSERT INTO fact.provenance_entry
