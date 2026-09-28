@@ -82,6 +82,7 @@ flowchart LR
 - [实施路线与验收标准](docs/delivery-plan.md)
 - [ADR-0001：事实库与图投影职责](docs/adr/0001-storage-responsibilities.md)
 - [ADR-0002：采用 Claim 中心模型](docs/adr/0002-claim-centered-model.md)
+- [ADR-0003：Semantica 作为可替换语义运行时](docs/adr/0003-semantica-runtime-adapter.md)
 
 ### 本体与语义资产
 
