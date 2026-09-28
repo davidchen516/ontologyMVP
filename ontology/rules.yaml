@@ -1,20 +1,46 @@
-version: "0.1.0"
+version: "0.1.1"
 name: stock-ontology-mvp-rules
 description: >-
   Deterministic rules for the A-share humanoid-robot ontology MVP.
-  Rules derive business relevance and exposure only. They never infer stock-price
-  direction, investment ratings, or trading actions.
+  Business stage and evidence state are intentionally separate. These rules
+  describe operating relevance and value-chain exposure only; they never infer
+  stock-price direction, investment ratings, or trading actions.
 
 constants:
   accepted_claim_statuses:
     - ACCEPTED
-  verified_business_stages:
+
+  business_stages:
+    - TECHNOLOGY_RESERVE
+    - RESEARCH
+    - PROTOTYPE
+    - SAMPLE_VALIDATION
     - SMALL_BATCH
     - MASS_PRODUCTION
+    - UNKNOWN
+
+  evidence_states:
+    - STRUCTURED_SOURCE
+    - PLATFORM_CLASSIFICATION_ONLY
+    - PRODUCT_DISCLOSED
     - REVENUE_DISCLOSED
+    - COMPANY_DENIAL
+    - EVIDENCE_INSUFFICIENT
+
+  verified_operating_stages:
+    - SAMPLE_VALIDATION
+    - SMALL_BATCH
+    - MASS_PRODUCTION
+
+  strong_operating_stages:
+    - SMALL_BATCH
+    - MASS_PRODUCTION
+
   active_claim_time_rule: >-
-    valid_from is null or valid_from <= as_of, and valid_to is null or valid_to > as_of;
-    recorded_at <= query_time, and superseded_at is null or superseded_at > query_time
+    valid_from is null or valid_from <= as_of, and valid_to is null or
+    valid_to > as_of; recorded_at <= query_time, and superseded_at is null
+    or superseded_at > query_time
+
   authoritative_text_sources:
     - ANNUAL_REPORT
     - SEMI_ANNUAL_REPORT
@@ -34,14 +60,22 @@ rules:
     when:
       all:
         - accepted_claim:
-            predicate: PRODUCES
+            predicate_in:
+              - PRODUCES
+              - DEVELOPS
+              - HAS_REVENUE_FROM
             subject_type: Company
             object_type: Product
-        - claim_business_stage_in:
-            values:
-              - SMALL_BATCH
-              - MASS_PRODUCTION
-              - REVENUE_DISCLOSED
+        - any:
+            - claim_business_stage_in:
+                values:
+                  - SAMPLE_VALIDATION
+                  - SMALL_BATCH
+                  - MASS_PRODUCTION
+            - claim_evidence_state_in:
+                values:
+                  - PRODUCT_DISCLOSED
+                  - REVENUE_DISCLOSED
         - path_exists:
             from: claim.object
             path:
@@ -62,9 +96,13 @@ rules:
         inputs:
           - claim.confidence
           - product_mapping.confidence
+      provenance:
+        include_input_claim_ids: true
+        include_rule_version: true
     explanation_template_zh: >-
-      {company}生产{product}，业务阶段为{business_stage}；该产品通过
-      {taxonomy_path}属于{theme}，因此形成已验证的业务相关性。
+      {company}存在经证据验证的{predicate}事实，业务阶段为{business_stage}，
+      证据状态为{evidence_state}；{product}通过{taxonomy_path}属于{theme}，
+      因此形成已验证的主题相关性。
 
   - id: R002_CLASSIFICATION_ONLY
     name: 只有平台概念标签
@@ -76,24 +114,27 @@ rules:
             predicate: TAGGED_AS
             subject_type: Company
             object_type: Concept
+            evidence_state: PLATFORM_CLASSIFICATION_ONLY
         - not_exists:
             accepted_business_claim_for_same_theme:
               predicates:
                 - PRODUCES
                 - DEVELOPS
-              stages:
+                - HAS_REVENUE_FROM
+              business_stages:
                 - SAMPLE_VALIDATION
                 - SMALL_BATCH
                 - MASS_PRODUCTION
+              evidence_states:
+                - PRODUCT_DISCLOSED
                 - REVENUE_DISCLOSED
     emit:
-      state: CLASSIFICATION_ONLY
-      fact_layer: INFERRED_FACT
-      predicate: HAS_RELEVANCE_STATE
-      object_literal: CLASSIFICATION_ONLY
+      query_annotation: CLASSIFICATION_ONLY
+      persist_as_claim: false
     explanation_template_zh: >-
       {company}被{source_platform}归入{concept}，但截至{as_of}尚未找到经过
-      验证的产品或经营事实；该结果只能解释为平台分类，不能解释为已形成业务。
+      验证的产品、研发、量产或收入事实；该结果只能解释为平台分类，不能
+      解释为已形成相关业务。
 
   - id: R003_DIRECT_BUSINESS_EXPOSURE
     name: 直接经营暴露
@@ -101,17 +142,22 @@ rules:
     priority: 80
     when:
       all:
-        - inferred_or_normalized_fact:
+        - inferred_fact:
             predicate: VERIFIED_RELEVANT_TO
         - product_distance_to_theme:
             max_component_hops: 1
+        - source_claim_active_at_query_time: true
     emit:
       predicate: DIRECT_EXPOSURE_TO
       fact_layer: INFERRED_FACT
       subject: input.subject
       object: input.object
+      provenance:
+        include_input_claim_ids: true
+        include_rule_version: true
     explanation_template_zh: >-
-      {company}直接生产属于{theme}的{product}，因此具有直接经营暴露。
+      {company}直接生产、研发或披露收入的{product}属于{theme}，因此具有
+      直接经营暴露。
 
   - id: R004_SECOND_ORDER_BUSINESS_EXPOSURE
     name: 二阶经营暴露
@@ -123,6 +169,10 @@ rules:
             predicate: PRODUCES
             subject_type: Company
             object_type: Product
+        - claim_business_stage_in:
+            values:
+              - SMALL_BATCH
+              - MASS_PRODUCTION
         - component_path_exists:
             path_relations:
               - COMPONENT_OF
@@ -137,6 +187,9 @@ rules:
       fact_layer: INFERRED_FACT
       subject: claim.subject
       object: component_path.theme
+      provenance:
+        include_input_claim_ids: true
+        include_rule_version: true
     explanation_template_zh: >-
       {company}生产{component}，该产品通过{component_path}进入{theme}产业链，
       因而属于二阶经营暴露。
@@ -153,15 +206,23 @@ rules:
             operator: gt
             value: 0
         - report_period_not_null: true
+        - source_record_available: true
     emit:
-      predicate: HAS_REVENUE_EVIDENCE
+      predicate: HAS_REVENUE_FROM
       fact_layer: NORMALIZED_FACT
       subject: business_segment.company
       object: business_segment.product
-      business_stage: REVENUE_DISCLOSED
+      business_stage: UNKNOWN
+      evidence_state: REVENUE_DISCLOSED
+      report_period: business_segment.report_period
       valid_from: business_segment.report_period
+      provenance:
+        include_source_record_id: true
+        include_mapping_version: true
+        include_rule_version: true
     explanation_template_zh: >-
-      {company}在{report_period}主营构成中披露{product}相关收入{revenue}{currency}。
+      {company}在{report_period}主营构成中披露{product}相关收入
+      {revenue}{currency}。该事实证明存在收入披露，但不单独推断量产起始时间。
 
   - id: R006_COMPANY_DENIAL
     name: 公司明确否认
@@ -170,7 +231,7 @@ rules:
     when:
       all:
         - accepted_claim:
-            predicate: DENIES
+            predicate: DENIES_INVOLVEMENT
             subject_type: Company
         - source_type_in:
             values:
@@ -180,28 +241,34 @@ rules:
         - evidence_quote_required: true
         - active_at_query_time: true
     emit:
-      predicate: HAS_RELEVANCE_STATE
+      predicate: DENIES_INVOLVEMENT
       fact_layer: NORMALIZED_FACT
       subject: claim.subject
-      object_literal: DENIED
-      business_stage: DENIED
+      object: claim.object
+      business_stage: UNKNOWN
+      evidence_state: COMPANY_DENIAL
+      provenance:
+        include_input_claim_ids: true
+        include_rule_version: true
     explanation_template_zh: >-
       {company}在{document_type}中明确否认{object_text}，原文为：“{quote}”。
 
   - id: R007_PRODUCTION_DENIAL_CONFLICT
-    name: 量产与否认时态冲突
+    name: 量产或收入与否认的时态冲突
     enabled: true
     priority: 120
     when:
       all:
         - two_claims_same_subject_and_business_object: true
-        - claim_a_business_stage_in:
+        - claim_a_matches:
+            any:
+              - business_stage_in:
+                  - MASS_PRODUCTION
+              - evidence_state_in:
+                  - REVENUE_DISCLOSED
+        - claim_b_evidence_state_in:
             values:
-              - MASS_PRODUCTION
-              - REVENUE_DISCLOSED
-        - claim_b_business_stage_in:
-            values:
-              - DENIED
+              - COMPANY_DENIAL
         - valid_intervals_overlap: true
         - neither_supersedes_the_other: true
     emit:
@@ -210,8 +277,8 @@ rules:
       automatic_resolution: false
       review_queue: DOMAIN_EXPERT
     explanation_template_zh: >-
-      同一公司和业务对象在重叠有效期内同时存在“量产/收入”和“否认”事实，
-      必须进行人工核验，不能自动选择其中一条。
+      同一公司和业务对象在重叠有效期内同时存在“量产/收入披露”和“公司否认”
+      事实，必须进行人工核验，不能自动选择其中一条。
 
   - id: R008_SHAREHOLDING_NOT_CONTROL
     name: 持股不自动推出控制
@@ -224,7 +291,7 @@ rules:
     emit:
       prohibited_inference: CONTROLS
       review_hint: >-
-        控制关系需要年报、招股书、公告或明确的一致行动/表决权安排证据。
+        控制关系需要年报、招股书、正式公告或明确的一致行动、表决权安排证据。
 
   - id: R009_UNKNOWN_IS_NOT_FALSE
     name: 未知不等于否定
@@ -235,10 +302,11 @@ rules:
         - no_matching_accepted_claim: true
         - no_explicit_denial_claim: true
     emit:
-      result_state: EVIDENCE_INSUFFICIENT
+      query_annotation: EVIDENCE_INSUFFICIENT
+      persist_as_claim: false
       prohibited_result_states:
         - FALSE
-        - DENIED
+        - COMPANY_DENIAL
     explanation_template_zh: >-
       截至{as_of}未找到满足条件的已验证证据，但也没有明确否认，结果应为
       “证据不足”，而不是“没有该业务”。
@@ -250,16 +318,18 @@ rules:
     when:
       all:
         - input_claim_predicate: TAGGED_AS
-        - input_evidence_state: PLATFORM_TAG
+        - input_evidence_state: PLATFORM_CLASSIFICATION_ONLY
     emit:
       prohibited_predicates:
         - PRODUCES
         - DEVELOPS
-        - HAS_REVENUE_EVIDENCE
+        - HAS_REVENUE_FROM
       prohibited_business_stages:
         - SAMPLE_VALIDATION
         - SMALL_BATCH
         - MASS_PRODUCTION
+      prohibited_evidence_states:
+        - PRODUCT_DISCLOSED
         - REVENUE_DISCLOSED
 
   - id: R011_NO_PRICE_DIRECTION_INFERENCE
@@ -289,11 +359,21 @@ review_policy:
       - entity_resolution_confidence_gte: 0.98
       - product_mapping_confidence_gte: 0.95
       - claim_confidence_gte: 0.92
+
   manual_review_required_when:
-    - conflict_severity_in: [HIGH, CRITICAL]
-    - predicate_in: [CONTROLS, SUPPLIES_TO]
-    - business_stage_in: [MASS_PRODUCTION, REVENUE_DISCLOSED, DENIED]
-    - product_mapping_status_in: [AMBIGUOUS]
+    - conflict_severity_in:
+        - HIGH
+        - CRITICAL
+    - predicate_in:
+        - CONTROLS
+        - SUPPLIES_TO
+    - business_stage_in:
+        - MASS_PRODUCTION
+    - evidence_state_in:
+        - REVENUE_DISCLOSED
+        - COMPANY_DENIAL
+    - product_mapping_status_in:
+        - AMBIGUOUS
     - quote_grounding_failed: true
 
 execution:
