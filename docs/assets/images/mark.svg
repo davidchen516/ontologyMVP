@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">ontologyMVP</title>
+  <desc id="desc">Connected evidence nodes forming the letter O</desc>
+  <defs>
+    <linearGradient id="g" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0f766e"/>
+      <stop offset="1" stop-color="#164e63"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#f0fdfa"/>
+  <circle cx="32" cy="32" r="19" fill="none" stroke="url(#g)" stroke-width="6"/>
+  <path d="M18 23 32 32l14-9M32 32v16" fill="none" stroke="#0f766e" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="18" cy="23" r="4" fill="#164e63"/>
+  <circle cx="46" cy="23" r="4" fill="#164e63"/>
+  <circle cx="32" cy="48" r="4" fill="#0f766e"/>
+</svg>

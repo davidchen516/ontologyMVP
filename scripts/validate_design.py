@@ -4,7 +4,7 @@
 Checks:
 - Turtle syntax for all ontology/*.ttl files.
 - YAML syntax for ontology/*.yaml and ontology/**/*.yaml.
-- Local Markdown links in README.md and docs/*.md.
+- Local Markdown and generated Jekyll HTML links in README.md and docs/*.md.
 - Required design artifacts are present.
 """
 
@@ -91,7 +91,12 @@ def validate_markdown_links(errors: list[str]) -> None:
                     f"link escapes repository: {markdown_path.relative_to(ROOT)} -> {raw_target}"
                 )
                 continue
-            if not resolved.exists():
+            generated_source = (
+                resolved.with_suffix(".md") if resolved.suffix == ".html" else None
+            )
+            if not resolved.exists() and not (
+                generated_source is not None and generated_source.exists()
+            ):
                 errors.append(
                     f"broken local link: {markdown_path.relative_to(ROOT)} -> {raw_target}"
                 )

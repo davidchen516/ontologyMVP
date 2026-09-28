@@ -14,3 +14,10 @@ htmlcov/
 .idea/
 .vscode/
 .DS_Store
+
+# Jekyll / Bundler
+.bundle/
+.jekyll-cache/
+.jekyll-metadata
+_site/
+vendor/bundle/

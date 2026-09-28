@@ -1,3 +1,10 @@
+---
+title: 查询、推理与 API
+parent: 设计原文
+nav_order: 5
+permalink: /query-and-api.html
+---
+
 # 查询、推理与API设计
 
 ## 1. 设计目标

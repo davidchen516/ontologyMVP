@@ -1,3 +1,10 @@
+---
+title: Semantica 集成设计
+parent: 设计原文
+nav_order: 4
+permalink: /semantica-integration.html
+---
+
 # Semantica集成设计
 
 ## 1. 定位

@@ -1,3 +1,10 @@
+---
+title: 质量、安全与测试
+parent: 设计原文
+nav_order: 6
+permalink: /quality-and-testing.html
+---
+
 # 质量、安全与测试方案
 
 ## 1. 目标

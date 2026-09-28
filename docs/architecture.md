@@ -1,3 +1,10 @@
+---
+title: 总体架构
+parent: 设计原文
+nav_order: 1
+permalink: /architecture.html
+---
+
 # 股票本体查询系统总体架构
 
 ## 1. 文档目的

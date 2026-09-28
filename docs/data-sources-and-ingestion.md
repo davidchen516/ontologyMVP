@@ -1,3 +1,10 @@
+---
+title: TuShare 与数据接入
+parent: 设计原文
+nav_order: 3
+permalink: /data-sources-and-ingestion.html
+---
+
 # TuShare与数据接入设计
 
 ## 1. 数据源策略

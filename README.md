@@ -2,12 +2,15 @@
 
 [![Validate design assets](https://github.com/davidchen516/ontologyMVP/actions/workflows/validate-design.yml/badge.svg)](https://github.com/davidchen516/ontologyMVP/actions/workflows/validate-design.yml)
 [![Runtime CI](https://github.com/davidchen516/ontologyMVP/actions/workflows/runtime-ci.yml/badge.svg)](https://github.com/davidchen516/ontologyMVP/actions/workflows/runtime-ci.yml)
+[![Build and deploy documentation](https://github.com/davidchen516/ontologyMVP/actions/workflows/pages.yml/badge.svg)](https://github.com/davidchen516/ontologyMVP/actions/workflows/pages.yml)
 
 本仓库代码仅用于验证本体论相关实现技术。
 
 场景为 基于 **TuShare + Semantica + PostgreSQL + Neo4j** 的股票本体查询系统 MVP。
 
 本仓库当前阶段用于固化可落地的技术设计，并作为后续代码实现的唯一工程基线。
+
+> 面向外部用户的项目定位、快速开始、架构、本体、开发、验收与 FAQ，请访问 [GitHub Pages 使用说明站点](https://davidchen516.github.io/ontologyMVP/)；站点源文件位于 [`docs/`](docs/)。当前仓库尚无项目级 `LICENSE`，公开可见不等于已经授予开源许可，详见[许可证与免责声明](https://davidchen516.github.io/ontologyMVP/license-and-disclaimer.html)。
 
 ## 1. MVP 目标
 
@@ -101,6 +104,8 @@ flowchart LR
 
 - [设计资产校验脚本](scripts/validate_design.py)
 - [GitHub Actions 校验流水线](.github/workflows/validate-design.yml)
+- [GitHub Pages 构建与发布流水线](.github/workflows/pages.yml)
+- [文档站技术选型 ADR](docs/adr/0004-documentation-site.md)
 
 校验覆盖：必需文件、Turtle、YAML 以及仓库内 Markdown 链接。每次向 `main` 推送及每个 Pull Request 都自动执行。
 

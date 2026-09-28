@@ -1,3 +1,11 @@
+---
+title: ADR-0003：Semantica 适配边界
+parent: 架构决策记录
+grand_parent: 设计原文
+nav_order: 3
+permalink: /adr/0003-semantica-runtime-adapter.html
+---
+
 # ADR-0003：Semantica作为可替换语义运行时
 
 - 状态：Accepted

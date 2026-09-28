@@ -1,3 +1,10 @@
+---
+title: 领域与数据模型
+parent: 设计原文
+nav_order: 2
+permalink: /domain-model.html
+---
+
 # 领域与数据模型
 
 ## 1. 设计目标

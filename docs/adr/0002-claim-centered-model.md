@@ -1,3 +1,11 @@
+---
+title: ADR-0002：Claim 中心模型
+parent: 架构决策记录
+grand_parent: 设计原文
+nav_order: 2
+permalink: /adr/0002-claim-centered-model.html
+---
+
 # ADR-0002：采用 Claim 中心的事实模型
 
 - 状态：Accepted

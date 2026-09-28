@@ -1,3 +1,10 @@
+---
+title: 实施路线与验收标准
+parent: 设计原文
+nav_order: 7
+permalink: /delivery-plan.html
+---
+
 # 实施路线与验收标准
 
 ## 1. 实施策略

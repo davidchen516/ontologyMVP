@@ -1,3 +1,11 @@
+---
+title: ADR-0001：存储职责
+parent: 架构决策记录
+grand_parent: 设计原文
+nav_order: 1
+permalink: /adr/0001-storage-responsibilities.html
+---
+
 # ADR-0001：PostgreSQL 作为事实主库，Neo4j 作为图查询投影
 
 - 状态：Accepted
