@@ -218,6 +218,21 @@ uv run pytest tests/db     # 迁移/约束/事务/并发/幂等/角色测试（C
   `GET /admin/financial/current/{security_id}`、
   `GET /admin/financial/operating-cashflow/{security_id}`（均只读，含选择策略）。
 
+### 语义运行时（issue #5，ADR-0003）
+
+- 业务层只依赖 `src/semantic/ports.py` 的 `SemanticRuntime` 端口
+  （本体/Claim/图校验、冲突检测、Provenance 注册与 lineage、受控图查询）；
+  `src/semantic/semantica_adapter.py` 是全仓库唯一允许导入 Semantica 的位置
+  （AST 静态测试强制，契约测试 `tests/semantic/` 同为豁免）；
+- Semantica 精确锁版 `0.7.0`（版本漂移在构造时即失败）；SHACL 校验经
+  pyshacl 引擎执行，失败结构化返回、绝不静默；
+- Provenance 权威存储为 PostgreSQL（`fact.provenance_entry`，Hash 链 +
+  advisory lock 串行化 + 幂等注册 + 重启可读）；生产不回退内存实现，
+  存储缺失时能力明确不可用；`clear()` 破坏性操作需显式管理授权；
+- 受控图查询只接受白名单模板 + 参数，自由 Cypher 一律拒绝；
+  双时态字段与 Semantica `BiTemporalFact` 往返语义不变；
+- `FakeSemanticRuntime` 支撑不依赖 Semantica/DB 的业务单元测试。
+
 ### 日志与追踪
 
 - 所有日志为结构化 JSON；API 请求与 Worker 执行单元统一携带 `trace_id`（可通过 `X-Trace-Id` 透传）。
@@ -262,6 +277,7 @@ TuShare 概念成员
 - [x] 可运行工程脚手架（API/Worker/Compose/CI/健康检查，见「本地启动与运行」）
 - [x] TuShare 能力探针 + Connector 框架 + Raw 层幂等采集（见「TuShare 采集与能力探针」）
 - [x] 主数据/概念/主营构成/财务观察值标准化管道（见「标准化管道」）
+- [x] SemanticRuntime 端口、Semantica 0.7.0 适配器与持久化 Provenance（见「语义运行时」）
 - [x] PostgreSQL Schema 与 Alembic 迁移、事实事务边界（Neo4j 为可重建投影，无迁移需求）
 - [ ] 首个纵向场景开发
 
