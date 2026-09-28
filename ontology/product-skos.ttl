@@ -1,0 +1,382 @@
+@prefix stock: <https://ontology.example.com/stock#> .
+@prefix product: <https://ontology.example.com/product#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+<https://ontology.example.com/product>
+    a owl:Ontology ;
+    owl:imports <https://ontology.example.com/stock> ;
+    owl:versionInfo "0.1.0" ;
+    dcterms:title "人形机器人产品与产业链词表"@zh ;
+    dcterms:description "股票本体MVP首批标准产品、别名、上下位和主题关系。"@zh ;
+    dcterms:created "2026-09-28"^^xsd:date .
+
+product:HumanoidRobotProductScheme
+    a skos:ConceptScheme ;
+    skos:prefLabel "人形机器人产品分类体系"@zh ;
+    skos:prefLabel "Humanoid Robot Product Scheme"@en ;
+    dcterms:version "0.1.0" .
+
+# ---------------------------------------------------------------------------
+# Theme and top-level categories
+# ---------------------------------------------------------------------------
+
+product:HumanoidRobot
+    a skos:Concept, stock:Theme ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:topConceptOf product:HumanoidRobotProductScheme ;
+    skos:prefLabel "人形机器人"@zh ;
+    skos:prefLabel "Humanoid Robot"@en ;
+    skos:altLabel "具身智能机器人"@zh ;
+    skos:definition "以类人形态执行感知、决策和动作任务的机器人主题。该主题节点用于研究归类，不代表某公司已形成相关收入。"@zh .
+
+product:WholeRobot
+    a skos:Concept, stock:ProductCategory ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:HumanoidRobot ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "人形机器人整机"@zh ;
+    skos:altLabel "机器人本体"@zh .
+
+product:JointAndActuation
+    a skos:Concept, stock:ProductCategory ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:HumanoidRobot ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "关节与执行器"@zh ;
+    skos:altLabel "运动执行系统"@zh .
+
+product:PerceptionSystem
+    a skos:Concept, stock:ProductCategory ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:HumanoidRobot ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "感知系统"@zh .
+
+product:MotionControlSystem
+    a skos:Concept, stock:ProductCategory ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:HumanoidRobot ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "运动控制系统"@zh .
+
+product:PowerAndThermal
+    a skos:Concept, stock:ProductCategory ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:HumanoidRobot ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "电源与热管理"@zh .
+
+product:CoreMaterialAndPart
+    a skos:Concept, stock:ProductCategory ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:HumanoidRobot ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "核心材料与通用零部件"@zh .
+
+product:ManufacturingAndTestingEquipment
+    a skos:Concept, stock:ProductCategory ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:HumanoidRobot ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "制造与测试设备"@zh .
+
+# ---------------------------------------------------------------------------
+# Joint and actuation subcategories
+# ---------------------------------------------------------------------------
+
+product:Reducer
+    a skos:Concept, stock:ProductCategory ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:JointAndActuation ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "精密减速器"@zh ;
+    skos:altLabel "机器人减速机"@zh .
+
+product:Motor
+    a skos:Concept, stock:ProductCategory ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:JointAndActuation ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "执行电机"@zh .
+
+product:ScrewTransmission
+    a skos:Concept, stock:ProductCategory ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:JointAndActuation ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "丝杠传动"@zh .
+
+product:IntegratedJoint
+    a skos:Concept, stock:ProductCategory ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:JointAndActuation ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "一体化关节"@zh ;
+    skos:altLabel "关节模组"@zh ;
+    skos:altLabel "执行器模组"@zh .
+
+product:HarmonicReducer
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:Reducer ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "谐波减速器"@zh ;
+    skos:prefLabel "Harmonic Drive Reducer"@en ;
+    skos:altLabel "谐波减速机"@zh ;
+    skos:altLabel "谐波传动装置"@zh ;
+    skos:altLabel "谐波齿轮减速器"@zh .
+
+product:RVReducer
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:Reducer ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "RV减速器"@zh ;
+    skos:altLabel "摆线针轮减速器"@zh .
+
+product:PlanetaryReducer
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:Reducer ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "行星减速器"@zh ;
+    skos:altLabel "精密行星减速机"@zh .
+
+product:FramelessTorqueMotor
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:Motor ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "无框力矩电机"@zh ;
+    skos:altLabel "无框电机"@zh ;
+    skos:altLabel "力矩电机"@zh .
+
+product:ServoMotor
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:Motor ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "伺服电机"@zh .
+
+product:RollerScrew
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:ScrewTransmission ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "行星滚柱丝杠"@zh ;
+    skos:altLabel "滚柱丝杠"@zh ;
+    skos:altLabel "行星滚柱螺母丝杠"@zh .
+
+product:BallScrew
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:ScrewTransmission ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "滚珠丝杠"@zh ;
+    skos:altLabel "滚珠螺母丝杠"@zh .
+
+product:LinearActuator
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:IntegratedJoint ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "线性执行器"@zh ;
+    skos:altLabel "直线执行器"@zh .
+
+product:RotaryActuator
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:IntegratedJoint ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "旋转执行器"@zh ;
+    skos:altLabel "旋转关节模组"@zh .
+
+# ---------------------------------------------------------------------------
+# Perception products
+# ---------------------------------------------------------------------------
+
+product:ForceSensor
+    a skos:Concept, stock:ProductCategory ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:PerceptionSystem ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "力传感器"@zh .
+
+product:VisionSensor
+    a skos:Concept, stock:ProductCategory ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:PerceptionSystem ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "视觉传感器"@zh .
+
+product:PositionAndMotionSensor
+    a skos:Concept, stock:ProductCategory ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:PerceptionSystem ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "位置与运动传感器"@zh .
+
+product:SixAxisForceTorqueSensor
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:ForceSensor ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "六维力传感器"@zh ;
+    skos:altLabel "六轴力传感器"@zh ;
+    skos:altLabel "六维力矩传感器"@zh ;
+    skos:altLabel "六轴力/力矩传感器"@zh .
+
+product:TorqueSensor
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:ForceSensor ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "扭矩传感器"@zh ;
+    skos:altLabel "力矩传感器"@zh .
+
+product:TactileSensor
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:ForceSensor ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "触觉传感器"@zh ;
+    skos:altLabel "电子皮肤"@zh ;
+    skos:altLabel "柔性触觉传感器"@zh .
+
+product:ThreeDVisionSensor
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:VisionSensor ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "3D视觉传感器"@zh ;
+    skos:altLabel "深度相机"@zh ;
+    skos:altLabel "三维视觉模组"@zh .
+
+product:Encoder
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:PositionAndMotionSensor ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "编码器"@zh ;
+    skos:altLabel "绝对值编码器"@zh ;
+    skos:altLabel "增量式编码器"@zh .
+
+product:IMU
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:PositionAndMotionSensor ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "惯性测量单元"@zh ;
+    skos:altLabel "IMU"@zh ;
+    skos:altLabel "惯性传感器"@zh .
+
+# ---------------------------------------------------------------------------
+# Motion control, power and core parts
+# ---------------------------------------------------------------------------
+
+product:ServoDrive
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:MotionControlSystem ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "伺服驱动器"@zh ;
+    skos:altLabel "伺服驱动系统"@zh .
+
+product:MotionController
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:MotionControlSystem ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "运动控制器"@zh ;
+    skos:altLabel "机器人控制器"@zh .
+
+product:RobotControlBoard
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:MotionControlSystem ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "机器人控制板"@zh ;
+    skos:altLabel "主控板"@zh .
+
+product:RobotBattery
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:PowerAndThermal ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "机器人动力电池"@zh .
+
+product:BatteryManagementSystem
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:PowerAndThermal ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "电池管理系统"@zh ;
+    skos:altLabel "BMS"@zh .
+
+product:ThermalManagementModule
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:PowerAndThermal ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "热管理模组"@zh ;
+    skos:altLabel "散热模组"@zh .
+
+product:PrecisionBearing
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:CoreMaterialAndPart ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "精密轴承"@zh ;
+    skos:altLabel "机器人轴承"@zh .
+
+product:PrecisionGear
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:CoreMaterialAndPart ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "精密齿轮"@zh .
+
+product:RareEarthPermanentMagnet
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:CoreMaterialAndPart ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "稀土永磁材料"@zh ;
+    skos:altLabel "钕铁硼永磁材料"@zh ;
+    skos:altLabel "高性能钕铁硼"@zh .
+
+product:LightweightStructuralPart
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:CoreMaterialAndPart ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "轻量化结构件"@zh ;
+    skos:altLabel "机器人结构件"@zh .
+
+product:ReducerTestingEquipment
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:ManufacturingAndTestingEquipment ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "减速器测试设备"@zh .
+
+product:MotorWindingEquipment
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:ManufacturingAndTestingEquipment ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "电机绕组设备"@zh ;
+    skos:altLabel "电机绕线设备"@zh .
+
+# Related concepts that must not be treated as equivalent.
+product:HarmonicReducer skos:related product:PrecisionBearing .
+product:FramelessTorqueMotor skos:related product:Encoder .
+product:IntegratedJoint skos:related product:SixAxisForceTorqueSensor .
+
+# Explicitly state non-equivalence by keeping platform themes outside this scheme.
+# Platform concept membership is modeled with stock:taggedAs, not skos:exactMatch.
