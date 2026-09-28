@@ -1,0 +1,63 @@
+@prefix stock: <https://ontology.example.com/stock#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+<https://ontology.example.com/stock-relations>
+    a owl:Ontology ;
+    owl:imports <https://ontology.example.com/stock> ;
+    owl:versionInfo "0.1.0" ;
+    dcterms:title "股票经营与产业链关系扩展"@zh ;
+    dcterms:description "补充推理规则使用的组成、收入证据、否认和主题相关性关系。"@zh .
+
+stock:componentOf
+    a owl:ObjectProperty ;
+    rdfs:domain stock:Product ;
+    rdfs:range stock:Product ;
+    rdfs:label "是产品组成部分"@zh ;
+    rdfs:comment "表示零部件构成更高层级产品。规则引擎显式限制遍历深度，不声明为OWL传递属性。"@zh .
+
+stock:hasComponent
+    a owl:ObjectProperty ;
+    owl:inverseOf stock:componentOf ;
+    rdfs:domain stock:Product ;
+    rdfs:range stock:Product ;
+    rdfs:label "包含产品组成部分"@zh .
+
+stock:verifiedRelevantTo
+    a owl:ObjectProperty ;
+    rdfs:domain stock:Company ;
+    rdfs:range stock:Theme ;
+    rdfs:label "已验证业务相关于"@zh ;
+    rdfs:comment "由版本化规则基于已接受Claim生成，不是原始披露事实。"@zh .
+
+stock:directExposureTo
+    rdfs:subPropertyOf stock:verifiedRelevantTo .
+
+stock:secondOrderExposureTo
+    rdfs:subPropertyOf stock:verifiedRelevantTo .
+
+stock:hasRevenueEvidence
+    a owl:ObjectProperty ;
+    rdfs:domain stock:Company ;
+    rdfs:range stock:Product ;
+    rdfs:label "具有产品收入证据"@zh ;
+    rdfs:comment "必须关联报告期、主营构成或正式披露证据；不等同于收入重大性。"@zh .
+
+stock:deniesInvolvementIn
+    a owl:ObjectProperty ;
+    rdfs:domain stock:Company ;
+    rdfs:range [
+        a owl:Class ;
+        owl:unionOf (stock:Product stock:Theme stock:Concept)
+    ] ;
+    rdfs:label "否认涉及"@zh ;
+    rdfs:comment "必须保存公司正式原文和有效时间；不删除其他来源的Claim。"@zh .
+
+stock:hasRelevanceState
+    a owl:DatatypeProperty ;
+    rdfs:domain stock:Company ;
+    rdfs:range xsd:string ;
+    rdfs:label "业务相关性状态"@zh ;
+    rdfs:comment "用于CLASSIFICATION_ONLY、EVIDENCE_INSUFFICIENT、DENIED等受控状态。"@zh .
