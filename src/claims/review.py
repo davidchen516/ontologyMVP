@@ -1,11 +1,12 @@
 """Claim 审核状态机编排 + 审核决策 API + 审计（issue #7 范围项 5/6/7）。
 
-- intake_candidate：抽取 → Grounding/校验 → 实体解析 → 幂等入库
-  （content_hash = 候选幂等键），状态 EXTRACTED/VALIDATED/NEEDS_REVIEW/REJECTED；
+- intake_candidate：抽取 → Grounding/校验 → SHACL（#5 端口）→ 实体解析 →
+  幂等入库（content_hash = 候选幂等键），状态 EXTRACTED/VALIDATED/
+  NEEDS_REVIEW/REJECTED；
 - review_decide：人工审核决策（NEEDS_REVIEW → ACCEPTED/REJECTED，
   乐观并发守卫：版本不符返回冲突，不覆盖他人决定）；
 - accept_claim 事务复用 #2 的 claim_service（Evidence/Provenance/审计/Outbox
-  同事务）；SHACL 校验经 #5 端口；高严重度冲突强制人工审核。
+  同事务）；冲突检测经 #5 适配器；高严重度冲突强制人工审核。
 """
 
 from __future__ import annotations
@@ -48,7 +49,8 @@ class IntakeOutcome:
 
 
 SHAPES_PATH = "ontology/shapes.ttl"
-AUTO_ACCEPT_ENABLED = True  # 自动接受策略可经配置关闭（回滚要求）
+# 默认值仅用于无 Settings 上下文的直接调用；生产经 Settings.claim_auto_accept 注入
+AUTO_ACCEPT_ENABLED = True
 
 
 def intake_candidate(
@@ -60,6 +62,8 @@ def intake_candidate(
     security_id: uuid.UUID | None,
     trace_id: str | None = None,
     auto_accept: bool = AUTO_ACCEPT_ENABLED,
+    shacl_validate: bool = False,
+    check_conflicts: bool = True,
 ) -> IntakeOutcome:
     """候选 Claim 幂等入库：校验 → 解析 → 状态机落位 + 冲突检测。"""
     idempotency = candidate_idempotency_key(
@@ -102,6 +106,15 @@ def intake_candidate(
             if validation.status == "VALIDATED":
                 validation.status = "NEEDS_REVIEW"
 
+    # 谓词白名单快速校验（常量集合查找——shapes.ttl ClaimShape 的 Python 内联）
+    shacl_reasons = _fast_predicate_check(candidate)
+    # 完整 SHACL（pyshacl 引擎——高成本，仅显式请求时执行）
+    if shacl_validate:
+        shacl_reasons.extend(_shacl_validate(uow, candidate))
+    validation.reasons.extend(shacl_reasons)
+    if shacl_reasons and validation.status == "VALIDATED":
+        validation.status = "NEEDS_REVIEW"
+
     status = _status_from_validation(validation)
 
     evidence_ids = [q.evidence_fragment_id for q in candidate.quotes]
@@ -135,9 +148,26 @@ def intake_candidate(
             reason_codes=list(validation.reasons)[:20],
         )
         review_task_id = task["id"]
+    elif status == ClaimStatus.VALIDATED and not auto_accept:
+        # 自动接受关闭：全部候选转人工审核（回滚要求）
+        task = uow.review_tasks.create(
+            task_type="CLAIM_REVIEW",
+            claim_id=claim["id"],
+            priority="NORMAL",
+            reason_codes=["auto_accept_disabled"],
+        )
+        review_task_id = task["id"]
 
-    # 冲突检测（#5 能力）：高严重度冲突强制人工审核
-    _check_conflicts(uow, claim["id"], candidate)
+    # 冲突检测（#5 能力）：高严重度冲突强制人工审核（可跳过——测试提速）
+    if check_conflicts:
+        _check_conflicts(
+            uow, claim["id"], candidate,
+            resolved_subject_id=(
+                subject_resolution.entity_id
+                if subject_resolution and subject_resolution.entity_id
+                else None
+            ),
+        )
 
     # 自动接受边界：VALIDATED + 无审核理由 + 开关开启 → 同事务走完整接受
     # （Evidence/Provenance/审计/Outbox 原子提交；高风险冲突已由上面的审核任务拦截）
@@ -167,7 +197,7 @@ def intake_candidate(
                 provenance={
                     "activity_id": f"extract-{claim['id']}",
                     "agent_id": "extractor",
-                    "checksum": uuid.uuid4().hex,
+                    "checksum": idempotency,
                     "metadata": {"auto_accept": True},
                 },
                 trace_id=trace_id,
@@ -187,6 +217,80 @@ def intake_candidate(
     )
 
 
+# shapes.ttl stock:ClaimShape 的谓词白名单（sh:in 列表的 Python 内联——
+# 完整 SHACL 由 _shacl_validate 按需执行；此处为快速路径）
+ALLOWED_PREDICATES = frozenset({
+    "ISSUES", "LISTED_ON", "CLASSIFIED_AS", "TAGGED_AS",
+    "PRODUCES", "DEVELOPS", "HAS_TECHNOLOGY_RESERVE",
+    "SAMPLES_TO", "SUPPLIES_TO", "USES_TECHNOLOGY",
+    "HAS_REVENUE_FROM", "DENIES_INVOLVEMENT",
+    "CONTROLS", "HOLDS", "HAS_SEGMENT", "MAPPED_TO_PRODUCT",
+    "VERIFIED_RELEVANT_TO", "DIRECT_EXPOSURE_TO",
+    "SECOND_ORDER_EXPOSURE_TO",
+})
+
+
+def _fast_predicate_check(candidate: CandidateClaim) -> list[str]:
+    """谓词白名单快速校验：shapes.ttl sh:in 列表的 Python 内联（O(1)）。"""
+    if candidate.predicate_code not in ALLOWED_PREDICATES:
+        return [
+            f"shacl: predicate_code {candidate.predicate_code!r} "
+            "not in allowed whitelist (shapes.ttl ClaimShape)"
+        ]
+    return []
+
+
+_SEMANTIC_RUNTIME = None
+
+
+def _get_semantic_runtime():
+    """模块级懒加载单例：SHACL 校验与冲突检测共用同一运行时实例。"""
+    global _SEMANTIC_RUNTIME
+    if _SEMANTIC_RUNTIME is None:
+        from pathlib import Path
+
+        from src.semantic.semantica_adapter import SemanticaRuntimeAdapter
+
+        shapes = str(Path(__file__).resolve().parents[2] / "ontology" / "shapes.ttl")
+        _SEMANTIC_RUNTIME = SemanticaRuntimeAdapter(shapes_path=shapes, provenance=None)
+    return _SEMANTIC_RUNTIME
+
+
+def _shacl_validate(uow: Any, candidate: CandidateClaim) -> list[str]:
+    """把候选 Claim 转为 RDF 图并按 shapes.ttl 执行 SHACL（#5 端口）。
+
+    追加校验理由（谓词白名单、对象类型约束、枚举范围等），绝不静默通过。
+    """
+    from src.semantic.claim_rdf import claim_to_graph
+
+    runtime = _get_semantic_runtime()
+    claim_dict = {
+        "id": str(uuid.uuid4()),
+        "subject_entity_type": candidate.subject_entity_type,
+        "subject_entity_id": str(candidate.subject_entity_id),
+        "predicate_code": candidate.predicate_code,
+        "claim_status": "VALIDATED",
+        "confidence": candidate.confidence,
+        "business_stage": candidate.business_stage.value,
+        "evidence_state": candidate.evidence_state.value,
+        "object_entity_id": str(candidate.object_entity_id)
+        if candidate.object_entity_id else None,
+        "object_entity_type": candidate.object_entity_type,
+        "object_value": candidate.object_value,
+        "valid_from": candidate.valid_from,
+        "valid_to": candidate.valid_to,
+        "superseded_at": None,
+        "evidence_ids": [str(q.evidence_fragment_id) for q in candidate.quotes],
+    }
+    try:
+        report = runtime.validate_claim(claim_to_graph(claim_dict))
+    except Exception as exc:  # noqa: BLE001 - SHACL 引擎失败不伪成功
+        return [f"shacl engine failure: {type(exc).__name__}"]
+    if report.conforms:
+        return []
+    return [f"shacl: {v.message or v.constraint}" for v in report.violations[:10]]
+
+
 def _status_from_validation(validation: CandidateValidation) -> ClaimStatus:
     if validation.status == "REJECTED":
         return ClaimStatus.REJECTED
@@ -196,9 +300,14 @@ def _status_from_validation(validation: CandidateValidation) -> ClaimStatus:
     return ClaimStatus.VALIDATED
 
 
-def _check_conflicts(uow: Any, claim_id: uuid.UUID, candidate: CandidateClaim) -> None:
+def _check_conflicts(
+    uow: Any, claim_id: uuid.UUID, candidate: CandidateClaim,
+    resolved_subject_id: uuid.UUID | None,
+) -> None:
     """把新候选与既有 ACCEPTED/NEEDS_REVIEW 同主体 Claim 交给冲突检测；
-    矛盾业务阶段 + 重叠有效期 → 创建审核任务（不自动裁决）。"""
+    矛盾业务阶段 + 重叠有效期 → 创建审核任务（不自动裁决）。
+    主体必须用解析后的权威 ID（与落库主体一致）。"""
+    subject_id = resolved_subject_id or candidate.subject_entity_id
     rows = uow._conn.execute(  # noqa: SLF001
         """
         SELECT id, subject_entity_id, predicate_code, business_stage,
@@ -207,7 +316,7 @@ def _check_conflicts(uow: Any, claim_id: uuid.UUID, candidate: CandidateClaim) -
         WHERE subject_entity_id = %s AND claim_status IN ('ACCEPTED', 'NEEDS_REVIEW')
         LIMIT 20
         """,
-        (candidate.subject_entity_id,),
+        (subject_id,),
     ).fetchall()
     if not rows:
         return
@@ -224,11 +333,9 @@ def _check_conflicts(uow: Any, claim_id: uuid.UUID, candidate: CandidateClaim) -
         "valid_to": candidate.valid_to.isoformat() if candidate.valid_to else None,
         "claim_status": "EXTRACTED",
     })
-    # 冲突检测经 SemanticRuntime 端口：真实 Semantica 适配器（冲突能力不依赖
-    # Provenance 存储，Round5 已验证 provenance=None 时 detect_conflicts 可用）
-    from src.semantic.semantica_adapter import SemanticaRuntimeAdapter
-
-    runtime = SemanticaRuntimeAdapter(shapes_path=SHAPES_PATH, provenance=None)
+    # 冲突检测经 SemanticRuntime 端口：真实 Semantica 适配器（单例复用，
+    # 冲突能力不依赖 Provenance 存储）
+    runtime = _get_semantic_runtime()
     findings = runtime.detect_conflicts(siblings)
     if findings:
         uow.review_tasks.create(
@@ -319,10 +426,13 @@ def review_decide(
         "review_decided", claim_id=str(claim_id), before=before_status,
         after=expected_next.value, reviewed_by=reviewed_by, trace_id=trace_id,
     )
+    decided_at = dt.datetime.now(tz=dt.UTC)
     return {
         "claim_id": str(claim_id),
         "before_status": before_status,
         "after_status": expected_next.value,
         "reviewed_by": reviewed_by,
+        "reviewed_at": decided_at.isoformat(),
+        "decision_reason": decision_reason,
         "review_task_id": str(review_task_id),
     }

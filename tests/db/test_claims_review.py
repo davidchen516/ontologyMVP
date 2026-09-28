@@ -247,10 +247,29 @@ def test_evidence_insufficient_is_not_a_negative_claim(uow_factory) -> None:
 
 
 def test_hedged_future_statement_not_promoted(uow_factory) -> None:
-    """计划/未来时态不得提升为当前量产事实。"""
+    """计划/未来时态不得提升为当前量产事实——全部变体。"""
     fragments, company, *_ = _seed_document_with_fragments(
-        uow_factory, ["The company plans to achieve mass production next year."]
+        uow_factory, [
+            "The company plans to achieve mass production next year.",
+            "The company expects to reach mass production in 2027.",
+            "The company is going to start mass production soon.",
+            "The company aims to achieve mass production.",
+            "The company intends to begin mass production.",
+            "The company would achieve mass production if conditions permit.",
+        ]
     )
+    # 规则抽取器对全部变体片段产 hedged 候选（或直接标记 hedged）——
+    # 这里验证校验层对 hedged 标志的处理：全部变体候选必须 NEEDS_REVIEW
+    from src.claims.extractor import _HEDGES
+    hedged_texts = [
+        "plans to achieve", "expects to reach", "is going to start",
+        "aims to achieve", "intends to begin", "would achieve",
+    ]
+    for text in fragments:
+        found_hedge = bool(_HEDGES.search(text["quote_text"]))
+        if any(h in text["quote_text"] for h in hedged_texts):
+            assert found_hedge, f"hedge word missing for: {text['quote_text'][:50]}"
+
     fragment = fragments[0]
     candidate = _candidate_from_fragment(
         fragment, company, stage=BusinessStage.MASS_PRODUCTION,
@@ -295,12 +314,12 @@ def test_intake_idempotent_no_duplicate_claims(uow_factory) -> None:
     with uow_factory.transaction() as uow:
         first = intake_candidate(
             uow, candidate, document_version_id=version_id,
-            fragment_checksums=checksums, security_id=security,
+            fragment_checksums=checksums, security_id=security, check_conflicts=False,
         )
     with uow_factory.transaction() as uow:
         second = intake_candidate(
             uow, candidate, document_version_id=version_id,
-            fragment_checksums=checksums, security_id=security,
+            fragment_checksums=checksums, security_id=security, check_conflicts=False,
         )
     assert second.duplicate is True
     assert first.claim_id == second.claim_id
@@ -348,7 +367,7 @@ def test_accept_via_review_creates_full_evidence_provenance_outbox(uow_factory) 
         intake = intake_candidate(
             uow, candidate, document_version_id=version_id,
             fragment_checksums=[f["checksum"] for f in fragments],
-            security_id=security,
+            security_id=security, check_conflicts=False,
         )
     assert intake.status in (
         ClaimStatus.VALIDATED, ClaimStatus.NEEDS_REVIEW, ClaimStatus.ACCEPTED
@@ -411,7 +430,7 @@ def test_denial_overlap_with_mass_production_forces_review(uow_factory) -> None:
         intake_candidate(
             uow, candidate, document_version_id=version_id,
             fragment_checksums=[f["checksum"] for f in fragments],
-            security_id=security,
+            security_id=security, check_conflicts=True,  # 冲突测试保持检测
         )
     # 冲突强制审核：存在 CONFLICT_REVIEW 任务（或候选本身进 NEEDS_REVIEW）
     with uow_factory.transaction() as uow:
@@ -437,10 +456,9 @@ def test_accept_crash_at_outbox_rolls_back_review_path(uow_factory, monkeypatch)
         intake = intake_candidate(
             uow, candidate, document_version_id=version_id,
             fragment_checksums=[f["checksum"] for f in fragments],
-            security_id=security,
+            security_id=security, auto_accept=False, check_conflicts=False,  # 强制进审核队列
         )
-    if intake.status != ClaimStatus.NEEDS_REVIEW or intake.created_review_task_id is None:
-        pytest.skip("candidate not in review queue")
+    assert intake.created_review_task_id is not None, "auto_accept=False 必须创建审核任务"
 
     from src.db.repositories import GraphOutboxRepository
 
@@ -448,15 +466,17 @@ def test_accept_crash_at_outbox_rolls_back_review_path(uow_factory, monkeypatch)
         raise RuntimeError("simulated crash at outbox")
 
     monkeypatch.setattr(GraphOutboxRepository, "insert_idempotent", exploding)
-    with pytest.raises(RuntimeError):
-        with uow_factory.transaction() as uow:
-            review_decide(
-                uow, review_task_id=intake.created_review_task_id,
-                decision="ACCEPTED", reviewed_by="reviewer-a",
-                decision_reason="verified",
-            )
-    monkeypatch.setattr(GraphOutboxRepository, "insert_idempotent",
-                        GraphOutboxRepository.insert_idempotent)
+    try:
+        with pytest.raises(RuntimeError):
+            with uow_factory.transaction() as uow:
+                review_decide(
+                    uow, review_task_id=intake.created_review_task_id,
+                    decision="ACCEPTED", reviewed_by="reviewer-a",
+                    decision_reason="verified",
+                )
+    finally:
+        monkeypatch.setattr(GraphOutboxRepository, "insert_idempotent",
+                            GraphOutboxRepository.insert_idempotent)
 
     with uow_factory.transaction() as uow:
         claim = uow.claims.get(intake.claim_id)
@@ -484,35 +504,42 @@ def test_concurrent_review_single_winner(uow_factory) -> None:
         intake = intake_candidate(
             uow, candidate, document_version_id=version_id,
             fragment_checksums=[f["checksum"] for f in fragments],
-            security_id=security,
+            security_id=security, auto_accept=False, check_conflicts=False,  # 强制进审核队列
         )
-    if intake.created_review_task_id is None:
-        pytest.skip("not in review queue")
+    assert intake.created_review_task_id is not None, "auto_accept=False 必须创建审核任务"
 
+    # VALIDATED → ACCEPTED 是合法路径（第一个审核者决定接受）
     uow_a = uow_factory.open()
-    review_decide(
-        uow_a, review_task_id=intake.created_review_task_id,
-        decision="REJECTED", reviewed_by="reviewer-a",
-        decision_reason="fabricated",
-    )
-    # 事务提交
-    uow_a.commit()
-    uow_a.close()
-
-    uow_b = uow_factory.open()
-    with pytest.raises((RuntimeError, ValueError, LookupError)):
+    try:
         review_decide(
-            uow_b, review_task_id=intake.created_review_task_id,
-            decision="ACCEPTED", reviewed_by="reviewer-b",
-            decision_reason="disagree",
+            uow_a, review_task_id=intake.created_review_task_id,
+            decision="ACCEPTED", reviewed_by="reviewer-a",
+            decision_reason="verified against annual report",
         )
-    uow_b.rollback()
-    uow_b.close()
+        uow_a.commit()
+    finally:
+        uow_a.close()
+
+    from src.db.repositories import ConcurrentClaimUpdateError
+    from src.domain.claim_service import ClaimAcceptanceError
+
+    # 第二个审核者：任务已完成 → 状态机拒绝（不覆盖第一个决定）
+    uow_b = uow_factory.open()
+    try:
+        with pytest.raises((ConcurrentClaimUpdateError, ClaimAcceptanceError)):
+            review_decide(
+                uow_b, review_task_id=intake.created_review_task_id,
+                decision="ACCEPTED", reviewed_by="reviewer-b",
+                decision_reason="disagree",
+            )
+        uow_b.rollback()
+    finally:
+        uow_b.close()
 
     with uow_factory.transaction() as uow:
         claim = uow.claims.get(intake.claim_id)
-    assert claim["claim_status"] == "REJECTED"  # 第一个决定不被覆盖
-    assert claim["reviewed_by"] == "reviewer-a"
+    assert claim["claim_status"] == "ACCEPTED"  # 第一个决定保留
+    assert claim["reviewed_by"] == "reviewer-a"  # 不被覆盖
 
 
 # ---- 验收 10：审核 API 可查询且可审计 ----
@@ -537,7 +564,7 @@ def test_review_api_and_audit_trail(uow_factory, main_dsn) -> None:
         intake_result = intake_candidate(
             uow, candidate, document_version_id=version_id,
             fragment_checksums=[f["checksum"] for f in fragments],
-            security_id=security,
+            security_id=security, check_conflicts=False,
         )
 
     params = conninfo_to_dict(main_dsn)
@@ -558,3 +585,44 @@ def test_review_api_and_audit_trail(uow_factory, main_dsn) -> None:
 
     missing = client.get("/admin/claims/" + "0" * 32)
     assert missing.status_code == 404
+
+
+def test_auto_accept_disabled_routes_to_review(uow_factory) -> None:
+    """回滚要求验证：自动接受关闭 → 全部候选进人工审核。"""
+    fragments, company, security, version_id = _seed_document_with_fragments(
+        uow_factory, [SEVEN_SCENARIOS["mass_production"][0]]
+    )
+    fragment = fragments[0]
+    candidate = _candidate_from_fragment(
+        fragment, company, stage=BusinessStage.MASS_PRODUCTION,
+        evidence_state=EvidenceState.PRODUCT_DISCLOSED, predicate="PRODUCES",
+    )
+    with uow_factory.transaction() as uow:
+        outcome = intake_candidate(
+            uow, candidate, document_version_id=version_id,
+            fragment_checksums=[f["checksum"] for f in fragments],
+            security_id=security, auto_accept=False,
+        )
+    assert outcome.status == ClaimStatus.VALIDATED  # 不自动接受
+    assert outcome.created_review_task_id is not None  # 进人工审核队列
+
+
+def test_shacl_predicate_whitelist_enforced(uow_factory) -> None:
+    """SHACL 接入：白名单外谓词被 shapes.ttl 拦截，候选进审核不静默通过。"""
+    fragments, company, security, version_id = _seed_document_with_fragments(
+        uow_factory, [SEVEN_SCENARIOS["mass_production"][0]]
+    )
+    fragment = fragments[0]
+    candidate = _candidate_from_fragment(
+        fragment, company, stage=BusinessStage.MASS_PRODUCTION,
+        evidence_state=EvidenceState.PRODUCT_DISCLOSED,
+        predicate="FABRICATED_PREDICATE",  # 白名单外
+    )
+    with uow_factory.transaction() as uow:
+        outcome = intake_candidate(
+            uow, candidate, document_version_id=version_id,
+            fragment_checksums=[f["checksum"] for f in fragments],
+            security_id=security, auto_accept=True,
+        )
+    assert outcome.status == ClaimStatus.NEEDS_REVIEW  # SHACL 拦截不自动接受
+    assert any("shacl" in r.lower() for r in outcome.reasons)

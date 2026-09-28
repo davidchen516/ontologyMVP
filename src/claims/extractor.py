@@ -49,17 +49,27 @@ _STAGE_PATTERNS: list[tuple[BusinessStage, EvidenceState, str]] = [
      r"insufficient evidence|证据不足|暂无明确信息"),
 ]
 
-# 提升阻断：条件/否定/计划/未来时态词——同句出现时不得提升为当前事实
+# 提升阻断：条件/否定/计划/未来时态词——同句出现时不得提升为当前事实。
+# 覆盖英文完整变体（expects to / is going to / aims to / intends to / would /
+# shall / scheduled to / upcoming / plans to / expected to / anticipates）+
+# 中文常见时态（计划/拟/将于/即将/预计/未来/尚未/暂未/如果/若/一旦）
 _HEDGES = re.compile(
-    r"if |if\b|若|如果|计划|拟|将 |will |plans? to|expected to|may |might |"
-    r"预计|未来|尚未|not yet|暂未",
+    r"\bif\b|\bunless\b|\bcondition(al)? on\b|"
+    r"\bplans? to\b|\bplans\b|\bplanning\b|"
+    r"\bexpects? to\b|\bexpected to\b|\banticipat(es|ed|ing)\b|"
+    r"\bis going to\b|\baims? to\b|\bintends? to\b|"
+    r"\bwould\b|\bshall\b|\bwill\b|"
+    r"\bscheduled to\b|\bupcoming\b|\bforthcoming\b|"
+    r"\bmight\b|\bmay\b|\bcould\b|"
+    r"计划|拟|将于|即将|预计|未来|尚未|暂未|如果|若|一旦|待|或有望",
     re.IGNORECASE,
 )
 
 # Prompt 注入样例：只作为文本，命中时记录拒绝理由（绝不产生工具调用）
 _INJECTION = re.compile(
     r"ignore (all )?(previous |system )?instructions|"
-    r"send (an )?email|访问url|execute .* command|invoke tool",
+    r"send (an )?email|访问url|execute .* command|invoke tool|"
+    r"忽略(全部)?(之前的?)?(系统)?指令|发送邮件|执行命令|访问链接",
     re.IGNORECASE,
 )
 
