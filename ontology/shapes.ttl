@@ -1,0 +1,368 @@
+@prefix stock: <https://ontology.example.com/stock#> .
+@prefix product: <https://ontology.example.com/product#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+# These Shapes validate the RDF/graph projection. PostgreSQL-only literal
+# claims are validated by Pydantic and database constraints before projection.
+
+# ---------------------------------------------------------------------------
+# Security and company shapes
+# ---------------------------------------------------------------------------
+
+stock:CompanyShape
+    a sh:NodeShape ;
+    sh:targetClass stock:Company ;
+    sh:property [
+        sh:path stock:canonicalKey ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:minLength 1 ;
+        sh:message "Company必须具有唯一稳定业务键。"@zh
+    ] .
+
+stock:SecurityShape
+    a sh:NodeShape ;
+    sh:targetClass stock:Security ;
+    sh:property [
+        sh:path stock:canonicalKey ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:minLength 1 ;
+        sh:message "Security必须具有稳定业务键。"@zh
+    ] ;
+    sh:property [
+        sh:path stock:tsCode ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:pattern "^[0-9]{6}\\.(SH|SZ|BJ)$" ;
+        sh:message "A股ts_code必须符合000001.SZ、600000.SH或北交所格式。"@zh
+    ] ;
+    sh:property [
+        sh:path stock:issuedBy ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class stock:Company ;
+        sh:message "Security必须且只能关联一个当前发行公司。"@zh
+    ] ;
+    sh:property [
+        sh:path stock:listedOn ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class stock:Exchange ;
+        sh:message "Security必须关联一个交易所。"@zh
+    ] .
+
+stock:ConceptShape
+    a sh:NodeShape ;
+    sh:targetClass stock:Concept ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1 ;
+        sh:message "平台概念必须有显示名称。"@zh
+    ] ;
+    sh:property [
+        sh:path stock:sourcePlatform ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:in ("EASTMONEY" "THS" "TUSHARE" "OTHER") ;
+        sh:message "平台概念必须记录来源平台。"@zh
+    ] .
+
+# ---------------------------------------------------------------------------
+# Product/SKOS shapes
+# ---------------------------------------------------------------------------
+
+stock:ProductConceptShape
+    a sh:NodeShape ;
+    sh:targetClass skos:Concept ;
+    sh:property [
+        sh:path skos:prefLabel ;
+        sh:minCount 1 ;
+        sh:uniqueLang true ;
+        sh:message "每个SKOS概念至少有一个prefLabel，且每种语言只能有一个。"@zh
+    ] ;
+    sh:property [
+        sh:path skos:inScheme ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class skos:ConceptScheme ;
+        sh:message "产品概念必须属于一个ConceptScheme。"@zh
+    ] .
+
+stock:ProductNoSelfBroaderShape
+    a sh:NodeShape ;
+    sh:targetClass skos:Concept ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "产品概念不能将自身作为broader节点。"@zh ;
+        sh:select """
+            SELECT $this
+            WHERE { $this skos:broader $this . }
+        """
+    ] .
+
+stock:ProductHierarchyCycleShape
+    a sh:NodeShape ;
+    sh:targetClass skos:Concept ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "产品分类层级存在循环。"@zh ;
+        sh:select """
+            SELECT $this
+            WHERE { $this skos:broader+ $this . }
+        """
+    ] .
+
+# ---------------------------------------------------------------------------
+# Claim shapes
+# ---------------------------------------------------------------------------
+
+stock:ClaimShape
+    a sh:NodeShape ;
+    sh:targetClass stock:Claim ;
+    sh:closed false ;
+    sh:property [
+        sh:path stock:canonicalKey ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:minLength 1 ;
+        sh:message "Claim必须有稳定ID。"@zh
+    ] ;
+    sh:property [
+        sh:path stock:claimSubject ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:message "Claim必须且只能有一个主体。"@zh
+    ] ;
+    sh:property [
+        sh:path stock:predicateCode ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:in (
+            "ISSUES" "LISTED_ON" "CLASSIFIED_AS" "TAGGED_AS"
+            "PRODUCES" "DEVELOPS" "SAMPLES_TO" "SUPPLIES_TO"
+            "CONTROLS" "HOLDS" "HAS_SEGMENT" "MAPPED_TO_PRODUCT"
+            "DIRECT_EXPOSURE_TO" "SECOND_ORDER_EXPOSURE_TO"
+        ) ;
+        sh:message "Claim谓词必须在MVP白名单内。"@zh
+    ] ;
+    sh:property [
+        sh:path stock:claimObject ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:message "进入图谱投影的Claim必须且只能有一个IRI对象。"@zh
+    ] ;
+    sh:property [
+        sh:path stock:claimStatus ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:in (
+            "EXTRACTED" "VALIDATED" "NEEDS_REVIEW" "ACCEPTED"
+            "CONTRADICTED" "SUPERSEDED" "REJECTED"
+        ) ;
+        sh:message "Claim状态值无效。"@zh
+    ] ;
+    sh:property [
+        sh:path stock:businessStage ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:in (
+            "CONCEPT_ONLY" "TECHNOLOGY_RESERVE" "RESEARCH" "PROTOTYPE"
+            "SAMPLE_VALIDATION" "SMALL_BATCH" "MASS_PRODUCTION"
+            "REVENUE_DISCLOSED" "DENIED" "UNKNOWN"
+        ) ;
+        sh:message "业务成熟阶段值无效。"@zh
+    ] ;
+    sh:property [
+        sh:path stock:evidenceState ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:in (
+            "STRUCTURED_SOURCE" "TEXT_EVIDENCE" "PLATFORM_TAG"
+            "INFERRED" "EVIDENCE_INSUFFICIENT"
+        ) ;
+        sh:message "证据状态值无效。"@zh
+    ] ;
+    sh:property [
+        sh:path stock:confidence ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:decimal ;
+        sh:minInclusive 0 ;
+        sh:maxInclusive 1 ;
+        sh:message "Claim置信度必须在0到1之间。"@zh
+    ] ;
+    sh:property [
+        sh:path stock:recordedAt ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:dateTime ;
+        sh:message "Claim必须记录系统入库时间。"@zh
+    ] ;
+    sh:property [
+        sh:path stock:ontologyVersion ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:pattern "^[0-9]+\\.[0-9]+\\.[0-9]+$" ;
+        sh:message "Claim必须记录语义化本体版本。"@zh
+    ] .
+
+stock:ClaimValidTimeShape
+    a sh:NodeShape ;
+    sh:targetClass stock:Claim ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Claim的validTo必须晚于validFrom。"@zh ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this stock:validFrom ?start ; stock:validTo ?end .
+                FILTER (?end <= ?start)
+            }
+        """
+    ] .
+
+stock:ClaimSystemTimeShape
+    a sh:NodeShape ;
+    sh:targetClass stock:Claim ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Claim的supersededAt必须晚于recordedAt。"@zh ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this stock:recordedAt ?start ; stock:supersededAt ?end .
+                FILTER (?end <= ?start)
+            }
+        """
+    ] .
+
+stock:AcceptedClaimEvidenceShape
+    a sh:NodeShape ;
+    sh:targetClass stock:Claim ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "ACCEPTED经营Claim必须至少有一个证据片段或明确结构化来源。"@zh ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this stock:claimStatus "ACCEPTED" .
+                FILTER NOT EXISTS { $this stock:supportedBy ?e . }
+                FILTER NOT EXISTS { $this stock:evidenceState "STRUCTURED_SOURCE" . }
+            }
+        """
+    ] .
+
+stock:ProductionClaimEvidenceShape
+    a sh:NodeShape ;
+    sh:targetClass stock:Claim ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "量产或已披露收入的Claim不能仅由平台概念标签支持。"@zh ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this stock:businessStage ?stage .
+                FILTER (?stage IN ("MASS_PRODUCTION", "REVENUE_DISCLOSED"))
+                $this stock:evidenceState "PLATFORM_TAG" .
+            }
+        """
+    ] .
+
+stock:PlatformTagClaimShape
+    a sh:NodeShape ;
+    sh:targetClass stock:Claim ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "TAGGED_AS只能表示平台标签，不得被标记为量产或收入阶段。"@zh ;
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this stock:predicateCode "TAGGED_AS" ;
+                      stock:businessStage ?stage .
+                FILTER (?stage != "CONCEPT_ONLY" && ?stage != "UNKNOWN")
+            }
+        """
+    ] .
+
+# ---------------------------------------------------------------------------
+# Evidence and financial shapes
+# ---------------------------------------------------------------------------
+
+stock:EvidenceFragmentShape
+    a sh:NodeShape ;
+    sh:targetClass stock:EvidenceFragment ;
+    sh:property [
+        sh:path stock:partOfDocument ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class stock:Document ;
+        sh:message "证据片段必须关联一份来源文档。"@zh
+    ] ;
+    sh:property [
+        sh:path stock:quoteText ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:minLength 5 ;
+        sh:message "证据片段必须保留可定位原文。"@zh
+    ] ;
+    sh:property [
+        sh:path stock:pageNumber ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 1 ;
+        sh:message "页码必须是大于等于1的整数。"@zh
+    ] .
+
+stock:FinancialObservationShape
+    a sh:NodeShape ;
+    sh:targetClass stock:FinancialObservation ;
+    sh:property [
+        sh:path stock:observedFor ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class stock:Security ;
+        sh:message "财务观察值必须对应一个证券。"@zh
+    ] ;
+    sh:property [
+        sh:path stock:observesMetric ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class stock:FinancialMetric ;
+        sh:message "财务观察值必须对应一个指标。"@zh
+    ] ;
+    sh:property [
+        sh:path stock:reportPeriod ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:date ;
+        sh:message "财务观察值必须记录报告期。"@zh
+    ] ;
+    sh:property [
+        sh:path stock:metricValue ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:decimal ;
+        sh:message "财务观察值必须有数值。"@zh
+    ] ;
+    sh:property [
+        sh:path stock:unit ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:message "财务观察值必须记录单位。"@zh
+    ] .
