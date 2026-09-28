@@ -23,6 +23,7 @@ from src.db.repositories import (
     ProvenanceRepository,
     ReviewTaskRepository,
     SecurityRepository,
+    SourceCapabilityRepository,
     SourceRecordRepository,
 )
 
@@ -34,6 +35,7 @@ class UnitOfWork:
         self._conn = conn
         self.ingest_runs = IngestRunRepository(conn)
         self.source_records = SourceRecordRepository(conn)
+        self.source_capabilities = SourceCapabilityRepository(conn)
         self.companies = CompanyRepository(conn)
         self.securities = SecurityRepository(conn)
         self.claims = ClaimRepository(conn)

@@ -61,7 +61,12 @@ CREATE TABLE IF NOT EXISTS ops.ingest_run (
     rows_updated            INTEGER NOT NULL DEFAULT 0,
     rows_rejected           INTEGER NOT NULL DEFAULT 0,
     error_detail            JSONB,
-    trace_id                VARCHAR(64) NOT NULL
+    trace_id                VARCHAR(64) NOT NULL,
+    -- 调度租约与心跳（migration 0003）：崩溃后 RUNNING 任务的恢复判定依据
+    lease_owner             VARCHAR(200),
+    lease_expires_at        TIMESTAMPTZ,
+    -- 断点续跑/重试与父运行的显式关联
+    parent_run_id           UUID REFERENCES ops.ingest_run(id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_ingest_run_dataset_started
@@ -79,6 +84,8 @@ CREATE TABLE IF NOT EXISTS raw.source_record (
     raw_payload             JSONB NOT NULL,
     ingest_run_id           UUID NOT NULL REFERENCES ops.ingest_run(id),
     schema_version          VARCHAR(50),
+    -- 数据集字段布局签名（migration 0003）：Schema 变化熔断与版本化回滚依据
+    schema_signature        CHAR(64),
     is_current              BOOLEAN NOT NULL DEFAULT TRUE,
     UNIQUE (source_system, api_name, payload_hash)
 );

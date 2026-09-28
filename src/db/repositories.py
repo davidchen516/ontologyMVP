@@ -52,21 +52,92 @@ class IngestRunRepository(Repository):
         trace_id: str,
         status: IngestRunStatus = IngestRunStatus.CREATED,
         cursor_state: dict[str, Any] | None = None,
+        lease_owner: str | None = None,
+        lease_expires_at: Any = None,
+        parent_run_id: uuid.UUID | None = None,
     ) -> dict[str, Any]:
         row = self._fetchone(
             """
-            INSERT INTO ops.ingest_run (dataset_name, source_system, trace_id, status, cursor_state)
-            VALUES (%s, %s, %s, %s::ingest_run_status, %s)
+            INSERT INTO ops.ingest_run
+                (dataset_name, source_system, trace_id, status, cursor_state,
+                 lease_owner, lease_expires_at, parent_run_id)
+            VALUES (%s, %s, %s, %s::ingest_run_status, %s, %s, %s, %s)
             RETURNING id, status, started_at
             """,
-            (dataset_name, source_system, trace_id, status.value, Json(cursor_state or {})),
+            (
+                dataset_name,
+                source_system,
+                trace_id,
+                status.value,
+                Json(cursor_state or {}),
+                lease_owner,
+                lease_expires_at,
+                parent_run_id,
+            ),
+        )
+        assert row is not None
+        return row
+
+    def get_active_run(self, dataset_name: str, *, now: Any) -> dict[str, Any] | None:
+        """同一数据集的活跃运行（RUNNING 且租约未过期）。"""
+        return self._fetchone(
+            "SELECT id, status, lease_owner, lease_expires_at, cursor_state "
+            "FROM ops.ingest_run "
+            "WHERE dataset_name = %s AND status = %s AND lease_expires_at > %s "
+            "ORDER BY started_at DESC LIMIT 1",
+            (dataset_name, IngestRunStatus.RUNNING.value, now),
+        )
+
+    def find_stale_running(self, *, now: Any) -> list[dict[str, Any]]:
+        """租约过期仍 RUNNING 的任务：崩溃后由恢复器判定为可恢复。"""
+        return self._fetchall(
+            "SELECT id, dataset_name, cursor_state, lease_expires_at "
+            "FROM ops.ingest_run "
+            "WHERE status = %s AND lease_expires_at IS NOT NULL AND lease_expires_at < %s "
+            "ORDER BY started_at",
+            (IngestRunStatus.RUNNING.value, now),
+        )
+
+    def update_counts(
+        self,
+        run_id: uuid.UUID,
+        *,
+        request_count: int = 0,
+        rows_received: int = 0,
+        rows_inserted: int = 0,
+        rows_rejected: int = 0,
+        cursor_state: dict[str, Any] | None = None,
+        lease_expires_at: Any = None,
+    ) -> dict[str, Any]:
+        """批次级原子更新：计数 + 游标 + 租约心跳同事务推进。"""
+        sets = [
+            "request_count = request_count + %s",
+            "rows_received = rows_received + %s",
+            "rows_inserted = rows_inserted + %s",
+            "rows_rejected = rows_rejected + %s",
+        ]
+        values: list[Any] = [request_count, rows_received, rows_inserted, rows_rejected]
+        if cursor_state is not None:
+            sets.append("cursor_state = %s")
+            values.append(Json(cursor_state))
+        if lease_expires_at is not None:
+            sets.append("lease_expires_at = %s")
+            values.append(lease_expires_at)
+        values.append(run_id)
+        row = self._fetchone(
+            f"UPDATE ops.ingest_run SET {', '.join(sets)} WHERE id = %s "
+            "RETURNING id, request_count, rows_received, rows_inserted, rows_rejected",
+            tuple(values),
         )
         assert row is not None
         return row
 
     def get(self, run_id: uuid.UUID) -> dict[str, Any] | None:
         return self._fetchone(
-            "SELECT id, dataset_name, source_system, status, cursor_state, error_detail, trace_id "
+            "SELECT id, dataset_name, source_system, status, started_at, finished_at, "
+            "request_count, rows_received, rows_inserted, rows_rejected, "
+            "cursor_state, error_detail, lease_owner, lease_expires_at, parent_run_id, "
+            "trace_id "
             "FROM ops.ingest_run WHERE id = %s",
             (run_id,),
         )
@@ -114,14 +185,15 @@ class SourceRecordRepository(Repository):
         ingest_run_id: uuid.UUID,
         source_key: str | None = None,
         request_params: dict[str, Any] | None = None,
+        schema_signature: str | None = None,
     ) -> dict[str, Any]:
         """重复 payload_hash 的重放不产生重复事实；返回 inserted 标志。"""
         row = self._fetchone(
             """
             INSERT INTO raw.source_record
                 (source_system, api_name, source_key, request_params, payload_hash,
-                 raw_payload, ingest_run_id)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+                 raw_payload, ingest_run_id, schema_signature)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (source_system, api_name, payload_hash) DO NOTHING
             RETURNING id
             """,
@@ -133,6 +205,7 @@ class SourceRecordRepository(Repository):
                 payload_hash,
                 Json(raw_payload),
                 ingest_run_id,
+                schema_signature,
             ),
         )
         if row is None:
@@ -565,6 +638,47 @@ class AuditEventRepository(Repository):
         )
         assert row is not None
         return row["n"]
+
+
+class SourceCapabilityRepository(Repository):
+    def upsert(
+        self,
+        *,
+        source_system: str,
+        api_name: str,
+        status: str,
+        response_latency_ms: int | None = None,
+        detail: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        row = self._fetchone(
+            """
+            INSERT INTO ops.source_capability
+                (source_system, api_name, status, checked_at, response_latency_ms, detail)
+            VALUES (%s, %s, %s, now(), %s, %s)
+            ON CONFLICT (source_system, api_name) DO UPDATE SET
+                status = EXCLUDED.status,
+                checked_at = EXCLUDED.checked_at,
+                response_latency_ms = EXCLUDED.response_latency_ms,
+                detail = EXCLUDED.detail
+            RETURNING source_system, api_name, status, checked_at, response_latency_ms
+            """,
+            (source_system, api_name, status, response_latency_ms, Json(detail or {})),
+        )
+        assert row is not None
+        return row
+
+    def get_status(self, source_system: str, api_name: str) -> dict[str, Any] | None:
+        return self._fetchone(
+            "SELECT source_system, api_name, status, checked_at, response_latency_ms, detail "
+            "FROM ops.source_capability WHERE source_system = %s AND api_name = %s",
+            (source_system, api_name),
+        )
+
+    def list_all(self) -> list[dict[str, Any]]:
+        return self._fetchall(
+            "SELECT source_system, api_name, status, checked_at, response_latency_ms, detail "
+            "FROM ops.source_capability ORDER BY source_system, api_name"
+        )
 
 
 class ConcurrentClaimUpdateError(Exception):

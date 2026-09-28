@@ -1,0 +1,26 @@
+{
+ "code": 0,
+ "msg": "",
+ "data": {
+  "fields": [
+   "index_code",
+   "industry_name",
+   "level",
+   "parent_code"
+  ],
+  "items": [
+   [
+    "v-index_code-1",
+    "样本公司一",
+    "L1",
+    "v-parent_code-1"
+   ],
+   [
+    "v-index_code-2",
+    "样本公司二",
+    "L2",
+    "v-parent_code-2"
+   ]
+  ]
+ }
+}

@@ -1,0 +1,4 @@
+{
+ "code": 429,
+ "msg": "HTTP 429 rate limited"
+}

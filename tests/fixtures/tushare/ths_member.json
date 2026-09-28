@@ -1,0 +1,26 @@
+{
+ "code": 0,
+ "msg": "",
+ "data": {
+  "fields": [
+   "ts_code",
+   "con_code",
+   "in_date",
+   "concept_name"
+  ],
+  "items": [
+   [
+    "000001.SZ",
+    "000001.SZ",
+    "20251231",
+    "样本concept_name-一"
+   ],
+   [
+    "600519.SH",
+    "600519.SH",
+    "20250930",
+    "样本concept_name-二"
+   ]
+  ]
+ }
+}
