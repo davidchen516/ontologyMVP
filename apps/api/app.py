@@ -49,8 +49,9 @@ def create_app(settings: Settings) -> FastAPI:
     app = FastAPI(title="ontologyMVP API", version="0.1.0", lifespan=lifespan)
     app.state.settings = settings
 
-    from apps.api.admin import build_admin_router
     from src.query.api import router as query_router
+
+    from apps.api.admin import build_admin_router
 
     app.include_router(build_admin_router(settings))
     app.include_router(query_router)
