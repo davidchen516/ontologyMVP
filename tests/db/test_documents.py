@@ -377,11 +377,11 @@ def test_retry_budget_exhausted_converges_to_final(uow_factory, tmp_path) -> Non
     """瞬态失败重试 3 次后收敛为终态，不得无限重试。"""
     seeded = seed_document(uow_factory, content_hash=uuid.uuid4().hex * 2)
     repo = version_repo(uow_factory)
-    for round_number in range(3):
+    for _round in range(3):
         result = download_version(repo, version_id=seeded["version"]["id"],
                                   fetch=make_fetch(b"", status=503),
                                   storage=LocalFileStorage(tmp_path))
-        assert result["retryable"] is (round_number < 2) or True
+        assert result["downloaded"] is False  # 前三次均为可重试失败
     result4 = download_version(repo, version_id=seeded["version"]["id"],
                                fetch=make_fetch(b"", status=503),
                                storage=LocalFileStorage(tmp_path))
@@ -529,3 +529,105 @@ def test_admin_document_endpoints_expose_parse_status(uow_factory, main_dsn, tmp
     assert freshness.status_code == 200
     fresh_body = freshness.json()
     assert "documents_by_source" in fresh_body  # 文档新鲜度暴露
+
+
+def test_stale_parsing_recovery_first_dispatch_succeeds(uow_factory, tmp_path) -> None:
+    """NB-1 回归：解析中途硬崩溃（状态留 PARSING）后，首次重派发即恢复成功——
+    走 FAILED_RETRYABLE→PENDING→PARSING 合法边，不再需要"崩两次"。"""
+    storage = LocalFileStorage(tmp_path / "store")
+    seeded = seed_document(uow_factory, content_hash=uuid.uuid4().hex * 2)
+    repo = version_repo(uow_factory)
+    download_version(repo, version_id=seeded["version"]["id"],
+                     fetch=make_fetch(make_normal_pdf()), storage=storage)
+    # 模拟硬崩溃：直接置 PARSING（进程被杀，无任何后续标记）
+    with uow_factory.transaction() as uow:
+        uow._conn.execute(  # noqa: SLF001
+            "UPDATE fact.document_version SET parse_status = 'PARSING' WHERE id = %s",
+            (seeded["version"]["id"],),
+        )
+    result = parse_version(repo, version_id=seeded["version"]["id"], storage=storage)
+    assert result["parsed"] is True  # 首次重派发即恢复
+    with uow_factory.transaction() as uow:
+        version = uow.document_versions.get_version(seeded["version"]["id"])
+    assert version["parse_status"] == "PARSED"
+
+
+def test_fragment_write_crash_never_leaves_parsed_without_fragments(
+    uow_factory, tmp_path, monkeypatch
+) -> None:
+    """NB-2 回归：片段写入中途崩溃 → 状态留 PARSING（可恢复），
+    绝不出现永久"PARSED 零片段"；重放自愈并补齐片段。"""
+    storage = LocalFileStorage(tmp_path / "store")
+    seeded = seed_document(uow_factory, content_hash=uuid.uuid4().hex * 2)
+    repo = version_repo(uow_factory)
+    download_version(repo, version_id=seeded["version"]["id"],
+                     fetch=make_fetch(make_normal_pdf()), storage=storage)
+
+    from src.documents.repositories import DocumentVersionRepository as _Repo
+
+    original = _Repo.insert_fragments_batch
+
+    def crashing(self, drafts):
+        raise RuntimeError("simulated crash during fragment batch write")
+
+    monkeypatch.setattr(_Repo, "insert_fragments_batch", crashing)
+    with pytest.raises(RuntimeError):
+        parse_version(repo, version_id=seeded["version"]["id"], storage=storage)
+    monkeypatch.setattr(_Repo, "insert_fragments_batch", original)
+
+    with uow_factory.transaction() as uow:
+        version = uow.document_versions.get_version(seeded["version"]["id"])
+    assert version["parse_status"] == "PARSING"  # 未假完成
+
+    result = parse_version(repo, version_id=seeded["version"]["id"], storage=storage)
+    assert result["parsed"] is True  # 恢复 + checksum 幂等自愈
+    with uow_factory.transaction() as uow:
+        count = uow._conn.execute(  # noqa: SLF001
+            "SELECT count(*) FROM fact.evidence_fragment"
+        ).fetchone()[0]
+    assert count == result["fragments"]["inserted"] + 0  # 无重复
+
+
+def test_needs_review_manual_reparse_entry(uow_factory, tmp_path) -> None:
+    """NC-1 回归：人工审核通过后的重解析入口真实可用——
+    NEEDS_REVIEW→PENDING→PARSING→PARSED，不再只能手工 SQL。"""
+    storage = LocalFileStorage(tmp_path / "store")
+    seeded = seed_document(uow_factory, content_hash=uuid.uuid4().hex * 2)
+    repo = version_repo(uow_factory)
+    download_version(repo, version_id=seeded["version"]["id"],
+                     fetch=make_fetch(make_scanned_pdf()), storage=storage)
+    result = parse_version(repo, version_id=seeded["version"]["id"], storage=storage)
+    assert result["needs_review"] is True
+
+    # 人工审核通过（示意）：用正常 PDF 替换存储内容后重派发
+    replacement_key = storage.put(make_normal_pdf())
+    with uow_factory.transaction() as uow:
+        uow._conn.execute(  # noqa: SLF001
+            "UPDATE fact.document_version SET storage_key = %s WHERE id = %s",
+            (replacement_key, seeded["version"]["id"]),
+        )
+    reparse = parse_version(repo, version_id=seeded["version"]["id"], storage=storage)
+    assert reparse["parsed"] is True  # 审核重解析成功
+    with uow_factory.transaction() as uow:
+        version = uow.document_versions.get_version(seeded["version"]["id"])
+    assert version["parse_status"] == "PARSED"
+
+
+def test_stale_downloading_with_exhausted_budget_converges(uow_factory, tmp_path) -> None:
+    """NC-2 回归：残留 DOWNLOADING ∧ 预算耗尽 → 收敛为终态，
+    不再楔死在非法迁移上。"""
+    seeded = seed_document(uow_factory, content_hash=uuid.uuid4().hex * 2)
+    repo = version_repo(uow_factory)
+    with uow_factory.transaction() as uow:
+        uow._conn.execute(  # noqa: SLF001
+            "UPDATE fact.document_version SET download_status = 'DOWNLOADING', "
+            "text_stats = '{\"download_attempts\": 3}'::jsonb WHERE id = %s",
+            (seeded["version"]["id"],),
+        )
+    result = download_version(repo, version_id=seeded["version"]["id"],
+                              fetch=make_fetch(make_normal_pdf()),
+                              storage=LocalFileStorage(tmp_path))
+    assert result["rejected"] == "retry budget exhausted"
+    with uow_factory.transaction() as uow:
+        version = uow.document_versions.get_version(seeded["version"]["id"])
+    assert version["download_status"] == "DOWNLOAD_FAILED_FINAL"

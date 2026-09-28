@@ -91,9 +91,19 @@ def download_version(
         return {"downloaded": False, "rejected": "terminal download failure",
                 "retryable": False, "terminal": True}
 
+    current_status = version["download_status"]
+    if current_status == DownloadStatus.DOWNLOADING.value:
+        # 残留 DOWNLOADING 恢复先于预算判断（否则楔死在非法迁移上）
+        repo.mark_download_status(
+            version_id, DownloadStatus.DOWNLOAD_FAILED_RETRYABLE.value,
+            error="stale DOWNLOADING recovered by re-dispatch",
+        )
+        current_status = DownloadStatus.DOWNLOAD_FAILED_RETRYABLE.value
+
     if repo.get_download_attempts(version_id) >= 3:
         # 瞬态重试上限：3 次真实尝试后收敛为终态，不得无限重试。
         # 状态机无 FAILED_RETRYABLE→FINAL 直达边：经 PENDING→DOWNLOADING→FINAL
+        # （经 DOWNLOADING 会再计一次尝试——终态路径，无害）
         repo.mark_download_status(version_id, DownloadStatus.DOWNLOAD_PENDING.value)
         repo.mark_download_status(version_id, DownloadStatus.DOWNLOADING.value)
         repo.mark_download_status(
@@ -103,15 +113,6 @@ def download_version(
         return {"downloaded": False, "rejected": "retry budget exhausted",
                 "retryable": False}
 
-    current_status = version["download_status"]
-    if current_status == DownloadStatus.DOWNLOADING.value:
-        # 崩溃残留的 DOWNLOADING（状态机无回头路）：先按恢复语义落
-        # FAILED_RETRYABLE，再重新排队——半文件不会被当作完成
-        repo.mark_download_status(
-            version_id, DownloadStatus.DOWNLOAD_FAILED_RETRYABLE.value,
-            error="stale DOWNLOADING recovered by re-dispatch",
-        )
-        current_status = DownloadStatus.DOWNLOAD_FAILED_RETRYABLE.value
     ensure_transition("document_download", current_status,
                       DownloadStatus.DOWNLOAD_PENDING.value)
     repo.mark_download_status(version_id, DownloadStatus.DOWNLOAD_PENDING.value)
@@ -176,6 +177,10 @@ def parse_version(
         DocumentParseStatus.FAILED_FINAL.value, DocumentParseStatus.SKIPPED.value
     ):
         return {"parsed": False, "needs_review": False, "terminal": True}
+    if parse_status_now == DocumentParseStatus.PARSE_NEEDS_REVIEW.value:
+        # 人工审核通过后的重解析入口：NEEDS_REVIEW -> PENDING（合法边）-> 重解析
+        repo.mark_parse_status(version_id, DocumentParseStatus.PENDING.value)
+        parse_status_now = DocumentParseStatus.PENDING.value
 
     repo.mark_parse_status(version_id, DocumentParseStatus.PARSING.value)
     data = storage.get(version["storage_key"])
@@ -209,6 +214,9 @@ def parse_version(
         }
 
     drafts = build_fragments(parsed, document_version_id=version_id)
+    # 片段先写、PARSED 后标：崩溃落入残留 PARSING → 恢复语义 + checksum 幂等
+    # 自愈；绝不留下"PARSED 零片段"的永久假完成（验收 6）
+    fragment_stats = repo.insert_fragments_batch(drafts)
     repo.mark_parse_result(
         version_id,
         parse_status=status.value,
@@ -216,7 +224,6 @@ def parse_version(
         page_count=len(parsed.pages),
         text_stats=parsed.quality,
     )
-    fragment_stats = repo.insert_fragments_batch(drafts)
     log.info(
         "document_parsed", version_id=str(version_id), status=status.value,
         pages=len(parsed.pages), fragments=fragment_stats["inserted"],

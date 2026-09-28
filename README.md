@@ -249,7 +249,9 @@ uv run pytest tests/db     # 迁移/约束/事务/并发/幂等/角色测试（C
   枚举）+ 残留 DOWNLOADING 恢复语义；对账：DB 记录缺失文件自动重新排队、
   孤儿文件可枚举；
 - 只读接口：`GET /admin/documents`、`GET /admin/documents/{id}`（含版本与
-  解析质量）、`GET /admin/evidence?document_version_id=`。
+  解析质量）、`GET /admin/evidence?document_version_id=`；
+  解析状态的权威字段是 `fact.document_version.parse_status`
+  （`fact.document.parse_status` 为文档级显示位，不随版本解析推进）。
 
 ### 日志与追踪
 

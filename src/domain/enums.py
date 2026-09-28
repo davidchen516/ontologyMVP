@@ -194,6 +194,8 @@ DOCUMENT_PARSE_TRANSITIONS: dict[DocumentParseStatus, frozenset[DocumentParseSta
     ),
     DocumentParseStatus.FAILED_RETRYABLE: frozenset(
         {
+            # issue #6 状态机：FAILED_RETRYABLE -> 对应 PENDING 状态（重试回到排队）
+            DocumentParseStatus.PENDING,
             DocumentParseStatus.PARSING,
             DocumentParseStatus.FAILED_FINAL,
             DocumentParseStatus.SKIPPED,
