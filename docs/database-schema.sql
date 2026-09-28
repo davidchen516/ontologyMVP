@@ -415,12 +415,15 @@ CREATE TABLE IF NOT EXISTS finance.financial_observation (
     update_flag             VARCHAR(30),
     source_record_id        UUID NOT NULL REFERENCES raw.source_record(id),
     recorded_at             TIMESTAMPTZ NOT NULL DEFAULT now(),
+    -- 公告日期属于观察值身份（migration 0005）：同口径重述独立保留，
+    -- 由当前值视图按最新公告日期选择，历史不覆盖
     UNIQUE NULLS NOT DISTINCT (
         security_id,
         metric_code,
         period_end,
         report_type,
-        update_flag
+        update_flag,
+        announced_at
     )
 );
 
@@ -587,7 +590,7 @@ FROM (
                ORDER BY
                    CASE fo.report_type
                        WHEN '1' THEN 1 WHEN '4' THEN 1
-                       WHEN '2' THEN 2 WHEN '5' THEN 2
+                       WHEN '2' THEN 2 WHEN '5' THEN 2 WHEN '6' THEN 2
                        ELSE 3
                    END ASC,
                    fo.announced_at DESC NULLS LAST,

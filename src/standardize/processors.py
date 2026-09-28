@@ -44,7 +44,9 @@ INDICATOR_METRICS = {
     "netprofit_yoy": ("NET_PROFIT_YOY", "净利润同比增长率", "RATIO", "LATEST"),
 }
 
-SEGMENT_TYPE_MAP = {"P": "PRODUCT", "I": "INDUSTRY", "D": "REGION", "S": "SALES_MODE"}
+# 与 ontology/mappings/tushare.yaml（v0.1.2）bz_code 映射一致；
+# 值域受 finance.business_segment_observation CHECK 约束
+SEGMENT_TYPE_MAP = {"P": "PRODUCT", "I": "INDUSTRY", "D": "REGION", "M": "SALES_MODE"}
 
 
 @dataclass
@@ -59,6 +61,9 @@ class StandardizeContext:
     def __init__(self, uow: Any, run_id: uuid.UUID) -> None:
         self.uow = uow
         self.run_id = run_id
+        from src.standardize.repositories import NormalizationEventRepository
+
+        self.events = NormalizationEventRepository(uow._conn)  # noqa: SLF001
         self.exchanges = ExchangeRepository(uow._conn)  # noqa: SLF001 - 同连接事务
         self.securities = StandardSecurityRepository(uow._conn)  # noqa: SLF001
         self.companies = StandardCompanyRepository(uow._conn)  # noqa: SLF001
@@ -187,6 +192,19 @@ class StockCompanyProcessor:
                 f"profile field rejected: {exc}", source_id, ts_code
             ))
 
+        if company.get("uscc_placeholder"):
+            ctx.events.add(
+                run_id=ctx.run_id,
+                event_type="MAPPED",
+                entity_type="COMPANY",
+                entity_ref=ts_code,
+                detail={
+                    "uncertainty": "uscc_placeholder",
+                    "note": "unified social credit code missing; "
+                            "controlled placeholder key assigned",
+                },
+                source_record_id=source_id,
+            )
         written = 1 if company.get("inserted") else 0
         return ProcessedOutcome(written, rejected)
 
@@ -426,7 +444,8 @@ class FinancialVipProcessor:
             period_end = parse_date(payload.get("end_date"))
             if period_end is None:
                 raise TransformError("financial observation requires end_date")
-            report_type = clean_str(payload.get("report_type")) or "1"
+            # 口径缺失绝不静默默认"合并"，使用 UNKNOWN 哨兵（视图按声明的偏好处理）
+            report_type = clean_str(payload.get("report_type")) or "UNKNOWN"
             update_flag = clean_str(payload.get("update_flag"))
             announced = parse_date(payload.get("ann_date"))
             announced_at = (
@@ -517,6 +536,16 @@ class MainbzProcessor:
             source_record_id=source_id,
             recorded_at=record["retrieved_at"],
         )
+        if not row["inserted"]:
+            # 同键覆盖：审计事件留痕（历史在 Raw 层可重建）
+            ctx.events.add(
+                run_id=ctx.run_id,
+                event_type="CORRECTION",
+                entity_type="BUSINESS_SEGMENT",
+                entity_ref=f"{ts_code}:{period_end}:{raw_name}",
+                detail={"note": "segment snapshot overwritten by latest raw"},
+                source_record_id=source_id,
+            )
         return ProcessedOutcome(1 if row["inserted"] else 0, rejected)
 
 
@@ -552,8 +581,8 @@ class Top10HoldersProcessor:
             security_id=security["id"],
             holder_name=holder_name,
             holder_type=clean_str(payload.get("holder_type")),
-            hold_amount=decimal_or_null(payload.get("hold")),
-            hold_ratio=decimal_or_null(payload.get("ratio")),
+            hold_amount=decimal_or_null(payload.get("hold_amount")),
+            hold_ratio=decimal_or_null(payload.get("hold_ratio")),
             end_date=end_date,
             source_record_id=source_id,
         )

@@ -128,15 +128,29 @@ def _isolated_security(uow_factory) -> str:
             "VALUES ('NET_CF_OPERATING', '经营活动现金流', 'CASHFLOW', 'CNY', 'SUM') "
             "ON CONFLICT (metric_code) DO NOTHING"
         )
-        raw_record = conn.execute(
+        run_id = conn.execute(
             "INSERT INTO ops.ingest_run (dataset_name, source_system, trace_id) "
             "VALUES ('test', 'TEST', 't') RETURNING id"
+        ).fetchone()[0]
+        payload = {"ts_code": ts_code, "note": "fy fixture"}
+        import hashlib
+
+        raw_record = conn.execute(
+            "INSERT INTO raw.source_record "
+            "(source_system, api_name, payload_hash, raw_payload, ingest_run_id) "
+            "VALUES ('TEST', 'test', %s, %s, %s) RETURNING id",
+            (
+                hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest(),
+                json.dumps(payload),
+                run_id,
+            ),
         ).fetchone()[0]
     return security, raw_record
 
 
 def _insert_observation(uow_factory, security, raw_record, year, value, *,
                         announced="2025-04-30", update_flag=None) -> None:
+    assert raw_record is not None, "FY 场景必须使用隔离证券自带的 raw 记录"
     with uow_factory.transaction() as uow:
         uow._conn.execute(  # noqa: SLF001
             """
@@ -144,9 +158,9 @@ def _insert_observation(uow_factory, security, raw_record, year, value, *,
                 (security_id, metric_code, period_end, report_type, value, currency,
                  announced_at, update_flag, source_record_id)
             SELECT %s, 'NET_CF_OPERATING', %s, '1', %s, 'CNY', %s, %s, id
-            FROM raw.source_record LIMIT 1
+            FROM raw.source_record WHERE id = %s
             """,
-            (security, f"{year}-12-31", value, announced, update_flag),
+            (security, f"{year}-12-31", value, announced, update_flag, raw_record),
         )
 
 
@@ -281,10 +295,11 @@ def test_business_segment_preserves_raw_bz_item(standardized) -> None:
             "SELECT raw_segment_name, segment_type, revenue, currency, mapping_status "
             "FROM finance.business_segment_observation"
         ).fetchall()
-    for raw_name, seg_type, revenue, _currency, mapping_status in rows:
+    for raw_name, seg_type, revenue, currency, mapping_status in rows:
         assert raw_name in ("机器人精密减速器", "伺服系统")  # 原始披露口径原样保留
-        assert seg_type == "PRODUCT"
+        assert seg_type in ("PRODUCT", "SALES_MODE")  # P→PRODUCT / M→SALES_MODE
         assert revenue is not None
+        assert currency in ("CNY", "USD")  # 币种原样保留
         assert mapping_status == "UNMAPPED"  # 产品语义映射不越权
 
 
@@ -345,9 +360,9 @@ def test_financial_restatement_and_scope_retained(uow_factory) -> None:
     [((2022, 2023, 2024), True), ((2023, 2024), False)],
 )
 def test_three_fy_cashflow_sufficiency(uow_factory, years, expected_sufficient) -> None:
-    security, _ = _isolated_security(uow_factory)
+    security, raw_record = _isolated_security(uow_factory)
     for year in years:
-        _insert_observation(uow_factory, security, None, year, 100.0)
+        _insert_observation(uow_factory, security, raw_record, year, 100.0)
 
     with uow_factory.transaction() as uow:
         result = recent_three_fy_operating_cashflow(uow, security_id=security)
@@ -359,9 +374,9 @@ def test_three_fy_cashflow_sufficiency(uow_factory, years, expected_sufficient) 
 
 def test_null_value_year_is_not_a_valid_fy(uow_factory) -> None:
     """含 NULL 值的财年不算有效观察（缺失≠0）。"""
-    security, _ = _isolated_security(uow_factory)
+    security, raw_record = _isolated_security(uow_factory)
     for year, value in ((2022, 100.0), (2023, 120.0), (2024, None)):
-        _insert_observation(uow_factory, security, None, year, value)
+        _insert_observation(uow_factory, security, raw_record, year, value)
 
     with uow_factory.transaction() as uow:
         result = recent_three_fy_operating_cashflow(uow, security_id=security)
@@ -569,6 +584,12 @@ def test_stale_normalization_recovered_by_lease(uow_factory) -> None:
         initial_watermark=detail["watermark"],
     )
     assert str(retry["parent_run_id"]) == str(run["id"])
+    # 测试自净：重试运行保持 RUNNING 属断言需要，结束前收敛为 CANCELLED，
+    # 不阻塞同模块后续测试的活跃运行守卫
+    with uow_factory.transaction() as uow:
+        NormalizationRunRepository(uow._conn).transition(  # noqa: SLF001
+            retry["id"], IngestRunStatus.CANCELLED.value, finished_at=None
+        )
 
 
 def test_holds_only_no_controls_claims(standardized) -> None:
@@ -576,6 +597,23 @@ def test_holds_only_no_controls_claims(standardized) -> None:
     uow_factory = standardized
     assert count(uow_factory, "SELECT count(*) FROM fact.holding_observation") == 2
     assert count(uow_factory, "SELECT count(*) FROM fact.claim") == 0
+    # BLOCKER-2 回归：持仓数量/比例必须真实落库（字段名对齐 yaml hold_amount/hold_ratio）
+    with uow_factory.transaction() as uow:
+        rows = uow._conn.execute(  # noqa: SLF001
+            "SELECT hold_ratio FROM fact.holding_observation"
+        ).fetchall()
+    assert rows and all(row[0] is not None for row in rows)
+
+
+def test_uscc_placeholder_uncertainty_is_audited(standardized) -> None:
+    """占位 uscc 的不确定性必须写入审计事件（MAPPED + uncertainty），不得无声。"""
+    uow_factory = standardized
+    with uow_factory.transaction() as uow:
+        rows = uow._conn.execute(  # noqa: SLF001
+            "SELECT count(*) FROM ops.normalization_event "
+            "WHERE event_type = 'MAPPED' AND detail->>'uncertainty' = 'uscc_placeholder'"
+        ).fetchone()
+    assert rows[0] >= 2  # 两家 fixture 公司均缺信用代码
 
 
 def test_standard_vs_raw_reconciliation_sampling(standardized) -> None:
@@ -679,3 +717,63 @@ def test_admin_normalization_and_financial_endpoints(standardized, main_dsn) -> 
 
     missing = client.get("/admin/normalization-runs/" + "0" * 32)
     assert missing.status_code == 404
+    bad_uuid = client.get("/admin/normalization/rejections",
+                          params={"run_id": "not-a-uuid"})
+    assert bad_uuid.status_code == 422
+
+
+def test_pipeline_level_restatement_is_retained_and_current_picks_latest(
+    uow_factory,
+) -> None:
+    """BLOCKER-1 回归：同口径重述经真实管道（Raw→标准化 upsert）必须保留两版，
+    当前值视图取最新公告，绝不静默吞掉重述。"""
+    ingest_fixture(uow_factory, "stock_basic")
+    normalize(uow_factory, "stock_basic")
+    import hashlib
+
+    def _raw(payload):
+        with uow_factory.transaction() as uow:
+            run = uow.ingest_runs.create(
+                dataset_name="cashflow_vip", source_system="TUSHARE", trace_id="t-rest"
+            )
+            record = uow.source_records.insert_idempotent(
+                source_system="TUSHARE", api_name="cashflow_vip",
+                payload_hash=hashlib.sha256(
+                    json.dumps(payload, sort_keys=True).encode()
+                ).hexdigest(),
+                raw_payload=payload, ingest_run_id=run["id"],
+                source_key=payload["ts_code"],
+            )
+        return record
+
+    original = {
+        "ts_code": "000001.SZ", "end_date": "20251231", "n_cashflow_act": 100.0,
+        "report_type": "1", "ann_date": "20250430",
+    }
+    restated = {
+        "ts_code": "000001.SZ", "end_date": "20251231", "n_cashflow_act": 333.0,
+        "report_type": "1", "ann_date": "20260425",
+    }
+    _raw(original)
+    run, outcome = normalize(uow_factory, "cashflow_vip")
+    assert outcome.rows_written >= 1
+
+    _raw(restated)  # 同口径重述：仅公告日期与数值不同
+    run2, outcome2 = normalize(uow_factory, "cashflow_vip")
+    assert outcome2.rows_written >= 1, "重述行不得被 ON CONFLICT 静默吞掉"
+
+    with uow_factory.transaction() as uow:
+        security = uow._conn.execute(  # noqa: SLF001
+            "SELECT id FROM master.security WHERE ts_code = '000001.SZ'"
+        ).fetchone()[0]
+        kept = uow._conn.execute(  # noqa: SLF001
+            "SELECT count(*) FROM finance.financial_observation "
+            "WHERE security_id = %s AND metric_code = 'NET_CF_OPERATING' "
+            "AND period_end = '2025-12-31' AND report_type = '1'",
+            (security,),
+        ).fetchone()[0]
+        assert kept == 2, "同口径的历史版本必须全部保留"
+        result = recent_three_fy_operating_cashflow(uow, security_id=security)
+        matched = [fy for fy in result["fiscal_years"]
+                   if fy["period_end"] == "2025-12-31"]
+    assert matched and matched[0]["value"] == 333.0  # 当前值取最新公告的重述

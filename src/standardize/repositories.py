@@ -321,7 +321,8 @@ class FinancialRepository(Repository):
                 (security_id, metric_code, period_end, report_type, value, currency,
                  announced_at, update_flag, source_record_id)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (security_id, metric_code, period_end, report_type, update_flag)
+            ON CONFLICT (security_id, metric_code, period_end, report_type, update_flag,
+                         announced_at)
                 DO NOTHING
             RETURNING id, (xmax = 0) AS inserted
             """,

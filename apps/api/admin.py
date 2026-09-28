@@ -107,8 +107,8 @@ def build_admin_router(settings: Settings) -> APIRouter:
         def fetch() -> dict[str, Any]:
             with psycopg.connect(settings.postgres_dsn) as conn:
                 repo = NormalizationRunRepository(conn)
-                return {"runs": repo.list_runs(dataset=dataset, limit=limit),
-                        "count": len(repo.list_runs(dataset=dataset, limit=limit))}
+                runs = repo.list_runs(dataset=dataset, limit=limit)
+                return {"runs": runs, "count": len(runs)}
 
         return await run_in_threadpool(fetch)
 
@@ -140,12 +140,21 @@ def build_admin_router(settings: Settings) -> APIRouter:
     async def normalization_rejections(
         run_id: str | None = Query(default=None), limit: int = Query(default=100, ge=1, le=500)
     ) -> dict[str, Any]:
+        import uuid as _uuid
+
         from src.standardize.repositories import NormalizationEventRepository
+
+        parsed_run_id: str | None = None
+        if run_id is not None:
+            try:
+                parsed_run_id = str(_uuid.UUID(run_id))
+            except ValueError:
+                raise HTTPException(status_code=422, detail="invalid run id") from None
 
         def fetch() -> dict[str, Any]:
             with psycopg.connect(settings.postgres_dsn) as conn:
                 events = NormalizationEventRepository(conn).list_rejections(
-                    run_id=run_id, limit=limit
+                    run_id=parsed_run_id, limit=limit
                 )
                 return {"rejections": events, "count": len(events)}
 

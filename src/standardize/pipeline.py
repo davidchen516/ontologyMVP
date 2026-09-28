@@ -137,7 +137,7 @@ def _fetch_raw_records(
     cur = uow._conn.execute(  # noqa: SLF001
         """
         SELECT id, raw_payload, retrieved_at FROM raw.source_record
-        WHERE api_name = %s AND is_current
+        WHERE api_name = %s AND source_system = 'TUSHARE' AND is_current
           AND (retrieved_at, id) > (%s::timestamptz, %s::uuid)
         ORDER BY retrieved_at, id
         LIMIT %s

@@ -402,12 +402,17 @@ def test_terminal_schema_changed_error_fuses_dataset(uow_factory) -> None:
 
 
 def test_probe_only_dataset_refuses_raw_ingestion(uow_factory) -> None:
-    """anns_d/互动等 probe_only 数据集只做权限探测，禁止 Raw 采集。"""
+    """anns_d/互动等 probe_only 数据集只做权限探测，禁止 Raw 采集；
+    拒绝后运行收敛为 FAILED_FINAL（不遗留 RUNNING 等租约恢复）。"""
     connector = make_connector("anns_d", lambda req: fixture_response("anns_d"))
     run = begin_run(uow_factory, "anns_d")
     with pytest.raises(ProbeOnlyDatasetError):
         ingest_dataset(uow_factory, connector, run_id=run["id"],
                        lease_ttl_seconds=LEASE_TTL)
+    with uow_factory.transaction() as uow:
+        detail = uow.ingest_runs.get(run["id"])
+    assert detail["status"] == "FAILED_FINAL"
+    assert "probe-only" in detail["error_detail"]["reason"]
 
 
 def test_resume_from_nonempty_cursor_skips_consumed_pages(uow_factory) -> None:
