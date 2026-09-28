@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# 本地环境与 Secret（真实 Secret 只通过环境变量注入）
+.env
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
