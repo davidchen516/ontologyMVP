@@ -6,6 +6,7 @@ import os
 import signal
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -25,6 +26,9 @@ ENV_VARS = {
     "LLM_API_KEY": "",
 }
 
+STARTUP_DEADLINE_SECONDS = 15
+SHUTDOWN_DEADLINE_SECONDS = 15
+
 
 def test_worker_process_graceful_shutdown_on_sigterm():
     env = os.environ.copy()
@@ -37,27 +41,41 @@ def test_worker_process_graceful_shutdown_on_sigterm():
         stderr=subprocess.STDOUT,
         text=True,
     )
+    # 独立线程持续排空 stdout：避免管道写满死锁，也让主线程可以限时轮询
+    lines: list[str] = []
+    reader = threading.Thread(
+        target=lambda: [lines.append(line) for line in proc.stdout], daemon=True
+    )
+    reader.start()
     try:
-        # 等待 worker_start 出现（最长 15s，覆盖首次导入）
-        deadline = time.monotonic() + 15
-        output = ""
+        # 1) 等待 worker_start 出现（限时，不依赖 readline 阻塞语义）
+        deadline = time.monotonic() + STARTUP_DEADLINE_SECONDS
         while time.monotonic() < deadline:
-            assert proc.poll() is None, f"worker 提前退出: {proc.returncode}"
-            output = proc.stdout.readline() if proc.stdout else ""
-            # 逐行读到 start 即可；其余留给 communicate
-            if '"worker_start"' in output:
+            assert proc.poll() is None, (
+                f"worker 提前退出: rc={proc.returncode}\n{''.join(lines)}"
+            )
+            if any('"worker_start"' in line for line in lines):
                 break
             time.sleep(0.05)
         else:
-            raise AssertionError("worker 未在期限内输出 worker_start")
+            raise AssertionError(
+                f"worker 未在 {STARTUP_DEADLINE_SECONDS}s 内输出 worker_start\n{''.join(lines)}"
+            )
 
+        # 2) 发送真实 SIGTERM，限时等待优雅退出
         proc.send_signal(signal.SIGTERM)
-        rest, _ = proc.communicate(timeout=15)
-        full_output = output + (rest or "")
+        try:
+            proc.wait(timeout=SHUTDOWN_DEADLINE_SECONDS)
+        except subprocess.TimeoutExpired as exc:
+            proc.kill()
+            proc.wait(timeout=5)
+            raise AssertionError("worker 未在期限内优雅退出（SIGTERM 后仍在运行）") from exc
     finally:
         if proc.poll() is None:
             proc.kill()
             proc.wait(timeout=5)
+    reader.join(timeout=2)
+    full_output = "".join(lines)
 
     # 优雅关闭：正常退出码 + 生命周期日志齐全
     assert proc.returncode == 0, f"退出码异常: {proc.returncode}\n{full_output}"

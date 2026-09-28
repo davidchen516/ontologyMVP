@@ -15,13 +15,42 @@ def test_missing_required_field_fails_fast_with_actionable_message(monkeypatch):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("POSTGRES_HOST", "postgres")
 
+    # _env_file=None：不读 CWD 的 .env，保证测试密闭（README 流程 cp .env 后仍可运行）
     with pytest.raises(ValidationError) as excinfo:
-        Settings()
+        Settings(_env_file=None)
     message = str(excinfo.value)
     # 可操作错误：逐项列出缺失字段名
     for missing in ("postgres_db", "postgres_user", "postgres_password", "neo4j_uri",
                     "neo4j_user", "neo4j_password"):
         assert missing in message
+
+
+def test_env_dependent_tests_stay_hermetic_with_dotenv_present(tmp_path, monkeypatch):
+    """回归：README 文档流程（仓库根存在 .env）不得让缺失配置测试出现假阴/假阳。"""
+    decoy_env = tmp_path / ".env"
+    decoy_env.write_text(
+        "POSTGRES_HOST=decoy-host\n"
+        "POSTGRES_DB=decoy-db\n"
+        "POSTGRES_USER=decoy-user\n"
+        "POSTGRES_PASSWORD=decoy-password\n"
+        "NEO4J_URI=bolt://decoy:7687\n"
+        "NEO4J_USER=decoy-user\n"
+        "NEO4J_PASSWORD=decoy-password\n",
+        encoding="utf-8",
+    )
+    for name in ENV_NAMES.values():
+        monkeypatch.delenv(name, raising=False)
+
+    # .env 全量提供必填项：若测试读 .env，将静默通过并掩盖“快速失败”语义
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None)
+
+    # init 参数优先于 .env：make_settings 路径不受 decoy .env 影响
+    from tests.helpers import make_settings
+
+    settings = make_settings()
+    assert settings.postgres_host == "127.0.0.1"
+    assert settings.neo4j_uri == "bolt://127.0.0.1:7687"
 
 
 def test_no_dangerous_defaults_on_required_fields():
@@ -38,7 +67,7 @@ def test_settings_load_from_environment(monkeypatch):
         monkeypatch.setenv(env_name, str(BASE[attr]))
     monkeypatch.setenv("ENVIRONMENT", "ci")
     monkeypatch.setenv("LOG_LEVEL", "WARNING")
-    settings = Settings()
+    settings = Settings(_env_file=None)  # 密闭：不受 CWD .env 干扰
     assert settings.postgres_host == "127.0.0.1"
     assert settings.postgres_port == 5432
     assert settings.environment == "ci"

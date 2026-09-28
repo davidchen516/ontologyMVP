@@ -24,10 +24,12 @@ services:
     volumes:
       - neo4j_data:/data
     ports:
-      - "7474:7474"
-      - "7687:7687"
+      # 仅绑定回环地址：与 postgres 不发布宿主端口的边界保持一致
+      - "127.0.0.1:7474:7474"
+      - "127.0.0.1:7687:7687"
     healthcheck:
-      test: ["CMD-SHELL", "timeout 5 bash -c '</dev/tcp/localhost/7474' || exit 1"]
+      # 同时探测 HTTP(7474) 与 Bolt(7687)：Bolt 晚于 HTTP 就绪，就绪门禁以两者为准
+      test: ["CMD-SHELL", "timeout 5 bash -c '</dev/tcp/localhost/7474 && </dev/tcp/localhost/7687' || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 24
@@ -56,9 +58,10 @@ services:
     ports:
       - "8000:8000"
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/readyz', timeout=3)"]
+      # readyz 最坏情况两探针串行 2×2s，探测超时给 6s（挂起场景不被误判为通过）
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/readyz', timeout=6)"]
       interval: 10s
-      timeout: 5s
+      timeout: 8s
       retries: 6
       start_period: 5s
 

@@ -147,7 +147,8 @@ curl -s http://localhost:8000/readyz    # 未配置 TuShare Token 时返回 DEGR
 uv sync                                      # 按 uv.lock 精确安装（Python 3.11 + semantica==0.7.0）
 uv run pytest                                # 单元 + 集成测试（不依赖真实数据库）
 uv run ruff check .                          # 静态检查
-uv run uvicorn apps.api.main:app --port 8000 --no-access-log   # 需设置必填环境变量
+uv run uvicorn apps.api.main:app --port 8000 --no-access-log   # 配置来自 .env 或环境变量
+uv run python -m apps.worker.main                             # Worker 同样读取 .env
 ```
 
 ### 日志与追踪

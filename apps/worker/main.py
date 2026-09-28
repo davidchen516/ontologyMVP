@@ -12,6 +12,7 @@ import signal
 import threading
 
 import structlog
+from src.core.bootstrap import load_settings_or_fail
 from src.core.config import Settings
 from src.core.logging import configure_logging
 from src.core.trace import new_trace_id, reset_trace_id, set_trace_id
@@ -63,7 +64,7 @@ class Worker:
 
 
 def main() -> None:
-    settings = Settings()  # 必填缺失时快速失败
+    settings = load_settings_or_fail()  # 必填缺失时快速失败（脱敏 stderr + 退出码 2）
     configure_logging(settings)
     worker = Worker(settings)
     worker.install_signal_handlers()
