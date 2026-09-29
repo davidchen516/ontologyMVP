@@ -128,9 +128,12 @@ jobs:
           enable-cache: true
 
       - name: Export locked dependency set
-        # --frozen：以锁文件为准审计，不允许 CI 现场解析新版本
-        run: uv export --frozen --no-emit-project --format requirements-txt
-             -o requirements-audit.txt
+        # --frozen：以锁文件为准审计，不允许 CI 现场解析新版本。
+        # --no-hashes：uv.lock 记录的 wheel hash 与 PyPI 当前资产可能
+        # 不一致（重传/平台裁剪），hash 校验是 pip dry-run 的附带行为
+        # 而非本步目标——漏洞审计按（名字,版本）查 OSV 即完整。
+        run: uv export --frozen --no-hashes --no-emit-project
+             --format requirements-txt -o requirements-audit.txt
 
       - name: Dependency vulnerability audit (pip-audit)
         # 已知漏洞 → 失败。豁免必须 --ignore-vuln <ID> 并附理由+到期日
