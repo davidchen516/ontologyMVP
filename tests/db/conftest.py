@@ -34,7 +34,7 @@ REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 _all_tables_sql = """
 SELECT string_agg(format('%I.%I', table_schema, table_name), ', ')
 FROM information_schema.tables
-WHERE table_schema IN ('raw', 'master', 'fact', 'finance', 'ops')
+WHERE table_schema IN ('raw', 'master', 'fact', 'finance', 'ops', 'query')
   AND table_type = 'BASE TABLE'
 """
 

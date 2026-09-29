@@ -11,9 +11,10 @@ from __future__ import annotations
 
 import datetime as dt
 from enum import StrEnum
+from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class QueryIntent(StrEnum):
@@ -54,7 +55,13 @@ class SemanticFilter(BaseModel):
 
 
 class NumericFilter(BaseModel):
-    """财务筛选：只使用 financial_metric_catalog 白名单中的指标。"""
+    """财务筛选：只使用 financial_metric_catalog 白名单中的指标。
+
+    PeriodRule 与 operator/fiscal_years 必须一致（验收 5 的口径约束）：
+    - LAST_N_FY            ⇒ fiscal_years == N；
+    - LAST_3_FY_TOTAL_POSITIVE ⇒ operator=TOTAL_POSITIVE 且 fiscal_years=3；
+    - CONSECUTIVE_3_FY_POSITIVE ⇒ operator=CONSECUTIVE_POSITIVE 且 fiscal_years=3。
+    """
 
     model_config = ConfigDict(frozen=True)
 
@@ -63,6 +70,38 @@ class NumericFilter(BaseModel):
     threshold: float | None = None
     period_rule: str = Field(default="LAST_3_FY", max_length=50)
     fiscal_years: int = Field(default=3, ge=1, le=10)
+
+    @model_validator(mode="after")
+    def _period_rule_consistent(self) -> NumericFilter:
+        rule = self.period_rule
+        if self.operator in (PathOperator.MIN_VALUE, PathOperator.MAX_VALUE) \
+                and self.threshold is None:
+            raise ValueError(
+                f"operator {self.operator.value} requires threshold"
+            )
+        if rule == "LAST_1_FY" and self.fiscal_years != 1:
+            raise ValueError("LAST_1_FY requires fiscal_years=1")
+        if rule == "LAST_3_FY" and self.fiscal_years != 3:
+            raise ValueError("LAST_3_FY requires fiscal_years=3")
+        if rule == "LAST_5_FY" and self.fiscal_years != 5:
+            raise ValueError("LAST_5_FY requires fiscal_years=5")
+        if rule == "LAST_3_FY_TOTAL_POSITIVE" and (
+            self.operator is not PathOperator.TOTAL_POSITIVE
+            or self.fiscal_years != 3
+        ):
+            raise ValueError(
+                "LAST_3_FY_TOTAL_POSITIVE requires operator=TOTAL_POSITIVE "
+                "and fiscal_years=3"
+            )
+        if rule == "CONSECUTIVE_3_FY_POSITIVE" and (
+            self.operator is not PathOperator.CONSECUTIVE_POSITIVE
+            or self.fiscal_years != 3
+        ):
+            raise ValueError(
+                "CONSECUTIVE_3_FY_POSITIVE requires "
+                "operator=CONSECUTIVE_POSITIVE and fiscal_years=3"
+            )
+        return self
 
 
 class QueryPlan(BaseModel):
@@ -73,6 +112,7 @@ class QueryPlan(BaseModel):
     plan_id: UUID = Field(default_factory=uuid4)
     intent: QueryIntent
     subject: EntityRef | None = None
+    object_entity: EntityRef | None = None  # EXPLAIN_RELATION 的目标实体
     semantic_filter: SemanticFilter | None = None
     numeric_filter: NumericFilter | None = None
     evidence_required: bool = True
@@ -96,9 +136,11 @@ class QueryPlan(BaseModel):
     def _no_injection(cls, value: SemanticFilter | None) -> SemanticFilter | None:
         if value is None:
             return None
-        # 检查是否包含 SQL/Cypher 注入模式
+        # 深度防御：SQL/Cypher 关键字黑名单（真正的保障是参数化+白名单模板，
+        # 黑名单用于尽早拒绝可疑输入并给出受控 422）
         dangerous = ("DROP", "DELETE", "INSERT", "UPDATE", "CREATE", "ALTER",
-                     "MERGE", "DETACH", "CALL", "LOAD CSV", "//", "/*")
+                     "TRUNCATE", "GRANT", "REVOKE", "EXECUTE", "PG_SLEEP",
+                     "MERGE", "DETACH", "CALL", "LOAD CSV", "COPY", ";", "//", "/*")
         for field_value in (value.concept_name, value.relation_type,
                             value.business_stage):
             if field_value:
@@ -135,6 +177,7 @@ class GroundedResult(BaseModel):
     financial_value: float | None = None
     report_period: str | None = None
     currency: str | None = None
+    financial_detail: list[dict[str, Any]] = Field(default_factory=list)
     evidence_ids: list[UUID] = Field(default_factory=list)
     reasoning_path: list[str] = Field(default_factory=list)
     data_freshness: str | None = None

@@ -1,20 +1,39 @@
-"""FastAPI 业务接口：/api/v1/query + /api/v1/screen + 只读实体端点（issue #9）。"""
+"""FastAPI 业务接口：/api/v1/query + /api/v1/screen + 只读实体端点（issue #9）。
+
+不变量：
+- 查询执行使用只读事务（SET TRANSACTION READ ONLY，服务端强制拒绝写入）；
+- 除查询审计（query.query_audit，独立连接写入）外无任何外部副作用；
+- 每次查询保存审计记录：原问题、规范化 QueryPlan、执行版本、口径、
+  trace_id、状态与错误类别；query_id 唯一约束保证重试不产生矛盾记录；
+- timeout_seconds 映射为 statement_timeout（事务级，防止长期运行查询）。
+"""
 
 from __future__ import annotations
 
+import datetime as dt
+import time
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Request
+import psycopg
+import structlog
+from fastapi import APIRouter, HTTPException, Query, Request
+from psycopg.types.json import Json
 from pydantic import BaseModel, Field
 
-from src.query.compiler import QueryOrchestrator
+from src.query.compiler import QUERY_EXECUTION_VERSION, QueryOrchestrator
 from src.query.models import (
+    NumericFilter,
+    PathOperator,
+    QueryIntent,
     QueryPlan,
     QueryResponse,
+    SemanticFilter,
 )
 
 router = APIRouter(prefix="/api/v1", tags=["query"])
+
+log = structlog.get_logger(__name__)
 
 
 class QueryRequest(BaseModel):
@@ -30,36 +49,129 @@ class ScreenRequest(BaseModel):
     concept_name: str | None = Field(default=None, max_length=200)
     business_stage: str | None = Field(default=None, max_length=50)
     metric_code: str | None = Field(default=None, max_length=64)
-    min_fy_count: int = Field(default=3, ge=1, le=10)
+    operator: PathOperator = PathOperator.TOTAL_POSITIVE
+    threshold: float | None = None
+    period_rule: str = Field(default="LAST_3_FY", max_length=50)
+    fiscal_years: int = Field(default=3, ge=1, le=10)
     evidence_required: bool = True
-    as_of: str | None = None
+    as_of: dt.datetime | None = None
     max_results: int = Field(default=50, ge=1, le=100)
+
+
+def _connect_read_only(dsn: str) -> psycopg.Connection:
+    """只读事务连接：SET TRANSACTION READ ONLY 使写入在服务端被拒绝。"""
+    conn = psycopg.connect(dsn)
+    conn.execute("SET TRANSACTION READ ONLY")
+    return conn
+
+
+def _apply_statement_timeout(conn: psycopg.Connection, plan: QueryPlan) -> None:
+    """timeout_seconds → 事务级 statement_timeout（不遗留长期运行查询）。"""
+    conn.execute(
+        "SELECT set_config('statement_timeout', %s, true)",
+        (f"{plan.timeout_seconds * 1000}ms",),
+    )
+
+
+def _record_query_audit(
+    settings: Any, *, plan: QueryPlan, status: str,
+    natural_question: str | None = None, trace_id: str | None = None,
+    error_category: str | None = None, duration_ms: int | None = None,
+    response: QueryResponse | None = None,
+) -> None:
+    """写入查询审计记录（独立可写连接；查询路径本身保持只读）。
+
+    query_id 唯一 + ON CONFLICT DO NOTHING：同一计划重试安全重执行且
+    不产生多条矛盾审计记录。
+    """
+    with psycopg.connect(settings.postgres_dsn) as conn:
+        conn.execute(
+            """
+            INSERT INTO query.query_audit
+                (query_id, natural_question, plan, intent, status,
+                 error_category, trace_id, execution_version, period_rule,
+                 duration_ms, response)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (query_id) DO NOTHING
+            """,
+            (
+                plan.plan_id,
+                natural_question,
+                Json(plan.model_dump(mode="json")),
+                plan.intent.value,
+                status,
+                error_category,
+                trace_id,
+                QUERY_EXECUTION_VERSION,
+                plan.numeric_filter.period_rule
+                if plan.numeric_filter else None,
+                duration_ms,
+                Json(response.model_dump(mode="json")) if response else None,
+            ),
+        )
+
+
+def _execute_plan(
+    request: Request, plan: QueryPlan, natural_question: str | None
+) -> QueryResponse:
+    """共用执行路径：只读事务 + 超时 + 审计 + 受控错误类别。"""
+    settings = request.app.state.settings
+    trace_id = request.headers.get("x-trace-id")
+    executor = getattr(request.app.state, "query_graph_executor", None)
+    orchestrator = QueryOrchestrator(graph_executor=executor)
+    started = time.perf_counter()
+
+    try:
+        with _connect_read_only(settings.postgres_dsn) as conn:
+            _apply_statement_timeout(conn, plan)
+            result = orchestrator.execute(conn, plan, trace_id=trace_id)
+    except ValueError as exc:
+        _record_query_audit(
+            settings, plan=plan, status="REJECTED",
+            natural_question=natural_question, trace_id=trace_id,
+            error_category="plan_validation",
+        )
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except psycopg.errors.QueryCanceled as exc:
+        log.warning("query_timeout", trace_id=trace_id)
+        _record_query_audit(
+            settings, plan=plan, status="FAILED",
+            natural_question=natural_question, trace_id=trace_id,
+            error_category="query_timeout",
+            duration_ms=int((time.perf_counter() - started) * 1000),
+        )
+        raise HTTPException(status_code=504, detail="query timed out") from exc
+    except Exception as exc:
+        category = type(exc).__name__
+        log.error("query_execution_failed", error_category=category,
+                  trace_id=trace_id)
+        _record_query_audit(
+            settings, plan=plan, status="FAILED",
+            natural_question=natural_question, trace_id=trace_id,
+            error_category=category,
+            duration_ms=int((time.perf_counter() - started) * 1000),
+        )
+        raise HTTPException(status_code=500, detail="query execution failed") \
+            from exc
+
+    duration_ms = int((time.perf_counter() - started) * 1000)
+    _record_query_audit(
+        settings, plan=plan, status=result.status.value,
+        natural_question=natural_question, trace_id=trace_id,
+        duration_ms=duration_ms, response=result,
+    )
+    return result
 
 
 @router.post("/query", response_model=QueryResponse)
 async def execute_query(body: QueryRequest, request: Request) -> QueryResponse:
-    """执行受控查询计划。只读——不修改事实/财务/图。"""
-    plan = body.plan
-    trace_id = request.headers.get("x-trace-id")
-    settings = request.app.state.settings
-
-    # 只读连接
-    import psycopg
-
-
-    orchestrator = QueryOrchestrator()
-    with psycopg.connect(settings.postgres_dsn) as conn:
-        try:
-            return orchestrator.execute(conn, plan, trace_id=trace_id)
-        except ValueError as exc:
-            raise HTTPException(status_code=422, detail=str(exc)) from exc
+    """执行受控查询计划。只读——不修改事实/财务/图（除查询审计）。"""
+    return _execute_plan(request, body.plan, body.natural_question)
 
 
 @router.post("/screen", response_model=QueryResponse)
 async def execute_screen(body: ScreenRequest, request: Request) -> QueryResponse:
     """筛选：概念/阶段 + 财务条件的简化查询。"""
-    from src.query.models import NumericFilter, QueryIntent, SemanticFilter
-
     semantic = None
     if body.concept_name or body.business_stage:
         semantic = SemanticFilter(
@@ -68,30 +180,29 @@ async def execute_screen(body: ScreenRequest, request: Request) -> QueryResponse
         )
     numeric = None
     if body.metric_code:
+        # 口径别名：3FY+合计为正 / 3FY+连续为正使用不同 PeriodRule（验收 5）
+        rule = body.period_rule
+        if rule == "LAST_3_FY" and body.fiscal_years == 3:
+            if body.operator is PathOperator.TOTAL_POSITIVE:
+                rule = "LAST_3_FY_TOTAL_POSITIVE"
+            elif body.operator is PathOperator.CONSECUTIVE_POSITIVE:
+                rule = "CONSECUTIVE_3_FY_POSITIVE"
         numeric = NumericFilter(
             metric_code=body.metric_code,
-            operator="TOTAL_POSITIVE",
-            period_rule="LAST_3_FY",
+            operator=body.operator,
+            threshold=body.threshold,
+            period_rule=rule,
+            fiscal_years=body.fiscal_years,
         )
     plan = QueryPlan(
         intent=QueryIntent.SEMANTIC_SCREEN,
         semantic_filter=semantic,
         numeric_filter=numeric,
         evidence_required=body.evidence_required,
+        as_of=body.as_of,
         max_results=body.max_results,
     )
-    trace_id = request.headers.get("x-trace-id")
-    settings = request.app.state.settings
-
-    import psycopg
-
-
-    orchestrator = QueryOrchestrator()
-    with psycopg.connect(settings.postgres_dsn) as conn:
-        try:
-            return orchestrator.execute(conn, plan, trace_id=trace_id)
-        except ValueError as exc:
-            raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return _execute_plan(request, plan, None)
 
 
 # ---- 只读实体接口 ----
@@ -100,12 +211,12 @@ async def execute_screen(body: ScreenRequest, request: Request) -> QueryResponse
 @router.get("/companies/{company_id}")
 async def get_company(company_id: UUID, request: Request) -> dict[str, Any]:
     settings = request.app.state.settings
-    import psycopg
 
-    with psycopg.connect(settings.postgres_dsn) as conn:
+    with _connect_read_only(settings.postgres_dsn) as conn:
         row = conn.execute(
-            "SELECT id, canonical_name, unified_social_credit_code, company_type, "
-            "status, created_at FROM master.company WHERE id = %s",
+            "SELECT id, canonical_name, unified_social_credit_code, "
+            "company_type, status, created_at FROM master.company "
+            "WHERE id = %s",
             (company_id,),
         ).fetchone()
     if not row:
@@ -117,21 +228,22 @@ async def get_company(company_id: UUID, request: Request) -> dict[str, Any]:
 
 @router.get("/companies/{company_id}/claims")
 async def get_company_claims(
-    company_id: UUID, request: Request, limit: int = 50
+    company_id: UUID, request: Request,
+    limit: int = Query(default=50, ge=1, le=200),
 ) -> dict[str, Any]:
     settings = request.app.state.settings
-    import psycopg
 
-    with psycopg.connect(settings.postgres_dsn) as conn:
+    with _connect_read_only(settings.postgres_dsn) as conn:
         rows = conn.execute(
             "SELECT id, predicate_code, claim_status, business_stage, "
             "evidence_state, confidence, valid_from, valid_to, recorded_at "
             "FROM fact.claim WHERE subject_entity_id = %s "
             "ORDER BY recorded_at DESC LIMIT %s",
-            (company_id, min(limit, 200)),
+            (company_id, limit),
         ).fetchall()
     cols = ["id", "predicate_code", "claim_status", "business_stage",
-            "evidence_state", "confidence", "valid_from", "valid_to", "recorded_at"]
+            "evidence_state", "confidence", "valid_from", "valid_to",
+            "recorded_at"]
     claims = [dict(zip(cols, row, strict=True)) for row in rows]
     return {"company_id": str(company_id), "claims": claims, "count": len(claims)}
 
@@ -140,9 +252,8 @@ async def get_company_claims(
 async def get_company_timeline(company_id: UUID, request: Request) -> dict[str, Any]:
     """主体时间线：ACCEPTED Claim 的双时态视图。"""
     settings = request.app.state.settings
-    import psycopg
 
-    with psycopg.connect(settings.postgres_dsn) as conn:
+    with _connect_read_only(settings.postgres_dsn) as conn:
         rows = conn.execute(
             """
             SELECT c.id, c.predicate_code, c.business_stage, c.evidence_state,

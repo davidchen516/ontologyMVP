@@ -45,9 +45,17 @@ def create_app(settings: Settings) -> FastAPI:
             reset_trace_id(token)
         yield
         log.info("api_shutdown")
+        executor = getattr(app.state, "query_graph_executor", None)
+        if executor is not None:
+            executor.close()
 
     app = FastAPI(title="ontologyMVP API", version="0.1.0", lifespan=lifespan)
     app.state.settings = settings
+    # 生产图执行器：查询编排器经 app.state 取用；构建失败/后端不可达时
+    # 查询链路进入明确 DEGRADED（不静默丢弃图语义过滤）
+    from src.query.graph_executor import build_query_graph_executor
+
+    app.state.query_graph_executor = build_query_graph_executor(settings)
 
     from src.query.api import router as query_router
 
