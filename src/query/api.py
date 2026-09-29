@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import datetime as dt
 import time
+from collections.abc import Callable
 from typing import Any
 from uuid import UUID
 
@@ -19,7 +20,7 @@ import psycopg
 import structlog
 from fastapi import APIRouter, HTTPException, Query, Request
 from psycopg.types.json import Json
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from src.query.compiler import QUERY_EXECUTION_VERSION, QueryOrchestrator
 from src.query.models import (
@@ -44,18 +45,43 @@ class QueryRequest(BaseModel):
 
 
 class ScreenRequest(BaseModel):
-    """筛选请求：语义条件 + 财务条件的简化入口。"""
+    """筛选请求：语义条件 + 财务条件的简化入口。
+
+    前置约束与 QueryPlan 模型一致（非法组合在请求层即 422）；
+    注入载荷在计划构造层被拒（同样走受控 422）。
+    """
 
     concept_name: str | None = Field(default=None, max_length=200)
     business_stage: str | None = Field(default=None, max_length=50)
     metric_code: str | None = Field(default=None, max_length=64)
     operator: PathOperator = PathOperator.TOTAL_POSITIVE
     threshold: float | None = None
-    period_rule: str = Field(default="LAST_3_FY", max_length=50)
-    fiscal_years: int = Field(default=3, ge=1, le=10)
+    period_rule: str | None = Field(
+        default=None, max_length=50
+    )  # None = 按 fiscal_years/operator 推导口径
+    fiscal_years: int = Field(default=3)
     evidence_required: bool = True
     as_of: dt.datetime | None = None
+    known_at: dt.datetime | None = None
     max_results: int = Field(default=50, ge=1, le=100)
+
+    @field_validator("fiscal_years")
+    @classmethod
+    def _fy_choices(cls, value: int) -> int:
+        if value not in (3, 5):
+            raise ValueError("fiscal_years must be 3 or 5")
+        return value
+
+    @model_validator(mode="after")
+    def _operator_requires_threshold(self) -> ScreenRequest:
+        if (
+            self.operator in (PathOperator.MIN_VALUE, PathOperator.MAX_VALUE)
+            and self.threshold is None
+        ):
+            raise ValueError(
+                f"operator {self.operator.value} requires threshold"
+            )
+        return self
 
 
 def _connect_read_only(dsn: str) -> psycopg.Connection:
@@ -81,10 +107,25 @@ def _record_query_audit(
 ) -> None:
     """写入查询审计记录（独立可写连接；查询路径本身保持只读）。
 
-    query_id 唯一 + ON CONFLICT DO NOTHING：同一计划重试安全重执行且
-    不产生多条矛盾审计记录。
+    query_id 唯一 + 既有记录保持：同一计划重试安全重执行且不产生多条
+    矛盾审计记录。同一 query_id 携带不同 plan 重放属于客户端冲突——
+    保留首条记录并以结构化告警留痕（不静默丢弃后至计划）。
     """
+    plan_json = plan.model_dump(mode="json")
     with psycopg.connect(settings.postgres_dsn) as conn:
+        existing = conn.execute(
+            "SELECT plan FROM query.query_audit WHERE query_id = %s",
+            (plan.plan_id,),
+        ).fetchone()
+        if existing is not None:
+            if existing[0] != plan_json:
+                log.warning(
+                    "query_audit_conflict",
+                    query_id=str(plan.plan_id), trace_id=trace_id,
+                    detail="query_id reused with a different plan; "
+                           "first audit record retained",
+                )
+            return
         conn.execute(
             """
             INSERT INTO query.query_audit
@@ -92,12 +133,11 @@ def _record_query_audit(
                  error_category, trace_id, execution_version, period_rule,
                  duration_ms, response)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (query_id) DO NOTHING
             """,
             (
                 plan.plan_id,
                 natural_question,
-                Json(plan.model_dump(mode="json")),
+                Json(plan_json),
                 plan.intent.value,
                 status,
                 error_category,
@@ -112,27 +152,45 @@ def _record_query_audit(
 
 
 def _execute_plan(
-    request: Request, plan: QueryPlan, natural_question: str | None
+    request: Request, plan_source: QueryPlan | Callable[[], QueryPlan],
+    natural_question: str | None,
 ) -> QueryResponse:
-    """共用执行路径：只读事务 + 超时 + 审计 + 受控错误类别。"""
+    """共用执行路径：只读事务 + 超时 + 审计 + 受控错误类别。
+
+    plan_source 可以是已构造的 QueryPlan（/query）或计划工厂（/screen）。
+    计划构造（含注入黑名单与交叉校验）发生在受控 try 块内——
+    pydantic ValidationError 是 ValueError 子类，非法计划得到 422
+    而非未捕获 500。
+    """
     settings = request.app.state.settings
     trace_id = request.headers.get("x-trace-id")
     executor = getattr(request.app.state, "query_graph_executor", None)
     orchestrator = QueryOrchestrator(graph_executor=executor)
     started = time.perf_counter()
+    plan: QueryPlan | None = None
 
     try:
+        plan = plan_source() if callable(plan_source) else plan_source
+        assert plan is not None
         with _connect_read_only(settings.postgres_dsn) as conn:
             _apply_statement_timeout(conn, plan)
             result = orchestrator.execute(conn, plan, trace_id=trace_id)
     except ValueError as exc:
-        _record_query_audit(
-            settings, plan=plan, status="REJECTED",
-            natural_question=natural_question, trace_id=trace_id,
-            error_category="plan_validation",
-        )
+        if plan is not None:
+            _record_query_audit(
+                settings, plan=plan, status="REJECTED",
+                natural_question=natural_question, trace_id=trace_id,
+                error_category="plan_validation",
+            )
+        else:
+            # 构造期拒绝：尚无规范化计划可审计——结构化留痕，不静默
+            log.warning(
+                "query_plan_construction_rejected", error=str(exc),
+                trace_id=trace_id, natural_question=natural_question,
+            )
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except psycopg.errors.QueryCanceled as exc:
+        assert plan is not None
         log.warning("query_timeout", trace_id=trace_id)
         _record_query_audit(
             settings, plan=plan, status="FAILED",
@@ -145,15 +203,17 @@ def _execute_plan(
         category = type(exc).__name__
         log.error("query_execution_failed", error_category=category,
                   trace_id=trace_id)
-        _record_query_audit(
-            settings, plan=plan, status="FAILED",
-            natural_question=natural_question, trace_id=trace_id,
-            error_category=category,
-            duration_ms=int((time.perf_counter() - started) * 1000),
-        )
+        if plan is not None:
+            _record_query_audit(
+                settings, plan=plan, status="FAILED",
+                natural_question=natural_question, trace_id=trace_id,
+                error_category=category,
+                duration_ms=int((time.perf_counter() - started) * 1000),
+            )
         raise HTTPException(status_code=500, detail="query execution failed") \
             from exc
 
+    assert plan is not None
     duration_ms = int((time.perf_counter() - started) * 1000)
     _record_query_audit(
         settings, plan=plan, status=result.status.value,
@@ -171,38 +231,51 @@ async def execute_query(body: QueryRequest, request: Request) -> QueryResponse:
 
 @router.post("/screen", response_model=QueryResponse)
 async def execute_screen(body: ScreenRequest, request: Request) -> QueryResponse:
-    """筛选：概念/阶段 + 财务条件的简化查询。"""
-    semantic = None
-    if body.concept_name or body.business_stage:
-        semantic = SemanticFilter(
-            concept_name=body.concept_name,
-            business_stage=body.business_stage,
+    """筛选：概念/阶段 + 财务条件的简化查询。
+
+    计划构造经由工厂延迟到 _execute_plan 的受控 try 块内执行——
+    非法组合与注入载荷得到 422，而非未捕获 500。
+    """
+
+    def build_plan() -> QueryPlan:
+        semantic = None
+        if body.concept_name or body.business_stage:
+            semantic = SemanticFilter(
+                concept_name=body.concept_name,
+                business_stage=body.business_stage,
+            )
+        numeric = None
+        if body.metric_code:
+            # 口径推导：默认按窗口/算子映射（验收 5 不同口径）；
+            # 显式 period_rule 由模型交叉校验一致性
+            rule = body.period_rule
+            if rule is None:
+                if body.fiscal_years == 5:
+                    rule = "LAST_5_FY"
+                elif body.operator is PathOperator.TOTAL_POSITIVE:
+                    rule = "LAST_3_FY_TOTAL_POSITIVE"
+                elif body.operator is PathOperator.CONSECUTIVE_POSITIVE:
+                    rule = "CONSECUTIVE_3_FY_POSITIVE"
+                else:
+                    rule = "LAST_3_FY"
+            numeric = NumericFilter(
+                metric_code=body.metric_code,
+                operator=body.operator,
+                threshold=body.threshold,
+                period_rule=rule,
+                fiscal_years=body.fiscal_years,
+            )
+        return QueryPlan(
+            intent=QueryIntent.SEMANTIC_SCREEN,
+            semantic_filter=semantic,
+            numeric_filter=numeric,
+            evidence_required=body.evidence_required,
+            as_of=body.as_of,
+            known_at=body.known_at,
+            max_results=body.max_results,
         )
-    numeric = None
-    if body.metric_code:
-        # 口径别名：3FY+合计为正 / 3FY+连续为正使用不同 PeriodRule（验收 5）
-        rule = body.period_rule
-        if rule == "LAST_3_FY" and body.fiscal_years == 3:
-            if body.operator is PathOperator.TOTAL_POSITIVE:
-                rule = "LAST_3_FY_TOTAL_POSITIVE"
-            elif body.operator is PathOperator.CONSECUTIVE_POSITIVE:
-                rule = "CONSECUTIVE_3_FY_POSITIVE"
-        numeric = NumericFilter(
-            metric_code=body.metric_code,
-            operator=body.operator,
-            threshold=body.threshold,
-            period_rule=rule,
-            fiscal_years=body.fiscal_years,
-        )
-    plan = QueryPlan(
-        intent=QueryIntent.SEMANTIC_SCREEN,
-        semantic_filter=semantic,
-        numeric_filter=numeric,
-        evidence_required=body.evidence_required,
-        as_of=body.as_of,
-        max_results=body.max_results,
-    )
-    return _execute_plan(request, plan, None)
+
+    return _execute_plan(request, build_plan, None)
 
 
 # ---- 只读实体接口 ----

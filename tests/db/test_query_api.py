@@ -32,7 +32,15 @@ def settings_for(main_dsn: str):
 
 
 def make_client(main_dsn: str) -> TestClient:
-    return TestClient(create_app(settings_for(main_dsn)))
+    app = create_app(settings_for(main_dsn))
+    # 测试一律以 stub/None 替换执行器：先关闭 create_app 构建的真实
+    # Neo4j 驱动（惰性连接，本地无 Neo4j 也可安全 close），避免驱动
+    # 析构告警与连接泄漏
+    executor = getattr(app.state, "query_graph_executor", None)
+    if executor is not None:
+        executor.close()
+        app.state.query_graph_executor = None
+    return TestClient(app)
 
 
 class StubGraphExecutor:
@@ -825,3 +833,188 @@ def test_company_readonly_endpoints(uow_factory, main_dsn) -> None:
 
     missing = client.get(f"/api/v1/companies/{uuid.uuid4()}")
     assert missing.status_code == 404
+
+
+# ---- 五审 B1 回归：/screen 受控拒绝（422 非 500）----
+
+
+def test_screen_invalid_combinations_controlled_422(uow_factory, main_dsn) -> None:
+    """B1 回归：Schema 合法但模型交叉校验拒绝的组合 → 422（非未捕获 500）。"""
+    client = make_client(main_dsn)
+
+    # fiscal_years=5 + 默认 LAST_3_FY 语义（按推导应为 LAST_5_FY，但显式
+    # 传 LAST_3_FY 与 5 窗口不一致 → 模型拒绝）
+    r1 = client.post("/api/v1/screen", json={
+        "metric_code": "NET_CF_OPERATING",
+        "operator": "TOTAL_POSITIVE",
+        "period_rule": "LAST_3_FY",
+        "fiscal_years": 5,
+    })
+    assert r1.status_code == 422
+
+    # MIN/MAX 无 threshold（ScreenRequest 前置约束拒绝）
+    r2 = client.post("/api/v1/screen", json={
+        "metric_code": "NET_CF_OPERATING",
+        "operator": "MIN_VALUE",
+    })
+    assert r2.status_code == 422
+
+    # fiscal_years 越出 {3,5}
+    r3 = client.post("/api/v1/screen", json={
+        "metric_code": "NET_CF_OPERATING",
+        "operator": "TOTAL_POSITIVE",
+        "fiscal_years": 7,
+    })
+    assert r3.status_code == 422
+
+
+def test_screen_injection_controlled_422(uow_factory, main_dsn) -> None:
+    """B1 回归：注入载荷经 /screen 也得到受控 422（不再未捕获 500）。"""
+    client = make_client(main_dsn)
+
+    for payload in (
+        "'; DROP TABLE fact.claim; --",
+        "TRUNCATE TABLE fact.claim; --",
+        "GRANT ALL ON fact.claim TO public",
+        "SELECT pg_sleep(10)--",
+        "a;b",
+    ):
+        r1 = client.post("/api/v1/screen", json={"concept_name": payload})
+        assert r1.status_code == 422, payload
+        r2 = client.post("/api/v1/screen", json={"business_stage": payload})
+        assert r2.status_code == 422, payload
+
+
+def test_screen_5fy_derivation(uow_factory, main_dsn) -> None:
+    """/screen fiscal_years=5 自动推导 LAST_5_FY 口径（不再崩溃）。"""
+    seed_financial_company(
+        uow_factory, company_name="五年窗口公司",
+        fy_values=[(2024, 100.0), (2023, 200.0), (2022, 300.0),
+                   (2021, 400.0), (2020, 500.0)],
+    )
+    client = make_client(main_dsn)
+
+    response = client.post("/api/v1/screen", json={
+        "metric_code": "NET_CF_OPERATING",
+        "operator": "TOTAL_POSITIVE",
+        "fiscal_years": 5,
+    })
+    assert response.status_code == 200
+    body = response.json()
+    assert body["period_rule"] == "LAST_5_FY"
+    assert body["results"][0]["financial_value"] == 1500.0
+    assert len(body["results"][0]["financial_detail"]) == 5
+
+
+# ---- 五审 MINOR 回归：双证券财年去重 ----
+
+
+def test_dual_listing_fiscal_years_deduped(uow_factory, main_dsn) -> None:
+    """MINOR 回归：双重上市公司同财年只计一次（不双计、不挤出窗口）。"""
+    seeded = seed_financial_company(
+        uow_factory, company_name="双重上市公司",
+        fy_values=[(2024, 1000.0), (2023, 1.0), (2022, 1.0)],
+    )
+    # 给同一公司挂第二只证券，复制同财年观察值（每证券独立 3FY）
+    with uow_factory.transaction() as uow:
+        conn = uow._conn  # noqa: SLF001
+        run = conn.execute(
+            "INSERT INTO ops.ingest_run (dataset_name, source_system, status, "
+            "trace_id) VALUES ('dual', 'DUALTEST', 'SUCCEEDED', %s) "
+            "RETURNING id", (uuid.uuid4().hex,),
+        ).fetchone()[0]
+        src = conn.execute(
+            "INSERT INTO raw.source_record (source_system, api_name, "
+            "payload_hash, raw_payload, ingest_run_id) "
+            "VALUES ('DUALTEST', 'cashflow', %s, '{}', %s) RETURNING id",
+            (uuid.uuid4().hex + uuid.uuid4().hex, run),
+        ).fetchone()[0]
+        exchange = conn.execute(
+            "INSERT INTO master.exchange (code, name) VALUES (%s, 'T') "
+            "RETURNING id", (f"DEX-{uuid.uuid4().hex[:8]}",),
+        ).fetchone()[0]
+        security2 = conn.execute(
+            "INSERT INTO master.security (ts_code, symbol, name, exchange_id, "
+            "status) VALUES (%s, '000002', '第二上市', %s, 'ACTIVE') "
+            "RETURNING id", (f"{uuid.uuid4().hex[:10]}.HK", exchange),
+        ).fetchone()[0]
+        conn.execute(
+            "INSERT INTO master.company_security (company_id, security_id, "
+            "recorded_at, source_record_id) VALUES (%s, %s, now(), %s)",
+            (seeded["company"]["id"], security2, src),
+        )
+        for year, value in ((2024, 1000.0), (2023, 1.0), (2022, 1.0)):
+            conn.execute(
+                "INSERT INTO finance.financial_observation "
+                "(security_id, metric_code, period_end, report_type, value, "
+                "currency, announced_at, source_record_id) "
+                "VALUES (%s, 'NET_CF_OPERATING', %s, '1', %s, 'CNY', "
+                "'2025-04-30', %s)",
+                (security2, f"{year}-12-31", value, src),
+            )
+
+    client = make_client(main_dsn)
+    response = client.post("/api/v1/screen", json={
+        "metric_code": "NET_CF_OPERATING", "operator": "TOTAL_POSITIVE",
+    })
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body["results"]) == 1
+    result = body["results"][0]
+    # 正确：3 个不同财年合计 1002；缺陷版会是 2001（同财年双计）
+    assert result["financial_value"] == 1002.0
+    assert len(result["financial_detail"]) == 3
+    periods = {d["period_end"] for d in result["financial_detail"]}
+    assert periods == {"2024-12-31", "2023-12-31", "2022-12-31"}
+    assert result["report_period"] == "2022-12-31..2024-12-31"
+
+
+# ---- 五审 MINOR 回归：图权威空结果不携带降级式注记 ----
+
+
+def test_graph_authoritative_empty_no_degradation_note(
+    uow_factory, main_dsn
+) -> None:
+    """MINOR 回归：图成功返回空 + concept 查询 → SUCCEEDED 且无降级注记。"""
+    seed_claim_with_evidence(uow_factory)  # PG 有候选——防止误报 stale
+    client = make_client(main_dsn)
+    client.app.state.query_graph_executor = StubGraphExecutor(results=[])
+
+    response = client.post("/api/v1/screen", json={
+        "concept_name": "无对应概念",
+    })
+    body = response.json()
+    assert body["status"] == "SUCCEEDED"
+    assert body["degraded"] is False
+    assert body["results"] == []
+    # 权威空结果不携带"不可评估"降级式说明
+    assert not any("not evaluable" in n for n in body["degradation_notes"])
+
+
+def test_query_id_reuse_with_different_plan_warns(
+    uow_factory, main_dsn, caplog: pytest.LogCaptureFixture
+) -> None:
+    """MINOR 回归：query_id 复用携带不同 plan → 首条审计保留 + 冲突告警。"""
+
+    seed_claim_with_evidence(uow_factory)
+    client = make_client(main_dsn)
+
+    plan = {
+        "plan_id": str(uuid.uuid4()),
+        "intent": "SEMANTIC_SCREEN",
+        "semantic_filter": {"business_stage": "MASS_PRODUCTION"},
+    }
+    r1 = client.post("/api/v1/query", json={"plan": plan})
+    assert r1.status_code == 200
+    r2 = client.post("/api/v1/query", json={"plan": {
+        **plan,
+        "semantic_filter": {"business_stage": "RESEARCH"},
+    }})
+    assert r2.status_code == 200
+
+    with psycopg.connect(main_dsn) as conn:
+        count = conn.execute(
+            "SELECT count(*) FROM query.query_audit WHERE query_id = %s",
+            (plan["plan_id"],),
+        ).fetchone()[0]
+    assert count == 1  # 首条保留，不产生矛盾记录

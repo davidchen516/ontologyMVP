@@ -138,6 +138,8 @@ class FinancialCompiler:
     - MIN_VALUE / MAX_VALUE→ 最近一个完整 FY 值 >= / <= threshold（必须给 threshold）。
     完整 FY = period_end 为 12-31 的年报口径观察且 value 非 NULL；
     窗口不足 N 个完整 FY 时判 insufficient，不把缺失当 0。
+    双重上市（多证券映射同一公司）时同一财年只计一次（最新公告优先），
+    避免同财年双计、更早财年被挤出窗口。
     """
 
     @staticmethod
@@ -159,7 +161,8 @@ class FinancialCompiler:
             raise ValueError(
                 f"operator {nf.operator.value} requires threshold"
             )
-        # 只读参数化 SQL——当前值视图（重述按明示规则选择）+ 双时态过滤
+        # 只读参数化 SQL——当前值视图（重述按明示规则选择）+ 双时态过滤；
+        # 同财年多证券行按 announced_at 降序排列，Python 侧按 period_end 去重
         sql = """
         SELECT cs.company_id, fo.security_id, fo.period_end, fo.value,
                fo.currency, fo.report_type, fo.announced_at
@@ -172,7 +175,7 @@ class FinancialCompiler:
           AND (%(as_of_date)s::date IS NULL OR fo.period_end <= %(as_of_date)s::date)
           AND (%(known_at)s::timestamptz IS NULL OR fo.announced_at IS NULL
                OR fo.announced_at <= %(known_at)s::timestamptz)
-        ORDER BY fo.period_end DESC
+        ORDER BY fo.period_end DESC, fo.announced_at DESC NULLS LAST
         """
         as_of_date = plan.as_of.date() if plan.as_of else None
         return sql, {
@@ -196,32 +199,35 @@ def evaluate_numeric_filter(
     sql, params = compiled
     rows = conn.execute(sql, params).fetchall()  # noqa: SLF001
 
-    by_company: dict[Any, list[tuple[dt.date, float]]] = {}
-    currency: dict[Any, str | None] = {}
+    # 按公司分组，同一财年（period_end）只保留最新公告的观察（双重上市去重）
+    by_company: dict[Any, dict[dt.date, tuple[float, str | None]]] = {}
     for row in rows:
         company_id, _security_id, period_end, value, cur = (
             row[0], row[1], row[2], row[3], row[4]
         )
-        by_company.setdefault(company_id, []).append((period_end, float(value)))
-        currency[company_id] = cur
+        fy_map = by_company.setdefault(company_id, {})
+        if period_end not in fy_map:  # 行序：period_end/announced_at 均降序
+            fy_map[period_end] = (float(value), cur)
 
     nf = plan.numeric_filter
     assert nf is not None  # 由调用方保证
     threshold = nf.threshold if nf.threshold is not None else 0.0
 
     evaluations: dict[Any, dict[str, Any]] = {}
-    for company_id, fys in by_company.items():
-        fys.sort(key=lambda item: item[0], reverse=True)
+    for company_id, fy_map in by_company.items():
+        fys = sorted(fy_map.items(), key=lambda item: item[0], reverse=True)
         window = fys[: nf.fiscal_years]
-        values = [value for _, value in window]
+        values = [entry[0] for _, entry in window]
+        currencies = [entry[1] for _, entry in window]
+        currency = next((c for c in currencies if c), None)
         entry: dict[str, Any] = {
             "sufficient": len(window) == nf.fiscal_years,
-            "currency": currency.get(company_id),
+            "currency": currency,
             "detail": [
                 {"period_end": period.isoformat(), "value": value}
-                for period, value in window
+                for period, (value, _cur) in window
             ],
-            "available": len(fys),
+            "available": len(fy_map),
         }
         if len(window) < nf.fiscal_years:
             entry.update(
@@ -431,9 +437,10 @@ class QueryOrchestrator:
                                                     "pg-unavailable")
             candidates = [dict(r) for r in rows]
             if not candidates:
-                # 图空结果：可能是权威空，也可能是投影滞后——PG 可验证时区分
-                pg_candidates, _ = self._pg_semantic_candidates(
-                    conn, plan, notes, "pg-stale"
+                # 图空结果：可能是权威空，也可能是投影滞后——PG 可验证时区分。
+                # 探测用一次性 notes，避免把降级式说明泄露到权威成功响应里
+                pg_candidates, _probe_notes = self._pg_semantic_candidates(
+                    conn, plan, [], "pg-stale"
                 )
                 if pg_candidates:
                     notes.append(
@@ -529,10 +536,14 @@ class QueryOrchestrator:
             reasoning.append(
                 "graph path: " + " - ".join(segments) + f" ({len(rels)} hops)"
             )
+        elif degraded:
+            unknowns.append(
+                "relation path not evaluable: graph projection unavailable"
+            )
         else:
             unknowns.append(
-                "no relation path found between subject and object within "
-                f"max_hops (graph consulted: {not degraded})"
+                "no relation path found between subject and object "
+                "within max_hops"
             )
 
         # 关系两端公司仍从 PG 加载 Grounded 证据（路径存在时）
