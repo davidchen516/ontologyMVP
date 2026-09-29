@@ -1,8 +1,9 @@
 """黄金查询回归（issue #10 验收 8）。
 
 期望基线：tests/golden/expectations.yaml（更新需在 PR 说明理由 + 独立
-审查确认）。指标：Precision / Recall / Evidence Grounding / 时态正确性，
-计算逻辑在 metrics.py（纯函数）。
+审查确认）。指标：Precision / Recall / Evidence Grounding，计算逻辑在
+metrics.py（纯函数）；时态正确性由 as_of/known_at 场景断言锁定，
+路径正确性由真实 Neo4j 读路径 e2e 锁定（tests/integration）。
 
 场景全部走无图执行器的 API 全链路（TestClient），锁定的不只是查询
 正确性，还包括降级注记、口径返回、受控拒绝等响应语义。

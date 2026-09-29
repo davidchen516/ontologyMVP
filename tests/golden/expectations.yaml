@@ -9,6 +9,9 @@
 # - precision  = |results ∩ expected| / |results|
 # - recall     = |results ∩ expected| / |expected|
 # - evidence_grounding = 携带 evidence_ids 的结果比例
+# 时态正确性由 as_of/known_at 场景断言直接锁定（精确 FY 窗口值 +
+# must_not_contain 泄漏检查）；路径正确性由真实 Neo4j 读路径 e2e
+# 锁定（tests/integration/test_neo4j_query_read_e2e.py）。
 suite: golden-query-v1
 description: >
   证据化筛选黄金基线：语义阶段筛选、财务口径、证据排除、双时态边界。
