@@ -287,6 +287,22 @@ uv run pytest tests/db     # 迁移/约束/事务/并发/幂等/角色测试（C
   （重建期间增量事件不丢失）；
 - 测试用 `FakeGraphExecutor`（内存图，不写真实 Neo4j——CI 零外呼）。
 
+### 受控查询与证据化 API（issue #9）
+
+- QueryPlan / EntityRef / SemanticFilter / NumericFilter 严格 Pydantic Schema
+  （Intent/Path/Operator/指标/时间/跳数白名单校验；SQL/Cypher 注入在
+  Schema 层拒绝）；
+- 图查询编译器：只使用白名单参数化 Cypher 模板（max_hops ≤ 4）；
+  财务查询编译器：只使用 `finance.financial_metric` 白名单指标 + PeriodRule；
+- 查询编排器：图语义候选 → SQL 财务过滤 → Claim/Evidence 加载 →
+  Grounded 结构化响应（不添加结构化结果中不存在的实体）；
+  `as_of`（业务有效时间）与 `known_at`（系统已知时间）分离过滤；
+  图不可用时明确降级（`DEGRADED` + 降级说明），不伪装完整结果；
+- API：`POST /api/v1/query`（受控 QueryPlan）、`POST /api/v1/screen`
+  （简化筛选）、`GET /api/v1/companies/{id}`（+ `/claims` + `/timeline`）——
+  全部只读（不修改 Fact/Finance/Graph）；
+- `evidence_required=true` 时无证据候选只在 excluded/unknowns 中出现。
+
 ### 日志与追踪
 
 - 所有日志为结构化 JSON；API 请求与 Worker 执行单元统一携带 `trace_id`（可通过 `X-Trace-Id` 透传）。
@@ -335,6 +351,7 @@ TuShare 概念成员
 - [x] 官方披露文档采集、版本化解析与 EvidenceFragment（见「官方披露文档管道」）
 - [x] 证据化 Claim 抽取、校验、冲突与人工审核状态机（见「证据化 Claim 抽取与人工审核」）
 - [x] Transactional Outbox、Neo4j 幂等投影、对账与全量重建（见「Transactional Outbox 与 Neo4j 图投影」）
+- [x] 受控 QueryPlan、图/财务联合查询与证据化 API（见「受控查询与证据化 API」）
 - [x] PostgreSQL Schema 与 Alembic 迁移、事实事务边界（Neo4j 为可重建投影，无迁移需求）
 - [ ] 首个纵向场景开发
 
