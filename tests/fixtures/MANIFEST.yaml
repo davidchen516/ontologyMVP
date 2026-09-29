@@ -1,0 +1,33 @@
+# 机器可读 Fixture 清单（issue #10）。哈希不匹配即失败
+# （tests/unit/test_fixture_manifest.py）。更新流程见 MANIFEST.md。
+{
+  "version": "v1",
+  "updated": "2026-09-29",
+  "files": {
+    "tushare/anns_d.json": "1de1188716a78e2972442427241bc2f410f42169dfc223e9c39167c5f5b58c4a",
+    "tushare/balancesheet_vip.json": "83e1e2f9020bb135c8df8d82129a4b00e5b370380fe957352e6cd4d960085e1f",
+    "tushare/cashflow_vip.json": "b6e62a01db3943c3a04d7b6a5f4d82026115088fcf963230d80ecb462a42c663",
+    "tushare/dc_index.json": "0c666ca8877972b4f17be2ad7a089947fbac7ea69ca47a6a07214f37f56a8a2d",
+    "tushare/dc_member.json": "37196ce6c3d3bde8faf23bf602ded9269656109830600347cc20a91c333db9b6",
+    "tushare/error_http_429.json": "6d9b38dd0119d822b0c7337af061a05cac1701bd4200fc797673ab328b1e306d",
+    "tushare/error_invalid_request.json": "8c94e742aef27d5bd15b103e3aae9ce28959bc6aeb89c29299e831f3b07ed1cf",
+    "tushare/error_no_permission.json": "cd3a44838f7c860bc2096016cc8f7553307c67cb7d48e623a3e9fa87bceaf28d",
+    "tushare/error_rate_limited.json": "92a598c85278d5616926fab9fb0264c9a9cae8b1cc9d962aff8c1dac6c5ab840",
+    "tushare/error_separate_permission.json": "5c7159e5879e17b947b9f4bdc1c6adee4ab4cd8753126f4c0d7ecdbefc133a51",
+    "tushare/error_unknown.json": "cf5f33049b9faceae2f334c653d743c822e20330e18102b7b74947f8f9c8e65b",
+    "tushare/fina_indicator_vip.json": "3fd0f82f7087a33d30520d521a9a5365d4776686f17b879a99124eb15e07582d",
+    "tushare/fina_mainbz_vip.json": "78f0c0e9e429885e674781531efb2bb8f890dcc24e20faafd4d4e7d699e91cf7",
+    "tushare/income_vip.json": "642b1e95447f886de58cee18566c4256270807f98417a706e31f8050e5e7f70e",
+    "tushare/index_classify.json": "941d62887b49b66289e2b3964b10ccb81ac98c32ccc816ce880e23642160eb1f",
+    "tushare/index_member_all.json": "0cc22ba5da6cc5eb41f09057752ff11221d9a14b13a491d98fa0f5028638e510",
+    "tushare/irm_qa_sh.json": "ba293350488e67a7f74a971a91c69e668f38a9a49aecebf2fb5b956191e92bef",
+    "tushare/irm_qa_sz.json": "ba293350488e67a7f74a971a91c69e668f38a9a49aecebf2fb5b956191e92bef",
+    "tushare/namechange.json": "fe6e9ccb9aa45fd2f968d3f72b51283f3d463d177cc47cc136aa5c71573a4c4a",
+    "tushare/stk_surv.json": "b46bbe1a4e35545c5947905d520254061d404214beb7d36cf145b8c2107c05d9",
+    "tushare/stock_basic.json": "249091a9b2981a3d6d392f4e64f6fd33e3b569986d4fdfeb4359497bf25fd124",
+    "tushare/stock_company.json": "97bbd29ab6e995874e5786e48e2696d40cad9c767007ec5600e907b47a5c27f6",
+    "tushare/ths_index.json": "c6fe7726a8667b3b49b64f96ad34f0eddc993cc1293802916182d9136b717a98",
+    "tushare/ths_member.json": "e4908e0b88cf1568b602c490ee07bfb11c7c1936fb46b4a515d42feff7df51ab",
+    "tushare/top10_holders.json": "cfffb1402b63e28ebc9e82a63b9af69ce74838abc0b4cdc58a78dad1cd96d19b"
+  }
+}

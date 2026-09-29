@@ -1,0 +1,134 @@
+# 黄金查询回归基线（issue #10 验收 8）。
+#
+# 更新流程：黄金基线是"当前已验收的正确行为"快照。修改查询语义导致
+# 期望变化时，必须在 PR 中说明行为变化理由并经独立审查确认后更新本
+# 文件；禁止为让失败测试通过而静默放宽阈值或删除用例。
+# 回滚：git revert 恢复上一版本基线（文件即基线，无二进制产物）。
+#
+# 指标定义（tests/golden/metrics.py）：
+# - precision  = |results ∩ expected| / |results|
+# - recall     = |results ∩ expected| / |expected|
+# - evidence_grounding = 携带 evidence_ids 的结果比例
+# 时态正确性由 as_of/known_at 场景断言直接锁定（精确 FY 窗口值 +
+# must_not_contain 泄漏检查）；路径正确性由真实 Neo4j 读路径 e2e
+# 锁定（tests/integration/test_neo4j_query_read_e2e.py）。
+suite: golden-query-v1
+description: >
+  证据化筛选黄金基线：语义阶段筛选、财务口径、证据排除、双时态边界。
+  全部场景在无图执行器（PG 降级）下运行——降级是明确注记的行为，
+  黄金基线锁定"降级但不撒谎"的语义。
+
+cases:
+  - id: semantic_stage_screen
+    intent: SEMANTIC_SCREEN
+    request:
+      path: /api/v1/screen
+      body:
+        business_stage: MASS_PRODUCTION
+        evidence_required: true
+        max_results: 50
+    expected_company_names: [黄金量产公司甲, 黄金量产公司乙]
+    must_not_contain: [黄金研发公司, 黄金无证据公司, 黄金财务公司]
+    expected_status: DEGRADED        # 图不可用 → 明确降级（不得伪装 SUCCEEDED）
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0      # evidence_required=true ⇒ 全部结果有证据
+
+  - id: financial_total_positive_3fy
+    intent: SEMANTIC_SCREEN
+    request:
+      path: /api/v1/screen
+      body:
+        metric_code: NET_CF_OPERATING
+        operator: TOTAL_POSITIVE
+    # 窗口 = 最近 3 个完整 FY：财务公司 [100,200,300]=600 通过；
+    # 亏损公司 [100,-50,200] 合计 250>0 同样通过（合计口径不看每年）；
+    # 财年不足公司（2FY）排除——缺失不当 0
+    expected_company_names: [黄金财务公司, 黄金亏损公司]
+    must_not_contain: [黄金财年不足公司]
+    expected_status: SUCCEEDED       # 纯财务筛选不需要图
+    expected_period_rule: LAST_3_FY_TOTAL_POSITIVE
+    expected_financial_value:
+      黄金财务公司: 600.0
+      黄金亏损公司: 250.0
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  - id: financial_consecutive_positive_3fy
+    intent: SEMANTIC_SCREEN
+    request:
+      path: /api/v1/screen
+      body:
+        metric_code: NET_CF_OPERATING
+        operator: CONSECUTIVE_POSITIVE
+    expected_company_names: [黄金财务公司]
+    must_not_contain: [黄金亏损公司]   # -50 打破连续性（口径差异是验收 5 核心）
+    expected_status: SUCCEEDED
+    expected_period_rule: CONSECUTIVE_3_FY_POSITIVE
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  - id: evidence_exclusion
+    intent: SEMANTIC_SCREEN
+    request:
+      path: /api/v1/screen
+      body:
+        business_stage: RESEARCH
+        evidence_required: true
+    # RESEARCH 阶段有证据的三家财务公司正常进结果（无财务过滤）；
+    # 无证据候选只允许出现在 unknowns/excluded
+    expected_company_names: [黄金财务公司, 黄金亏损公司, 黄金财年不足公司]
+    must_not_contain: [黄金研发公司, 黄金无证据公司]
+    expect_unknowns_contain: [黄金研发公司, 黄金无证据公司]
+    expected_status: DEGRADED
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  - id: temporal_as_of_insufficient_window
+    intent: SEMANTIC_SCREEN
+    request:
+      path: /api/v1/query
+      body:
+        plan:
+          intent: SEMANTIC_SCREEN
+          numeric_filter:
+            metric_code: NET_CF_OPERATING
+            operator: TOTAL_POSITIVE
+          as_of: "2023-06-30T00:00:00Z"
+    expected_company_names: [黄金财务公司]
+    must_not_contain: [黄金财年不足公司]
+    expected_status: SUCCEEDED
+    expected_financial_value:
+      黄金财务公司: 1200.0           # as_of=2023-06-30 → FY2020..2022: 500+400+300
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  - id: temporal_known_at_before_disclosure
+    intent: SEMANTIC_SCREEN
+    request:
+      path: /api/v1/query
+      body:
+        plan:
+          intent: SEMANTIC_SCREEN
+          known_at: "2020-01-01T00:00:00Z"
+    expected_company_names: []
+    must_not_contain: [黄金财务公司]   # known_at 早于 recorded_at → 无已知信息
+    expected_status: SUCCEEDED        # 纯 PG 计划（无图依赖）→ 链路未降级
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  - id: injection_never_executes
+    intent: SEMANTIC_SCREEN
+    request:
+      path: /api/v1/screen
+      body:
+        concept_name: "'; DROP TABLE fact.claim; --"
+    expected_status_code: 422        # 受控拒绝，非 500 非 200
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0

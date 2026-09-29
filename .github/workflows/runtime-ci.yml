@@ -31,15 +31,27 @@ jobs:
         run: uv run ruff check .
 
       - name: Unit and integration tests
-        # 不依赖真实 PostgreSQL/Neo4j：故障场景用不可达端口注入
-        run: uv run pytest
+        # 不依赖真实 PostgreSQL/Neo4j：故障场景用不可达端口注入；
+        # DB/golden/Neo4j 套件在缺 DSN 时按设计跳过（db job 强制执行）
+        run: >
+          uv run pytest --junitxml=test-reports/junit-unit.xml
+          -o junit_family=xunit2
 
       - name: Validate design assets
         run: uv run python scripts/validate_design.py
 
+      - name: Upload failure diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-unit
+          path: test-reports/
+          retention-days: 14
+          if-no-files-found: ignore
+
   db:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     services:
       postgres:
         image: pgvector/pgvector:pg16
@@ -54,8 +66,22 @@ jobs:
           --health-interval 5s
           --health-timeout 3s
           --health-retries 12
+      neo4j:
+        image: neo4j:5.26
+        env:
+          NEO4J_AUTH: neo4j/ci-neo4j-password
+        ports:
+          - 7687:7687
+        options: >-
+          --health-cmd "wget -qO- http://localhost:7474 || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 30
     env:
       TEST_DATABASE_DSN: postgresql://postgres:postgres@localhost:5432/postgres
+      NEO4J_TEST_URI: bolt://localhost:7687
+      NEO4J_TEST_USER: neo4j
+      NEO4J_TEST_PASSWORD: ci-neo4j-password
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -69,8 +95,58 @@ jobs:
       - name: Install locked dependencies
         run: uv sync --frozen
 
-      - name: Database migration, constraint, transaction and role tests
-        run: uv run pytest tests/db
+      # 门禁范围：全部套件（unit 贡献 src 大量覆盖；DB/真实 Neo4j 投影
+      # e2e/黄金查询回归/状态机迁移）。覆盖率阈值（pyproject
+      # fail_under=88）在全套件上强制——任何回退直接失败工作流。
+      - name: Full suite with coverage gate
+        run: >
+          uv run pytest tests/unit tests/db tests/golden tests/integration
+          --cov=src --cov-report=term
+          --junitxml=test-reports/junit-db.xml
+          -o junit_family=xunit2
+
+      - name: Upload failure diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-db
+          path: test-reports/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up uv (pinned Python 3.11)
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.11"
+          enable-cache: true
+
+      - name: Export locked dependency set
+        # --frozen：以锁文件为准审计，不允许 CI 现场解析新版本。
+        # --no-hashes：uv.lock 记录的 wheel hash 与 PyPI 当前资产可能
+        # 不一致（重传/平台裁剪），hash 校验是 pip dry-run 的附带行为
+        # 而非本步目标——漏洞审计按（名字,版本）查 OSV 即完整。
+        run: uv export --frozen --no-hashes --no-emit-project
+             --format requirements-txt -o requirements-audit.txt
+
+      - name: Dependency vulnerability audit (pip-audit)
+        # 已知漏洞 → 失败。豁免必须 --ignore-vuln <ID> 并附理由+到期日
+        # （在下方命令内注释登记，禁止无登记豁免）。
+        # pipx 独立环境：pip-audit 运行时需要 pip（审计 requirements 时
+        # 建临时 venv），uv 管理的 .venv 不含 pip。
+        run: |
+          pipx install pip-audit
+          pip-audit -r requirements-audit.txt --no-deps --strict
+
+      - name: Cleanup audit export
+        if: always()
+        run: rm -f requirements-audit.txt
 
   secret-scan:
     runs-on: ubuntu-latest

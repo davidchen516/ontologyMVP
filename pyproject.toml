@@ -26,7 +26,8 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "pytest>=8,<9",
+    "pytest>=9.0.3,<10",
+    "pytest-cov>=7,<8",
     "httpx>=0.27,<1",
     "ruff>=0.6",
     "rdflib>=7,<8",
@@ -55,3 +56,34 @@ select = ["E", "F", "W", "I", "UP", "B"]
 pythonpath = ["."]
 testpaths = ["tests"]
 addopts = "-q"
+# 分层标记（issue #10）：CI 按层选择。unit/contract/integration/golden
+# 四层经 tests/conftest.py 按目录自动注入；e2e/fault/security/performance
+# 为已注册的预留标记（fault/security 场景当前由 integration/unit 层内
+# 的负向测试覆盖，逐测试打标后 -m 选择即可用）。默认全套运行。
+markers = [
+    "unit: 快速单元测试，无外部依赖（默认层）",
+    "contract: 外部端口契约测试（Semantica/TuShare/文档源 Fixture）",
+    "integration: 需要真实服务的集成测试（PostgreSQL/Neo4j service）",
+    "e2e: 端到端场景测试（API 全链路）",
+    "golden: 黄金查询回归（期望结果文件驱动）",
+    "fault: 故障注入（事务中断/并发/崩溃恢复/超时）",
+    "security: 安全负向场景（注入/越权/脱敏）",
+    "performance: 性能与基准（默认不在 PR 门禁运行）",
+]
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "src/semantic/semantica_adapter.py",  # 契约测试单独覆盖（tests/semantic）
+]
+
+[tool.coverage.report]
+# 全套件（unit + DB）发布门禁（issue #10 验收 10）；当前 89.7%，
+# 阈值 88% 允许小幅波动但不允许显著回退；apps/scripts 不在 src 覆盖范围
+fail_under = 88
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]

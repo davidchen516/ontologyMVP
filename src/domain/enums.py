@@ -206,6 +206,50 @@ DOCUMENT_PARSE_TRANSITIONS: dict[DocumentParseStatus, frozenset[DocumentParseSta
     DocumentParseStatus.SKIPPED: frozenset(),
 }
 
+
+class QueryStatus(StrEnum):
+    """查询执行状态机（issue #9：RECEIVED -> PLANNED -> RUNNING -> 终态/降级）。
+
+    纯应用层状态（审计表 VARCHAR，非 PG 原生枚举）；REJECTED 记录在
+    审计错误类别，DEGRADED 是带明确说明的成功变体。
+    注意：本机当前仅规格守护（合法/非法迁移表测试 + 审计状态值域检查），
+    无运行时写入点——查询编译器一次性写终态（SUCCEEDED/DEGRADED），
+    ensure_transition("query", ...) 留给后续异步执行/取消路径接入时强制。
+    与 src/query/models.py 的 QueryStatus 值域一致性由测试守护（M2）。
+    """
+
+    RECEIVED = "RECEIVED"
+    PLANNED = "PLANNED"
+    RUNNING = "RUNNING"
+    SUCCEEDED = "SUCCEEDED"
+    FAILED = "FAILED"
+    CANCELLED = "CANCELLED"
+    REJECTED = "REJECTED"
+    DEGRADED = "DEGRADED"
+
+
+QUERY_TRANSITIONS: dict[QueryStatus, frozenset[QueryStatus]] = {
+    QueryStatus.RECEIVED: frozenset(
+        {QueryStatus.PLANNED, QueryStatus.REJECTED}
+    ),
+    QueryStatus.PLANNED: frozenset(
+        {QueryStatus.RUNNING, QueryStatus.REJECTED}
+    ),
+    QueryStatus.RUNNING: frozenset(
+        {
+            QueryStatus.SUCCEEDED,
+            QueryStatus.DEGRADED,
+            QueryStatus.FAILED,
+            QueryStatus.CANCELLED,
+        }
+    ),
+    QueryStatus.SUCCEEDED: frozenset(),
+    QueryStatus.DEGRADED: frozenset(),
+    QueryStatus.FAILED: frozenset(),
+    QueryStatus.CANCELLED: frozenset(),
+    QueryStatus.REJECTED: frozenset(),
+}
+
 MACHINES: dict[str, type] = {
     "ingest_run": IngestRunStatus,
     "claim": ClaimStatus,
@@ -213,6 +257,7 @@ MACHINES: dict[str, type] = {
     "graph_outbox": GraphOutboxStatus,
     "document_parse": DocumentParseStatus,
     "document_download": DownloadStatus,
+    "query": QueryStatus,
 }
 
 
@@ -224,6 +269,7 @@ def transition_table(machine: str) -> dict[str, frozenset[str]]:
         "graph_outbox": GRAPH_OUTBOX_TRANSITIONS,
         "document_parse": DOCUMENT_PARSE_TRANSITIONS,
         "document_download": DOWNLOAD_TRANSITIONS,
+        "query": QUERY_TRANSITIONS,
     }
     return {current.value: {target.value for target in targets}
             for current, targets in tables[machine].items()}
