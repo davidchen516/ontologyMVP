@@ -11,6 +11,7 @@ from src.domain.enums import (
     DOCUMENT_PARSE_TRANSITIONS,
     GRAPH_OUTBOX_TRANSITIONS,
     INGEST_RUN_TRANSITIONS,
+    QUERY_TRANSITIONS,
     REVIEW_TASK_TRANSITIONS,
     ClaimStatus,
     DocumentParseStatus,
@@ -18,6 +19,7 @@ from src.domain.enums import (
     GraphOutboxStatus,
     IllegalTransitionError,
     IngestRunStatus,
+    QueryStatus,
     ReviewTaskStatus,
     ensure_transition,
     transition_table,
@@ -154,3 +156,89 @@ def test_repository_rejects_illegal_ingest_transition_without_partial_write(
     with uow_factory.transaction() as uow:
         current = uow.ingest_runs.get(run_id)
         assert current["status"] == "CREATED"
+
+
+# ---- Query 状态机（issue #9/#10；纯应用层，非 PG 原生枚举）----
+
+
+def test_query_state_machine_matches_issue_specification() -> None:
+    """与 issue #9 给定的查询状态机逐边核对。"""
+    assert QUERY_TRANSITIONS[QueryStatus.RECEIVED] == frozenset(
+        {QueryStatus.PLANNED, QueryStatus.REJECTED}
+    )
+    assert QUERY_TRANSITIONS[QueryStatus.PLANNED] == frozenset(
+        {QueryStatus.RUNNING, QueryStatus.REJECTED}
+    )
+    assert QUERY_TRANSITIONS[QueryStatus.RUNNING] == frozenset(
+        {
+            QueryStatus.SUCCEEDED,
+            QueryStatus.DEGRADED,
+            QueryStatus.FAILED,
+            QueryStatus.CANCELLED,
+        }
+    )
+    for terminal in (
+        QueryStatus.SUCCEEDED,
+        QueryStatus.DEGRADED,
+        QueryStatus.FAILED,
+        QueryStatus.CANCELLED,
+        QueryStatus.REJECTED,
+    ):
+        assert QUERY_TRANSITIONS[terminal] == frozenset()
+
+
+@pytest.mark.parametrize(
+    ("current", "target"),
+    [
+        ("RECEIVED", "PLANNED"),
+        ("RECEIVED", "REJECTED"),
+        ("PLANNED", "RUNNING"),
+        ("PLANNED", "REJECTED"),
+        ("RUNNING", "SUCCEEDED"),
+        ("RUNNING", "DEGRADED"),
+        ("RUNNING", "FAILED"),
+        ("RUNNING", "CANCELLED"),
+    ],
+)
+def test_query_legal_transitions_pass(current: str, target: str) -> None:
+    assert ensure_transition("query", current, target) == target
+
+
+@pytest.mark.parametrize(
+    ("current", "target"),
+    [
+        ("RECEIVED", "RUNNING"),  # 跳过计划阶段
+        ("RECEIVED", "SUCCEEDED"),
+        ("PLANNED", "SUCCEEDED"),  # 未执行不得成功（半结果不得标 SUCCEEDED）
+        ("PLANNED", "DEGRADED"),
+        ("RUNNING", "PLANNED"),  # 终态/降级不得回退
+        ("SUCCEEDED", "RUNNING"),
+        ("SUCCEEDED", "FAILED"),
+        ("DEGRADED", "SUCCEEDED"),  # 降级是带说明的成功变体，不可逆
+        ("REJECTED", "RUNNING"),  # 被拒计划必须重新 RECEIVED（新 query_id）
+        ("FAILED", "SUCCEEDED"),
+        ("CANCELLED", "RUNNING"),
+    ],
+)
+def test_query_illegal_transitions_fail(current: str, target: str) -> None:
+    with pytest.raises(IllegalTransitionError):
+        ensure_transition("query", current, target)
+
+
+def test_query_audit_status_values_respect_state_machine(main_dsn) -> None:
+    """审计表记录的状态必须落在状态机值域内（防止自由字符串）。"""
+    from src.query.compiler import QUERY_EXECUTION_VERSION
+
+    valid_statuses = {member.value for member in QueryStatus}
+    with psycopg.connect(main_dsn) as conn:
+        conn.execute(
+            "INSERT INTO query.query_audit (query_id, plan, intent, status, "
+            "execution_version) VALUES (%s, %s, %s, %s, %s)",
+            ("11111111-1111-1111-1111-111111111111", "{}", "ENTITY_LOOKUP",
+             "SUCCEEDED", QUERY_EXECUTION_VERSION),
+        )
+        row = conn.execute(
+            "SELECT status FROM query.query_audit "
+            "WHERE query_id = '11111111-1111-1111-1111-111111111111'"
+        ).fetchone()
+    assert row[0] in valid_statuses
