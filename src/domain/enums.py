@@ -212,6 +212,10 @@ class QueryStatus(StrEnum):
 
     纯应用层状态（审计表 VARCHAR，非 PG 原生枚举）；REJECTED 记录在
     审计错误类别，DEGRADED 是带明确说明的成功变体。
+    注意：本机当前仅规格守护（合法/非法迁移表测试 + 审计状态值域检查），
+    无运行时写入点——查询编译器一次性写终态（SUCCEEDED/DEGRADED），
+    ensure_transition("query", ...) 留给后续异步执行/取消路径接入时强制。
+    与 src/query/models.py 的 QueryStatus 值域一致性由测试守护（M2）。
     """
 
     RECEIVED = "RECEIVED"

@@ -106,7 +106,7 @@ def test_expectations_file_complete() -> None:
     data = yaml.safe_load((GOLDEN_DIR / "expectations.yaml").read_text("utf-8"))
     assert data["suite"] == "golden-query-v1"
     required = {"request", "min_precision", "min_recall",
-                "min_evidence_grounding", "temporal_ok"}
+                "min_evidence_grounding"}
     assert len(data["cases"]) == 7
     for case in data["cases"]:
         missing = required - set(case)

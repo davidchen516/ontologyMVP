@@ -9,7 +9,6 @@
 # - precision  = |results ∩ expected| / |results|
 # - recall     = |results ∩ expected| / |expected|
 # - evidence_grounding = 携带 evidence_ids 的结果比例
-# - temporal_ok = 时态边界场景的期望布尔（期窗外数据不得出现在结果）
 suite: golden-query-v1
 description: >
   证据化筛选黄金基线：语义阶段筛选、财务口径、证据排除、双时态边界。
@@ -31,7 +30,6 @@ cases:
     min_precision: 1.0
     min_recall: 1.0
     min_evidence_grounding: 1.0      # evidence_required=true ⇒ 全部结果有证据
-    temporal_ok: true
 
   - id: financial_total_positive_3fy
     intent: SEMANTIC_SCREEN
@@ -53,7 +51,6 @@ cases:
     min_precision: 1.0
     min_recall: 1.0
     min_evidence_grounding: 1.0
-    temporal_ok: true
 
   - id: financial_consecutive_positive_3fy
     intent: SEMANTIC_SCREEN
@@ -69,7 +66,6 @@ cases:
     min_precision: 1.0
     min_recall: 1.0
     min_evidence_grounding: 1.0
-    temporal_ok: true
 
   - id: evidence_exclusion
     intent: SEMANTIC_SCREEN
@@ -87,7 +83,6 @@ cases:
     min_precision: 1.0
     min_recall: 1.0
     min_evidence_grounding: 1.0
-    temporal_ok: true
 
   - id: temporal_as_of_insufficient_window
     intent: SEMANTIC_SCREEN
@@ -108,7 +103,6 @@ cases:
     min_precision: 1.0
     min_recall: 1.0
     min_evidence_grounding: 1.0
-    temporal_ok: true                # 期窗外（2023+）观察值不得计入
 
   - id: temporal_known_at_before_disclosure
     intent: SEMANTIC_SCREEN
@@ -124,7 +118,6 @@ cases:
     min_precision: 1.0
     min_recall: 1.0
     min_evidence_grounding: 1.0
-    temporal_ok: true
 
   - id: injection_never_executes
     intent: SEMANTIC_SCREEN
@@ -136,4 +129,3 @@ cases:
     min_precision: 1.0
     min_recall: 1.0
     min_evidence_grounding: 1.0
-    temporal_ok: true

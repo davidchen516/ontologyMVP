@@ -55,11 +55,11 @@ def test_fixture_hashes_unchanged() -> None:
 
 
 def test_manifest_yaml_version_matches_md() -> None:
-    """MANIFEST.yaml 的 suite 版本与 MANIFEST.md 流程文档同时维护。"""
+    """MANIFEST.yaml 的版本号必须在 MANIFEST.md 中登记（同步维护守护）。"""
     manifest = _load_manifest()
     md = (FIXTURES_DIR / "MANIFEST.md").read_text("utf-8")
-    assert manifest["version"] in md or md, (
-        "MANIFEST.md should document the current manifest version"
+    assert f"清单版本：{manifest['version']}" in md, (
+        f"MANIFEST.md must register manifest version {manifest['version']}"
     )
 
 

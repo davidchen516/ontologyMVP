@@ -228,3 +228,17 @@ def test_reasoning_path_honesty():
     assert not any("concept filter" in step for step in path)
     assert any("PG fallback" in step for step in path)
 
+
+
+def test_query_status_enums_in_sync():
+    """domain.QueryStatus（状态机/审计口径）与 query.models.QueryStatus
+    （响应 Schema）必须逐值一致——任一侧单独加值即漂移（M2 守护）。"""
+    from src.domain.enums import QueryStatus as DomainQueryStatus
+    from src.query.models import QueryStatus as ModelsQueryStatus
+
+    assert {m.value for m in ModelsQueryStatus} == {
+        m.value for m in DomainQueryStatus
+    }
+    assert {m.name for m in ModelsQueryStatus} == {
+        m.name for m in DomainQueryStatus
+    }

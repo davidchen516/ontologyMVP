@@ -4,7 +4,6 @@
 - precision  = |results ∩ expected| / |results|
 - recall     = |results ∩ expected| / |expected|
 - evidence_grounding = 携带 evidence_ids 的结果比例
-- temporal_ok = 时态边界场景的期望布尔
 
 纯函数，可独立单测；黄金套件失败时输出各指标实际值便于定位。
 """
@@ -95,10 +94,6 @@ def evaluate_case(case: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
                 f"{name} financial_value {matched.get('financial_value')} "
                 f"!= {value}"
             )
-    if case.get("temporal_ok") and leaked:
-        # 时态正确性的组合断言：期窗外/替代前数据泄漏即失败
-        failures.append("temporal correctness violated (leaked results)")
-
     return {
         "case_id": case["id"], "passed": not failures,
         "failures": failures,

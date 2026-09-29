@@ -1,5 +1,8 @@
 # Fixture 清单（issue #10：固定版本、内容 Hash、来源说明与更新流程）
 
+清单版本：v1（与 MANIFEST.yaml 的 version 字段同步，由
+tests/unit/test_fixture_manifest.py 守护）
+
 所有 Fixture 均为**手工审定的静态快照**：CI 离线运行、结果确定、不含
 真实 Token/密码/个人数据。本文件由 `tests/fixtures/MANIFEST.yaml`
 （机器可读 Hash 清单）与下述流程说明组成；测试启动时校验 Hash 不匹配

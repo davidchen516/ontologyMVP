@@ -56,8 +56,10 @@ select = ["E", "F", "W", "I", "UP", "B"]
 pythonpath = ["."]
 testpaths = ["tests"]
 addopts = "-q"
-# 分层标记（issue #10）：CI 按层选择；fault/golden/security 标记附加在
-# 具体测试上（同层可叠加）。默认全套运行，无标记的测试按目录归层。
+# 分层标记（issue #10）：CI 按层选择。unit/contract/integration/golden
+# 四层经 tests/conftest.py 按目录自动注入；e2e/fault/security/performance
+# 为已注册的预留标记（fault/security 场景当前由 integration/unit 层内
+# 的负向测试覆盖，逐测试打标后 -m 选择即可用）。默认全套运行。
 markers = [
     "unit: 快速单元测试，无外部依赖（默认层）",
     "contract: 外部端口契约测试（Semantica/TuShare/文档源 Fixture）",
