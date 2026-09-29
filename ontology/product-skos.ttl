@@ -373,6 +373,94 @@ product:MotorWindingEquipment
     skos:prefLabel "电机绕组设备"@zh ;
     skos:altLabel "电机绕线设备"@zh .
 
+
+# ---------------------------------------------------------------------------
+# Batch 2 (issue #11): expanded core-component vocabulary (50+ concepts)
+# ---------------------------------------------------------------------------
+
+product:DexterousHand
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:JointAndActuation ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "灵巧手"@zh ;
+    skos:altLabel "仿生灵巧手"@zh .
+
+product:HollowCupMotor
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:JointAndActuation ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "空心杯电机"@zh ;
+    skos:altLabel "杯型电机"@zh .
+
+product:LinearActuatorModule
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:JointAndActuation ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "直线执行器"@zh ;
+    skos:altLabel "线性执行器模组"@zh .
+
+product:RollerScrewAssembly
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:JointAndActuation ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "行星滚柱丝杠组件"@zh ;
+    skos:altLabel "丝杠副组件"@zh .
+
+product:ElectronicSkin
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:PerceptionSystem ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "电子皮肤"@zh ;
+    skos:altLabel "柔性触觉皮肤"@zh .
+
+product:StereoCamera
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:PerceptionSystem ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "双目视觉相机"@zh ;
+    skos:altLabel "立体相机"@zh .
+
+product:LidarModule
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:PerceptionSystem ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "激光雷达模组"@zh ;
+    skos:altLabel "固态激光雷达"@zh .
+
+product:MotionControllerBoard
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:MotionControlSystem ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "运动控制板卡"@zh ;
+    skos:altLabel "运动控制器"@zh .
+
+product:HarmonicReducerComponent
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:CoreMaterialAndPart ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "谐波减速器零部件"@zh ;
+    skos:altLabel "柔轮刚轮组件"@zh .
+
+product:ServoDriveModule
+    a skos:Concept, stock:Product ;
+    skos:inScheme product:HumanoidRobotProductScheme ;
+    skos:broader product:MotionControlSystem ;
+    stock:partOfTheme product:HumanoidRobot ;
+    skos:prefLabel "伺服驱动模块"@zh ;
+    skos:altLabel "伺服驱动器"@zh .
+
+product:HarmonicReducer skos:related product:HarmonicReducerComponent .
+product:DexterousHand skos:related product:TactileSensor .
+
 # Related concepts that must not be treated as equivalent.
 product:HarmonicReducer skos:related product:PrecisionBearing .
 product:FramelessTorqueMotor skos:related product:Encoder .

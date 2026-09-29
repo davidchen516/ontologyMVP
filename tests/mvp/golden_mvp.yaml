@@ -1,0 +1,365 @@
+# MVP 黄金查询基线（issue #11）：30 用例，覆盖 include/exclude/path/
+# evidence/双时态/口径/注入负向场景。
+#
+# 快照：scripts/build_mvp_snapshot.py 合成快照（辛示机器人01..30号）：
+# - 01..12 号 MASS_PROD（量产证据+3FY 全正，FY 值 100/200/300+序号×10，
+#   另有 FY2021=150 FY2020=250 支撑双时态窗口裁剪）
+# - 13..15 号 CONCEPT_ONLY（只有概念成员，无产品 Claim）
+# - 16..19 号 RESEARCH_ONLY（研发，不升量产）
+# - 20..22 号 DENIAL（公司否认 → DENIES_INVOLVEMENT）
+# - 23..25 号 THIRD_PARTY（第三方称量产+公司否认 → 审核，不自动接受）
+# - 26..27 号 FIN_SHORT（仅 2FY → 数据不足）
+# - 28..29 号 FIN_NEGATIVE（[100,-50,200] → 口径差异）
+# - 30 号 RESTATE（2024 重述 999）
+suite: mvp-golden-v1
+company:
+  mass_prod: [辛示机器人01号, 辛示机器人02号, 辛示机器人03号, 辛示机器人04号,
+              辛示机器人05号, 辛示机器人06号, 辛示机器人07号, 辛示机器人08号,
+              辛示机器人09号, 辛示机器人10号, 辛示机器人11号, 辛示机器人12号]
+  concept_only: [辛示机器人13号, 辛示机器人14号, 辛示机器人15号]
+  research: [辛示机器人16号, 辛示机器人17号, 辛示机器人18号, 辛示机器人19号]
+  denial: [辛示机器人20号, 辛示机器人21号, 辛示机器人22号]
+  third_party: [辛示机器人23号, 辛示机器人24号, 辛示机器人25号]
+  fin_short: [辛示机器人26号, 辛示机器人27号]
+  fin_negative: [辛示机器人28号, 辛示机器人29号]
+  restate: [辛示机器人30号]
+
+cases:
+  # ---- include：量产 + 证据 + 财务口径 ----
+  - id: g01_consecutive_3fy_core
+    request: {path: /api/v1/screen,
+              body: {business_stage: MASS_PRODUCTION, metric_code: NET_CF_OPERATING,
+                     operator: CONSECUTIVE_POSITIVE, max_results: 100}}
+    expected_company_names: [辛示机器人01号, 辛示机器人02号, 辛示机器人03号,
+                             辛示机器人04号, 辛示机器人05号, 辛示机器人06号,
+                             辛示机器人07号, 辛示机器人08号, 辛示机器人09号,
+                             辛示机器人10号, 辛示机器人11号, 辛示机器人12号,
+                             辛示机器人30号]
+    must_not_contain: [辛示机器人13号, 辛示机器人16号, 辛示机器人20号,
+                       辛示机器人23号, 辛示机器人26号, 辛示机器人28号]
+    expected_status: DEGRADED          # 无图 → 明确降级（诚实，非伪装）
+    expected_period_rule: CONSECUTIVE_3_FY_POSITIVE
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  - id: g02_total_3fy_includes_negative_year
+    request: {path: /api/v1/screen,
+              body: {business_stage: MASS_PRODUCTION, metric_code: NET_CF_OPERATING,
+                     operator: TOTAL_POSITIVE, max_results: 100}}
+    expected_company_names: [辛示机器人01号, 辛示机器人02号, 辛示机器人03号,
+                             辛示机器人04号, 辛示机器人05号, 辛示机器人06号,
+                             辛示机器人07号, 辛示机器人08号, 辛示机器人09号,
+                             辛示机器人10号, 辛示机器人11号, 辛示机器人12号,
+                             辛示机器人28号, 辛示机器人29号, 辛示机器人30号]
+    must_not_contain: [辛示机器人26号]
+    expected_period_rule: LAST_3_FY_TOTAL_POSITIVE
+    expected_financial_value:
+      辛示机器人01号: 630.0            # 110+210+310
+      辛示机器人12号: 960.0            # 220+320+420
+      辛示机器人28号: 250.0            # 100-50+200（合计口径通过）
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  - id: g03_5fy_window
+    request: {path: /api/v1/screen,
+              body: {business_stage: MASS_PRODUCTION, metric_code: NET_CF_OPERATING,
+                     operator: TOTAL_POSITIVE, fiscal_years: 5, max_results: 100}}
+    expected_company_names: [辛示机器人01号, 辛示机器人02号, 辛示机器人03号,
+                             辛示机器人04号, 辛示机器人05号, 辛示机器人06号,
+                             辛示机器人07号, 辛示机器人08号, 辛示机器人09号,
+                             辛示机器人10号, 辛示机器人11号, 辛示机器人12号]
+    must_not_contain: [辛示机器人28号, 辛示机器人30号]   # 不足 5FY
+    expected_period_rule: LAST_5_FY
+    expected_financial_value:
+      辛示机器人01号: 1050.0           # 110+210+310+160+260
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  - id: g04_min_threshold_recent_fy
+    request: {path: /api/v1/screen,
+              body: {business_stage: MASS_PRODUCTION, metric_code: NET_CF_OPERATING,
+                     operator: MIN_VALUE, threshold: 200.0, max_results: 100}}
+    expected_company_names: [辛示机器人11号, 辛示机器人12号, 辛示机器人30号]
+    must_not_contain: [辛示机器人01号]   # 最近 FY=110 < 200
+    expected_status: DEGRADED
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  # ---- 双时态 ----
+  - id: g05_as_of_narrows_window
+    request: {path: /api/v1/query,
+              body: {plan: {intent: SEMANTIC_SCREEN,
+                            semantic_filter: {business_stage: MASS_PRODUCTION},
+                            numeric_filter: {metric_code: NET_CF_OPERATING,
+                                             operator: TOTAL_POSITIVE},
+                            as_of: "2023-06-30T00:00:00Z", max_results: 100}}}
+    expected_company_names: [辛示机器人01号, 辛示机器人02号, 辛示机器人03号,
+                             辛示机器人04号, 辛示机器人05号, 辛示机器人06号,
+                             辛示机器人07号, 辛示机器人08号, 辛示机器人09号,
+                             辛示机器人10号, 辛示机器人11号, 辛示机器人12号]
+    must_not_contain: [辛示机器人30号]   # as_of 窗口内不足 3FY
+    expected_financial_value:
+      辛示机器人01号: 730.0            # FY2020..2022: 260+160+310
+      辛示机器人12号: 1060.0           # 260+160+310+... -> 370+270+420
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  - id: g06_known_at_before_disclosure
+    request: {path: /api/v1/query,
+              body: {plan: {intent: SEMANTIC_SCREEN,
+                            semantic_filter: {business_stage: MASS_PRODUCTION},
+                            known_at: "2020-01-01T00:00:00Z", max_results: 100}}}
+    expected_company_names: []
+    must_not_contain: [辛示机器人01号]   # 系统尚不知任何 claim
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  # ---- exclude/unknowns：负向场景 ----
+  - id: g07_concept_only_excluded_not_asserted_absent
+    request: {path: /api/v1/screen,
+              body: {business_stage: MASS_PRODUCTION, metric_code: NET_CF_OPERATING,
+                     operator: TOTAL_POSITIVE, max_results: 100}}
+    # 概念标签公司无 MASS_PRODUCTION Claim → 不进结果、不产生
+    # "该公司无业务"的陈述（无关于它们的任何结果/排除陈述）
+    must_not_contain: [辛示机器人13号, 辛示机器人14号, 辛示机器人15号]
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  - id: g08_research_never_promoted
+    request: {path: /api/v1/screen,
+              body: {business_stage: MASS_PRODUCTION, max_results: 100}}
+    must_not_contain: [辛示机器人16号, 辛示机器人17号, 辛示机器人18号,
+                       辛示机器人19号]
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  - id: g09_denial_excluded
+    request: {path: /api/v1/screen,
+              body: {business_stage: MASS_PRODUCTION, max_results: 100}}
+    must_not_contain: [辛示机器人20号, 辛示机器人21号, 辛示机器人22号]
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  - id: g10_third_party_not_auto_accepted
+    request: {path: /api/v1/screen,
+              body: {business_stage: MASS_PRODUCTION, max_results: 100}}
+    must_not_contain: [辛示机器人23号, 辛示机器人24号, 辛示机器人25号]
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  - id: g11_fin_short_insufficient_not_zero
+    request: {path: /api/v1/screen,
+              body: {business_stage: MASS_PRODUCTION, metric_code: NET_CF_OPERATING,
+                     operator: TOTAL_POSITIVE, max_results: 100}}
+    must_not_contain: [辛示机器人26号, 辛示机器人27号]
+    expect_excluded_contain: [辛示机器人26号]
+    expect_excluded_contain_text: insufficient
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  - id: g12_restate_uses_current_value
+    request: {path: /api/v1/screen,
+              body: {business_stage: MASS_PRODUCTION, metric_code: NET_CF_OPERATING,
+                     operator: TOTAL_POSITIVE, max_results: 100}}
+    expected_company_names: [辛示机器人30号]
+    expected_financial_value:
+      辛示机器人30号: 1299.0           # 重述 999+200+100（当前值视图最新公告）
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  # ---- 注入（受控拒绝）----
+  - id: g13_injection_drop_422
+    request: {path: /api/v1/screen,
+              body: {concept_name: "'; DROP TABLE fact.claim; --"}}
+    expected_status_code: 422
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  - id: g14_injection_truncate_422
+    request: {path: /api/v1/screen,
+              body: {business_stage: "TRUNCATE TABLE fact.claim; --"}}
+    expected_status_code: 422
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  - id: g15_injection_grant_422
+    request: {path: /api/v1/screen,
+              body: {concept_name: "GRANT ALL ON fact.claim TO public"}}
+    expected_status_code: 422
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  - id: g16_injection_cypher_422
+    request: {path: /api/v1/query,
+              body: {plan: {intent: SEMANTIC_SCREEN,
+                            semantic_filter: {business_stage: "1} DETACH DELETE n //"}}}}
+    expected_status_code: 422
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  # ---- /query 计划路径 + 只读实体端点 ----
+  - id: g17_plan_entity_lookup
+    request: {path: /api/v1/query,
+              body: {plan: {intent: ENTITY_LOOKUP,
+                            subject: {entity_type: Company,
+                                      entity_id: "00000000-0000-0000-0000-000000000000"},
+                            max_results: 10}}}
+    expected_status: SUCCEEDED
+    expected_company_names: []
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  - id: g18_plan_rejects_unknown_metric
+    request: {path: /api/v1/query,
+              body: {plan: {intent: SEMANTIC_SCREEN,
+                            numeric_filter: {metric_code: TOTALLY_FAKE,
+                                             operator: TOTAL_POSITIVE}}}}
+    expected_status_code: 422
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  - id: g19_plan_rejects_bad_period_rule
+    request: {path: /api/v1/query,
+              body: {plan: {intent: SEMANTIC_SCREEN,
+                            numeric_filter: {metric_code: NET_CF_OPERATING,
+                                             operator: TOTAL_POSITIVE,
+                                             period_rule: BOGUS}}}}
+    expected_status_code: 422
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  - id: g20_plan_max_results_bounded
+    request: {path: /api/v1/query,
+              body: {plan: {intent: SEMANTIC_SCREEN, max_results: 500}}}
+    expected_status_code: 422
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  # ---- 结构要素（验收 8：每结果完整证据包）----
+  - id: g21_result_structure_complete
+    request: {path: /api/v1/screen,
+              body: {business_stage: MASS_PRODUCTION, metric_code: NET_CF_OPERATING,
+                     operator: TOTAL_POSITIVE, max_results: 5}}
+    require_fields_on_results:
+      - claim_ids
+      - business_stage
+      - evidence_ids
+      - reasoning_path
+      - data_freshness
+      - financial_value
+      - report_period
+      - currency
+      - financial_detail
+    require_nonempty: [claim_ids, evidence_ids, reasoning_path]
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  - id: g22_reasoning_path_describes_steps
+    request: {path: /api/v1/screen,
+              body: {business_stage: MASS_PRODUCTION, metric_code: NET_CF_OPERATING,
+                     operator: TOTAL_POSITIVE, max_results: 3}}
+    require_reasoning_contains: financial filter applied
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  - id: g23_evidence_locatable_with_page
+    request: {path: /api/v1/screen,
+              body: {business_stage: MASS_PRODUCTION, max_results: 3}}
+    require_fields_on_results:
+      - evidence_ids
+      - claim_ids
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  # ---- 时态边界（证据有效期）----
+  - id: g24_known_at_mid_history
+    request: {path: /api/v1/query,
+              body: {plan: {intent: SEMANTIC_SCREEN,
+                            semantic_filter: {business_stage: MASS_PRODUCTION},
+                            known_at: "2026-01-01T00:00:00Z",
+                            numeric_filter: {metric_code: NET_CF_OPERATING,
+                                             operator: TOTAL_POSITIVE},
+                            max_results: 100}}}
+    expected_status: DEGRADED
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  # ---- 口径差异细断言（验收：合计≠每年均为正）----
+  - id: g25_consecutive_excludes_with_reason
+    request: {path: /api/v1/screen,
+              body: {business_stage: MASS_PRODUCTION, metric_code: NET_CF_OPERATING,
+                     operator: CONSECUTIVE_POSITIVE, max_results: 100}}
+    expect_excluded_contain: [辛示机器人28号]
+    expect_excluded_contain_text: CONSECUTIVE_POSITIVE
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  - id: g26_screen_as_of_screen_entry
+    request: {path: /api/v1/screen,
+              body: {business_stage: MASS_PRODUCTION, metric_code: NET_CF_OPERATING,
+                     operator: TOTAL_POSITIVE, as_of: "2023-06-30T00:00:00Z",
+                     max_results: 100}}
+    must_not_contain: [辛示机器人30号]
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  - id: g27_plan_timeout_bounded
+    request: {path: /api/v1/query,
+              body: {plan: {intent: SEMANTIC_SCREEN, timeout_seconds: 60,
+                            max_results: 10}}}
+    expected_status: SUCCEEDED
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  - id: g28_screen_rejects_fy7
+    request: {path: /api/v1/screen,
+              body: {business_stage: MASS_PRODUCTION, metric_code: NET_CF_OPERATING,
+                     operator: TOTAL_POSITIVE, fiscal_years: 7}}
+    expected_status_code: 422
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  - id: g29_screen_rejects_min_without_threshold
+    request: {path: /api/v1/screen,
+              body: {business_stage: MASS_PRODUCTION, metric_code: NET_CF_OPERATING,
+                     operator: MIN_VALUE}}
+    expected_status_code: 422
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0
+
+  - id: g30_timeline_readonly_endpoint
+    request: {path: /api/v1/screen,
+              body: {business_stage: MASS_PRODUCTION, max_results: 1}}
+    expected_status: DEGRADED
+    min_precision: 1.0
+    min_recall: 1.0
+    min_evidence_grounding: 1.0

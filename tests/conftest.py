@@ -15,6 +15,7 @@ _DIR_MARKERS: dict[str, str] = {
     "integration": "integration",
     "db": "integration",
     "golden": "golden",
+    "mvp": "integration",
 }
 
 

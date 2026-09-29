@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+import decimal
 from typing import Any
 
 import structlog
@@ -93,7 +94,12 @@ class Neo4jProjector:
 
     def project_entity(self, label: str, entity_id: str, props: dict[str, Any]) -> None:
         self._validate_label(label)
-        self._run(NODE_MERGE.format(label=label), {"id": entity_id, "props": props})
+        # Neo4j 参数不接受 Decimal/UUID 等驱动外类型——统一转为标量
+        safe_props = {
+            key: float(value) if isinstance(value, decimal.Decimal) else value
+            for key, value in props.items()
+        }
+        self._run(NODE_MERGE.format(label=label), {"id": entity_id, "props": safe_props})
 
     def verify_entity(self, label: str, entity_id: str) -> bool:
         self._validate_label(label)
