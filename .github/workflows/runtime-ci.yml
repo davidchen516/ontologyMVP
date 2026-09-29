@@ -95,12 +95,12 @@ jobs:
       - name: Install locked dependencies
         run: uv sync --frozen
 
-      # 门禁范围：DB 迁移/约束/事务/角色 + 真实 Neo4j 投影 e2e + 黄金查询
-      # 回归 + 状态机合法/非法迁移。覆盖率阈值（pyproject fail_under=88）
-      # 在全套件上强制——任何回退直接失败工作流。
-      - name: Integration, golden and coverage gate
+      # 门禁范围：全部套件（unit 贡献 src 大量覆盖；DB/真实 Neo4j 投影
+      # e2e/黄金查询回归/状态机迁移）。覆盖率阈值（pyproject
+      # fail_under=88）在全套件上强制——任何回退直接失败工作流。
+      - name: Full suite with coverage gate
         run: >
-          uv run pytest tests/db tests/golden tests/integration
+          uv run pytest tests/unit tests/db tests/golden tests/integration
           --cov=src --cov-report=term
           --junitxml=test-reports/junit-db.xml
           -o junit_family=xunit2
@@ -135,8 +135,10 @@ jobs:
       - name: Dependency vulnerability audit (pip-audit)
         # 已知漏洞 → 失败。豁免必须 --ignore-vuln <ID> 并附理由+到期日
         # （在下方命令内注释登记，禁止无登记豁免）。
+        # pipx 独立环境：pip-audit 运行时需要 pip（审计 requirements 时
+        # 建临时 venv），uv 管理的 .venv 不含 pip。
         run: |
-          python -m pip install --disable-pip-version-check pip-audit
+          pipx install pip-audit
           pip-audit -r requirements-audit.txt --no-deps --strict
 
       - name: Cleanup audit export
