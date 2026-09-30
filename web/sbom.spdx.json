@@ -1,0 +1,5367 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "ontology-mvp-web",
+  "documentNamespace": "https://davidchen516.github.io/ontologyMVP/sbom/web",
+  "creationInfo": {
+    "created": "2026-09-30T15:55:17.556Z",
+    "creators": [
+      "Tool: manual-npm-ls"
+    ]
+  },
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-Package-0",
+      "name": "@axe-core/playwright",
+      "versionInfo": "4.13.0",
+      "downloadLocation": "https://registry.npmmirror.com/@axe-core/playwright/-/playwright-4.13.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-1",
+      "name": "axe-core",
+      "versionInfo": "4.13.0",
+      "downloadLocation": "https://registry.npmmirror.com/axe-core/-/axe-core-4.13.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-2",
+      "name": "playwright-core",
+      "versionInfo": "1.63.0",
+      "downloadLocation": "https://registry.npmmirror.com/playwright-core/-/playwright-core-1.63.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-3",
+      "name": "@eslint/js",
+      "versionInfo": "9.39.5",
+      "downloadLocation": "https://registry.npmmirror.com/@eslint/js/-/js-9.39.5.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-4",
+      "name": "@playwright/test",
+      "versionInfo": "1.63.0",
+      "downloadLocation": "https://registry.npmmirror.com/@playwright/test/-/test-1.63.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-5",
+      "name": "playwright",
+      "versionInfo": "1.63.0",
+      "downloadLocation": "https://registry.npmmirror.com/playwright/-/playwright-1.63.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-6",
+      "name": "playwright-core",
+      "versionInfo": "1.63.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-7",
+      "name": "@radix-ui/react-tooltip",
+      "versionInfo": "1.2.16",
+      "downloadLocation": "https://registry.npmmirror.com/@radix-ui/react-tooltip/-/react-tooltip-1.2.16.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-8",
+      "name": "@radix-ui/primitive",
+      "versionInfo": "1.1.7",
+      "downloadLocation": "https://registry.npmmirror.com/@radix-ui/primitive/-/primitive-1.1.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-9",
+      "name": "@radix-ui/react-compose-refs",
+      "versionInfo": "1.1.5",
+      "downloadLocation": "https://registry.npmmirror.com/@radix-ui/react-compose-refs/-/react-compose-refs-1.1.5.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-10",
+      "name": "@types/react",
+      "versionInfo": "18.3.31",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-11",
+      "name": "react",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-12",
+      "name": "@radix-ui/react-context",
+      "versionInfo": "1.2.2",
+      "downloadLocation": "https://registry.npmmirror.com/@radix-ui/react-context/-/react-context-1.2.2.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-13",
+      "name": "@types/react",
+      "versionInfo": "18.3.31",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-14",
+      "name": "react",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-15",
+      "name": "@radix-ui/react-dismissable-layer",
+      "versionInfo": "1.1.19",
+      "downloadLocation": "https://registry.npmmirror.com/@radix-ui/react-dismissable-layer/-/react-dismissable-layer-1.1.19.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-16",
+      "name": "@radix-ui/primitive",
+      "versionInfo": "1.1.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-17",
+      "name": "@radix-ui/react-compose-refs",
+      "versionInfo": "1.1.5",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-18",
+      "name": "@radix-ui/react-primitive",
+      "versionInfo": "2.1.10",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-19",
+      "name": "@radix-ui/react-use-callback-ref",
+      "versionInfo": "1.1.4",
+      "downloadLocation": "https://registry.npmmirror.com/@radix-ui/react-use-callback-ref/-/react-use-callback-ref-1.1.4.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-20",
+      "name": "@types/react",
+      "versionInfo": "18.3.31",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-21",
+      "name": "react",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-22",
+      "name": "@radix-ui/react-use-effect-event",
+      "versionInfo": "0.0.5",
+      "downloadLocation": "https://registry.npmmirror.com/@radix-ui/react-use-effect-event/-/react-use-effect-event-0.0.5.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-23",
+      "name": "@radix-ui/react-use-layout-effect",
+      "versionInfo": "1.1.4",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-24",
+      "name": "@types/react",
+      "versionInfo": "18.3.31",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-25",
+      "name": "react",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-26",
+      "name": "@types/react-dom",
+      "versionInfo": "18.3.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-27",
+      "name": "@types/react",
+      "versionInfo": "18.3.31",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-28",
+      "name": "react-dom",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-29",
+      "name": "react",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-30",
+      "name": "@radix-ui/react-id",
+      "versionInfo": "1.1.4",
+      "downloadLocation": "https://registry.npmmirror.com/@radix-ui/react-id/-/react-id-1.1.4.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-31",
+      "name": "@radix-ui/react-use-layout-effect",
+      "versionInfo": "1.1.4",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-32",
+      "name": "@types/react",
+      "versionInfo": "18.3.31",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-33",
+      "name": "react",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-34",
+      "name": "@radix-ui/react-popper",
+      "versionInfo": "1.3.7",
+      "downloadLocation": "https://registry.npmmirror.com/@radix-ui/react-popper/-/react-popper-1.3.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-35",
+      "name": "@floating-ui/react-dom",
+      "versionInfo": "2.1.9",
+      "downloadLocation": "https://registry.npmmirror.com/@floating-ui/react-dom/-/react-dom-2.1.9.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-36",
+      "name": "@floating-ui/dom",
+      "versionInfo": "1.8.0",
+      "downloadLocation": "https://registry.npmmirror.com/@floating-ui/dom/-/dom-1.8.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-37",
+      "name": "@floating-ui/core",
+      "versionInfo": "1.8.0",
+      "downloadLocation": "https://registry.npmmirror.com/@floating-ui/core/-/core-1.8.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-38",
+      "name": "@floating-ui/utils",
+      "versionInfo": "0.2.12",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-39",
+      "name": "@floating-ui/utils",
+      "versionInfo": "0.2.12",
+      "downloadLocation": "https://registry.npmmirror.com/@floating-ui/utils/-/utils-0.2.12.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-40",
+      "name": "react-dom",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-41",
+      "name": "react",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-42",
+      "name": "@radix-ui/react-arrow",
+      "versionInfo": "1.1.15",
+      "downloadLocation": "https://registry.npmmirror.com/@radix-ui/react-arrow/-/react-arrow-1.1.15.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-43",
+      "name": "@radix-ui/react-primitive",
+      "versionInfo": "2.1.10",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-44",
+      "name": "@types/react-dom",
+      "versionInfo": "18.3.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-45",
+      "name": "@types/react",
+      "versionInfo": "18.3.31",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-46",
+      "name": "react-dom",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-47",
+      "name": "react",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-48",
+      "name": "@radix-ui/react-compose-refs",
+      "versionInfo": "1.1.5",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-49",
+      "name": "@radix-ui/react-context",
+      "versionInfo": "1.2.2",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-50",
+      "name": "@radix-ui/react-primitive",
+      "versionInfo": "2.1.10",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-51",
+      "name": "@radix-ui/react-use-callback-ref",
+      "versionInfo": "1.1.4",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-52",
+      "name": "@radix-ui/react-use-layout-effect",
+      "versionInfo": "1.1.4",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-53",
+      "name": "@radix-ui/react-use-rect",
+      "versionInfo": "1.1.4",
+      "downloadLocation": "https://registry.npmmirror.com/@radix-ui/react-use-rect/-/react-use-rect-1.1.4.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-54",
+      "name": "@radix-ui/rect",
+      "versionInfo": "1.1.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-55",
+      "name": "@types/react",
+      "versionInfo": "18.3.31",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-56",
+      "name": "react",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-57",
+      "name": "@radix-ui/react-use-size",
+      "versionInfo": "1.1.4",
+      "downloadLocation": "https://registry.npmmirror.com/@radix-ui/react-use-size/-/react-use-size-1.1.4.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-58",
+      "name": "@radix-ui/react-use-layout-effect",
+      "versionInfo": "1.1.4",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-59",
+      "name": "@types/react",
+      "versionInfo": "18.3.31",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-60",
+      "name": "react",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-61",
+      "name": "@radix-ui/rect",
+      "versionInfo": "1.1.3",
+      "downloadLocation": "https://registry.npmmirror.com/@radix-ui/rect/-/rect-1.1.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-62",
+      "name": "@types/react-dom",
+      "versionInfo": "18.3.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-63",
+      "name": "@types/react",
+      "versionInfo": "18.3.31",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-64",
+      "name": "react-dom",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-65",
+      "name": "react",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-66",
+      "name": "@radix-ui/react-portal",
+      "versionInfo": "1.1.17",
+      "downloadLocation": "https://registry.npmmirror.com/@radix-ui/react-portal/-/react-portal-1.1.17.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-67",
+      "name": "@radix-ui/react-primitive",
+      "versionInfo": "2.1.10",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-68",
+      "name": "@radix-ui/react-use-layout-effect",
+      "versionInfo": "1.1.4",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-69",
+      "name": "@types/react-dom",
+      "versionInfo": "18.3.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-70",
+      "name": "@types/react",
+      "versionInfo": "18.3.31",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-71",
+      "name": "react-dom",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-72",
+      "name": "react",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-73",
+      "name": "@radix-ui/react-presence",
+      "versionInfo": "1.1.10",
+      "downloadLocation": "https://registry.npmmirror.com/@radix-ui/react-presence/-/react-presence-1.1.10.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-74",
+      "name": "@radix-ui/react-use-layout-effect",
+      "versionInfo": "1.1.4",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-75",
+      "name": "@types/react-dom",
+      "versionInfo": "18.3.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-76",
+      "name": "@types/react",
+      "versionInfo": "18.3.31",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-77",
+      "name": "react-dom",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-78",
+      "name": "react",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-79",
+      "name": "@radix-ui/react-primitive",
+      "versionInfo": "2.1.10",
+      "downloadLocation": "https://registry.npmmirror.com/@radix-ui/react-primitive/-/react-primitive-2.1.10.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-80",
+      "name": "@radix-ui/react-slot",
+      "versionInfo": "1.3.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-81",
+      "name": "@types/react-dom",
+      "versionInfo": "18.3.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-82",
+      "name": "@types/react",
+      "versionInfo": "18.3.31",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-83",
+      "name": "react-dom",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-84",
+      "name": "react",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-85",
+      "name": "@radix-ui/react-slot",
+      "versionInfo": "1.3.3",
+      "downloadLocation": "https://registry.npmmirror.com/@radix-ui/react-slot/-/react-slot-1.3.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-86",
+      "name": "@radix-ui/react-compose-refs",
+      "versionInfo": "1.1.5",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-87",
+      "name": "@types/react",
+      "versionInfo": "18.3.31",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-88",
+      "name": "react",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-89",
+      "name": "@radix-ui/react-use-controllable-state",
+      "versionInfo": "1.2.6",
+      "downloadLocation": "https://registry.npmmirror.com/@radix-ui/react-use-controllable-state/-/react-use-controllable-state-1.2.6.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-90",
+      "name": "@radix-ui/primitive",
+      "versionInfo": "1.1.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-91",
+      "name": "@radix-ui/react-use-effect-event",
+      "versionInfo": "0.0.5",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-92",
+      "name": "@radix-ui/react-use-layout-effect",
+      "versionInfo": "1.1.4",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-93",
+      "name": "@types/react",
+      "versionInfo": "18.3.31",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-94",
+      "name": "react",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-95",
+      "name": "@radix-ui/react-use-layout-effect",
+      "versionInfo": "1.1.4",
+      "downloadLocation": "https://registry.npmmirror.com/@radix-ui/react-use-layout-effect/-/react-use-layout-effect-1.1.4.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-96",
+      "name": "@types/react",
+      "versionInfo": "18.3.31",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-97",
+      "name": "react",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-98",
+      "name": "@radix-ui/react-visually-hidden",
+      "versionInfo": "1.2.11",
+      "downloadLocation": "https://registry.npmmirror.com/@radix-ui/react-visually-hidden/-/react-visually-hidden-1.2.11.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-99",
+      "name": "@radix-ui/react-primitive",
+      "versionInfo": "2.1.10",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-100",
+      "name": "@types/react-dom",
+      "versionInfo": "18.3.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-101",
+      "name": "@types/react",
+      "versionInfo": "18.3.31",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-102",
+      "name": "react-dom",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-103",
+      "name": "react",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-104",
+      "name": "@types/react-dom",
+      "versionInfo": "18.3.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-105",
+      "name": "@types/react",
+      "versionInfo": "18.3.31",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-106",
+      "name": "react-dom",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-107",
+      "name": "react",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-108",
+      "name": "@tailwindcss/vite",
+      "versionInfo": "4.3.3",
+      "downloadLocation": "https://registry.npmmirror.com/@tailwindcss/vite/-/vite-4.3.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-109",
+      "name": "@tailwindcss/node",
+      "versionInfo": "4.3.3",
+      "downloadLocation": "https://registry.npmmirror.com/@tailwindcss/node/-/node-4.3.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-110",
+      "name": "@jridgewell/remapping",
+      "versionInfo": "2.3.5",
+      "downloadLocation": "https://registry.npmmirror.com/@jridgewell/remapping/-/remapping-2.3.5.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-111",
+      "name": "@jridgewell/gen-mapping",
+      "versionInfo": "0.3.13",
+      "downloadLocation": "https://registry.npmmirror.com/@jridgewell/gen-mapping/-/gen-mapping-0.3.13.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-112",
+      "name": "@jridgewell/sourcemap-codec",
+      "versionInfo": "1.6.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-113",
+      "name": "@jridgewell/trace-mapping",
+      "versionInfo": "0.3.31",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-114",
+      "name": "@jridgewell/trace-mapping",
+      "versionInfo": "0.3.31",
+      "downloadLocation": "https://registry.npmmirror.com/@jridgewell/trace-mapping/-/trace-mapping-0.3.31.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-115",
+      "name": "@jridgewell/resolve-uri",
+      "versionInfo": "3.1.2",
+      "downloadLocation": "https://registry.npmmirror.com/@jridgewell/resolve-uri/-/resolve-uri-3.1.2.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-116",
+      "name": "@jridgewell/sourcemap-codec",
+      "versionInfo": "1.6.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-117",
+      "name": "enhanced-resolve",
+      "versionInfo": "5.26.0",
+      "downloadLocation": "https://registry.npmmirror.com/enhanced-resolve/-/enhanced-resolve-5.26.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-118",
+      "name": "graceful-fs",
+      "versionInfo": "4.2.11",
+      "downloadLocation": "https://registry.npmmirror.com/graceful-fs/-/graceful-fs-4.2.11.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-119",
+      "name": "tapable",
+      "versionInfo": "2.3.3",
+      "downloadLocation": "https://registry.npmmirror.com/tapable/-/tapable-2.3.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-120",
+      "name": "jiti",
+      "versionInfo": "2.7.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-121",
+      "name": "lightningcss",
+      "versionInfo": "1.32.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-122",
+      "name": "magic-string",
+      "versionInfo": "0.30.21",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-123",
+      "name": "source-map-js",
+      "versionInfo": "1.2.1",
+      "downloadLocation": "https://registry.npmmirror.com/source-map-js/-/source-map-js-1.2.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-124",
+      "name": "tailwindcss",
+      "versionInfo": "4.3.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-125",
+      "name": "@tailwindcss/oxide",
+      "versionInfo": "4.3.3",
+      "downloadLocation": "https://registry.npmmirror.com/@tailwindcss/oxide/-/oxide-4.3.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-126",
+      "name": "@tailwindcss/oxide-android-arm64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-127",
+      "name": "@tailwindcss/oxide-darwin-arm64",
+      "versionInfo": "4.3.3",
+      "downloadLocation": "https://registry.npmmirror.com/@tailwindcss/oxide-darwin-arm64/-/oxide-darwin-arm64-4.3.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-128",
+      "name": "@tailwindcss/oxide-darwin-x64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-129",
+      "name": "@tailwindcss/oxide-freebsd-x64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-130",
+      "name": "@tailwindcss/oxide-linux-arm-gnueabihf",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-131",
+      "name": "@tailwindcss/oxide-linux-arm64-gnu",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-132",
+      "name": "@tailwindcss/oxide-linux-arm64-musl",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-133",
+      "name": "@tailwindcss/oxide-linux-x64-gnu",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-134",
+      "name": "@tailwindcss/oxide-linux-x64-musl",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-135",
+      "name": "@tailwindcss/oxide-wasm32-wasi",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-136",
+      "name": "@tailwindcss/oxide-win32-arm64-msvc",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-137",
+      "name": "@tailwindcss/oxide-win32-x64-msvc",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-138",
+      "name": "tailwindcss",
+      "versionInfo": "4.3.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-139",
+      "name": "vite",
+      "versionInfo": "6.4.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-140",
+      "name": "@tanstack/react-query",
+      "versionInfo": "5.104.0",
+      "downloadLocation": "https://registry.npmmirror.com/@tanstack/react-query/-/react-query-5.104.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-141",
+      "name": "@tanstack/query-core",
+      "versionInfo": "5.104.0",
+      "downloadLocation": "https://registry.npmmirror.com/@tanstack/query-core/-/query-core-5.104.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-142",
+      "name": "react",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-143",
+      "name": "@testing-library/dom",
+      "versionInfo": "10.4.2",
+      "downloadLocation": "https://registry.npmmirror.com/@testing-library/dom/-/dom-10.4.2.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-144",
+      "name": "@babel/code-frame",
+      "versionInfo": "7.29.7",
+      "downloadLocation": "https://registry.npmmirror.com/@babel/code-frame/-/code-frame-7.29.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-145",
+      "name": "@babel/helper-validator-identifier",
+      "versionInfo": "7.29.7",
+      "downloadLocation": "https://registry.npmmirror.com/@babel/helper-validator-identifier/-/helper-validator-identifier-7.29.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-146",
+      "name": "js-tokens",
+      "versionInfo": "4.0.0",
+      "downloadLocation": "https://registry.npmmirror.com/js-tokens/-/js-tokens-4.0.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-147",
+      "name": "picocolors",
+      "versionInfo": "1.1.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-148",
+      "name": "@babel/runtime",
+      "versionInfo": "7.29.7",
+      "downloadLocation": "https://registry.npmmirror.com/@babel/runtime/-/runtime-7.29.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-149",
+      "name": "@types/aria-query",
+      "versionInfo": "5.0.4",
+      "downloadLocation": "https://registry.npmmirror.com/@types/aria-query/-/aria-query-5.0.4.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-150",
+      "name": "aria-query",
+      "versionInfo": "5.3.0",
+      "downloadLocation": "https://registry.npmmirror.com/aria-query/-/aria-query-5.3.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-151",
+      "name": "dequal",
+      "versionInfo": "2.0.3",
+      "downloadLocation": "https://registry.npmmirror.com/dequal/-/dequal-2.0.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-152",
+      "name": "dom-accessibility-api",
+      "versionInfo": "0.5.16",
+      "downloadLocation": "https://registry.npmmirror.com/dom-accessibility-api/-/dom-accessibility-api-0.5.16.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-153",
+      "name": "lz-string",
+      "versionInfo": "1.5.0",
+      "downloadLocation": "https://registry.npmmirror.com/lz-string/-/lz-string-1.5.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-154",
+      "name": "picocolors",
+      "versionInfo": "1.1.1",
+      "downloadLocation": "https://registry.npmmirror.com/picocolors/-/picocolors-1.1.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-155",
+      "name": "pretty-format",
+      "versionInfo": "27.5.1",
+      "downloadLocation": "https://registry.npmmirror.com/pretty-format/-/pretty-format-27.5.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-156",
+      "name": "ansi-regex",
+      "versionInfo": "5.0.1",
+      "downloadLocation": "https://registry.npmmirror.com/ansi-regex/-/ansi-regex-5.0.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-157",
+      "name": "ansi-styles",
+      "versionInfo": "5.2.0",
+      "downloadLocation": "https://registry.npmmirror.com/ansi-styles/-/ansi-styles-5.2.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-158",
+      "name": "react-is",
+      "versionInfo": "17.0.2",
+      "downloadLocation": "https://registry.npmmirror.com/react-is/-/react-is-17.0.2.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-159",
+      "name": "@testing-library/jest-dom",
+      "versionInfo": "6.10.0",
+      "downloadLocation": "https://registry.npmmirror.com/@testing-library/jest-dom/-/jest-dom-6.10.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-160",
+      "name": "@adobe/css-tools",
+      "versionInfo": "4.5.0",
+      "downloadLocation": "https://registry.npmmirror.com/@adobe/css-tools/-/css-tools-4.5.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-161",
+      "name": "@testing-library/dom",
+      "versionInfo": "10.4.2",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-162",
+      "name": "aria-query",
+      "versionInfo": "5.3.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-163",
+      "name": "css.escape",
+      "versionInfo": "1.5.1",
+      "downloadLocation": "https://registry.npmmirror.com/css.escape/-/css.escape-1.5.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-164",
+      "name": "dom-accessibility-api",
+      "versionInfo": "0.6.3",
+      "downloadLocation": "https://registry.npmmirror.com/dom-accessibility-api/-/dom-accessibility-api-0.6.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-165",
+      "name": "picocolors",
+      "versionInfo": "1.1.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-166",
+      "name": "redent",
+      "versionInfo": "3.0.0",
+      "downloadLocation": "https://registry.npmmirror.com/redent/-/redent-3.0.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-167",
+      "name": "indent-string",
+      "versionInfo": "4.0.0",
+      "downloadLocation": "https://registry.npmmirror.com/indent-string/-/indent-string-4.0.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-168",
+      "name": "strip-indent",
+      "versionInfo": "3.0.0",
+      "downloadLocation": "https://registry.npmmirror.com/strip-indent/-/strip-indent-3.0.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-169",
+      "name": "min-indent",
+      "versionInfo": "1.0.1",
+      "downloadLocation": "https://registry.npmmirror.com/min-indent/-/min-indent-1.0.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-170",
+      "name": "@testing-library/react",
+      "versionInfo": "16.3.3",
+      "downloadLocation": "https://registry.npmmirror.com/@testing-library/react/-/react-16.3.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-171",
+      "name": "@babel/runtime",
+      "versionInfo": "7.29.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-172",
+      "name": "@testing-library/dom",
+      "versionInfo": "10.4.2",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-173",
+      "name": "@types/react-dom",
+      "versionInfo": "18.3.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-174",
+      "name": "@types/react",
+      "versionInfo": "18.3.31",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-175",
+      "name": "react-dom",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-176",
+      "name": "react",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-177",
+      "name": "@testing-library/user-event",
+      "versionInfo": "14.6.7",
+      "downloadLocation": "https://registry.npmmirror.com/@testing-library/user-event/-/user-event-14.6.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-178",
+      "name": "@testing-library/dom",
+      "versionInfo": "10.4.2",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-179",
+      "name": "@types/node",
+      "versionInfo": "26.6.3",
+      "downloadLocation": "https://registry.npmmirror.com/@types/node/-/node-26.6.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-180",
+      "name": "undici-types",
+      "versionInfo": "8.9.0",
+      "downloadLocation": "https://registry.npmmirror.com/undici-types/-/undici-types-8.9.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-181",
+      "name": "@types/react-dom",
+      "versionInfo": "18.3.7",
+      "downloadLocation": "https://registry.npmmirror.com/@types/react-dom/-/react-dom-18.3.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-182",
+      "name": "@types/react",
+      "versionInfo": "18.3.31",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-183",
+      "name": "@types/react",
+      "versionInfo": "18.3.31",
+      "downloadLocation": "https://registry.npmmirror.com/@types/react/-/react-18.3.31.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-184",
+      "name": "@types/prop-types",
+      "versionInfo": "15.7.15",
+      "downloadLocation": "https://registry.npmmirror.com/@types/prop-types/-/prop-types-15.7.15.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-185",
+      "name": "csstype",
+      "versionInfo": "3.2.3",
+      "downloadLocation": "https://registry.npmmirror.com/csstype/-/csstype-3.2.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-186",
+      "name": "@vitejs/plugin-react",
+      "versionInfo": "4.7.0",
+      "downloadLocation": "https://registry.npmmirror.com/@vitejs/plugin-react/-/plugin-react-4.7.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-187",
+      "name": "@babel/core",
+      "versionInfo": "7.29.7",
+      "downloadLocation": "https://registry.npmmirror.com/@babel/core/-/core-7.29.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-188",
+      "name": "@babel/code-frame",
+      "versionInfo": "7.29.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-189",
+      "name": "@babel/generator",
+      "versionInfo": "7.29.8",
+      "downloadLocation": "https://registry.npmmirror.com/@babel/generator/-/generator-7.29.8.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-190",
+      "name": "@babel/parser",
+      "versionInfo": "7.29.9",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-191",
+      "name": "@babel/types",
+      "versionInfo": "7.29.8",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-192",
+      "name": "@jridgewell/gen-mapping",
+      "versionInfo": "0.3.13",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-193",
+      "name": "@jridgewell/trace-mapping",
+      "versionInfo": "0.3.31",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-194",
+      "name": "jsesc",
+      "versionInfo": "3.1.0",
+      "downloadLocation": "https://registry.npmmirror.com/jsesc/-/jsesc-3.1.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-195",
+      "name": "@babel/helper-compilation-targets",
+      "versionInfo": "7.29.7",
+      "downloadLocation": "https://registry.npmmirror.com/@babel/helper-compilation-targets/-/helper-compilation-targets-7.29.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-196",
+      "name": "@babel/compat-data",
+      "versionInfo": "7.29.7",
+      "downloadLocation": "https://registry.npmmirror.com/@babel/compat-data/-/compat-data-7.29.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-197",
+      "name": "@babel/helper-validator-option",
+      "versionInfo": "7.29.7",
+      "downloadLocation": "https://registry.npmmirror.com/@babel/helper-validator-option/-/helper-validator-option-7.29.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-198",
+      "name": "browserslist",
+      "versionInfo": "4.29.3",
+      "downloadLocation": "https://registry.npmmirror.com/browserslist/-/browserslist-4.29.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-199",
+      "name": "baseline-browser-mapping",
+      "versionInfo": "2.11.26",
+      "downloadLocation": "https://registry.npmmirror.com/baseline-browser-mapping/-/baseline-browser-mapping-2.11.26.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-200",
+      "name": "caniuse-lite",
+      "versionInfo": "1.0.30001813",
+      "downloadLocation": "https://registry.npmmirror.com/caniuse-lite/-/caniuse-lite-1.0.30001813.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-201",
+      "name": "electron-to-chromium",
+      "versionInfo": "1.5.442",
+      "downloadLocation": "https://registry.npmmirror.com/electron-to-chromium/-/electron-to-chromium-1.5.442.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-202",
+      "name": "node-releases",
+      "versionInfo": "2.0.57",
+      "downloadLocation": "https://registry.npmmirror.com/node-releases/-/node-releases-2.0.57.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-203",
+      "name": "update-browserslist-db",
+      "versionInfo": "1.3.3",
+      "downloadLocation": "https://registry.npmmirror.com/update-browserslist-db/-/update-browserslist-db-1.3.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-204",
+      "name": "browserslist",
+      "versionInfo": "4.29.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-205",
+      "name": "escalade",
+      "versionInfo": "3.2.0",
+      "downloadLocation": "https://registry.npmmirror.com/escalade/-/escalade-3.2.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-206",
+      "name": "picocolors",
+      "versionInfo": "1.1.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-207",
+      "name": "lru-cache",
+      "versionInfo": "5.1.1",
+      "downloadLocation": "https://registry.npmmirror.com/lru-cache/-/lru-cache-5.1.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-208",
+      "name": "yallist",
+      "versionInfo": "3.1.1",
+      "downloadLocation": "https://registry.npmmirror.com/yallist/-/yallist-3.1.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-209",
+      "name": "semver",
+      "versionInfo": "6.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-210",
+      "name": "@babel/helper-module-transforms",
+      "versionInfo": "7.29.7",
+      "downloadLocation": "https://registry.npmmirror.com/@babel/helper-module-transforms/-/helper-module-transforms-7.29.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-211",
+      "name": "@babel/core",
+      "versionInfo": "7.29.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-212",
+      "name": "@babel/helper-module-imports",
+      "versionInfo": "7.29.7",
+      "downloadLocation": "https://registry.npmmirror.com/@babel/helper-module-imports/-/helper-module-imports-7.29.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-213",
+      "name": "@babel/traverse",
+      "versionInfo": "7.29.8",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-214",
+      "name": "@babel/types",
+      "versionInfo": "7.29.8",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-215",
+      "name": "@babel/helper-validator-identifier",
+      "versionInfo": "7.29.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-216",
+      "name": "@babel/traverse",
+      "versionInfo": "7.29.8",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-217",
+      "name": "@babel/helpers",
+      "versionInfo": "7.29.7",
+      "downloadLocation": "https://registry.npmmirror.com/@babel/helpers/-/helpers-7.29.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-218",
+      "name": "@babel/template",
+      "versionInfo": "7.29.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-219",
+      "name": "@babel/types",
+      "versionInfo": "7.29.8",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-220",
+      "name": "@babel/parser",
+      "versionInfo": "7.29.9",
+      "downloadLocation": "https://registry.npmmirror.com/@babel/parser/-/parser-7.29.9.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-221",
+      "name": "@babel/types",
+      "versionInfo": "7.29.8",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-222",
+      "name": "@babel/template",
+      "versionInfo": "7.29.7",
+      "downloadLocation": "https://registry.npmmirror.com/@babel/template/-/template-7.29.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-223",
+      "name": "@babel/code-frame",
+      "versionInfo": "7.29.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-224",
+      "name": "@babel/parser",
+      "versionInfo": "7.29.9",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-225",
+      "name": "@babel/types",
+      "versionInfo": "7.29.8",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-226",
+      "name": "@babel/traverse",
+      "versionInfo": "7.29.8",
+      "downloadLocation": "https://registry.npmmirror.com/@babel/traverse/-/traverse-7.29.8.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-227",
+      "name": "@babel/code-frame",
+      "versionInfo": "7.29.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-228",
+      "name": "@babel/generator",
+      "versionInfo": "7.29.8",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-229",
+      "name": "@babel/helper-globals",
+      "versionInfo": "7.29.7",
+      "downloadLocation": "https://registry.npmmirror.com/@babel/helper-globals/-/helper-globals-7.29.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-230",
+      "name": "@babel/parser",
+      "versionInfo": "7.29.9",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-231",
+      "name": "@babel/template",
+      "versionInfo": "7.29.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-232",
+      "name": "@babel/types",
+      "versionInfo": "7.29.8",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-233",
+      "name": "debug",
+      "versionInfo": "4.4.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-234",
+      "name": "@babel/types",
+      "versionInfo": "7.29.8",
+      "downloadLocation": "https://registry.npmmirror.com/@babel/types/-/types-7.29.8.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-235",
+      "name": "@babel/helper-string-parser",
+      "versionInfo": "7.29.7",
+      "downloadLocation": "https://registry.npmmirror.com/@babel/helper-string-parser/-/helper-string-parser-7.29.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-236",
+      "name": "@babel/helper-validator-identifier",
+      "versionInfo": "7.29.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-237",
+      "name": "@jridgewell/remapping",
+      "versionInfo": "2.3.5",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-238",
+      "name": "convert-source-map",
+      "versionInfo": "2.0.0",
+      "downloadLocation": "https://registry.npmmirror.com/convert-source-map/-/convert-source-map-2.0.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-239",
+      "name": "debug",
+      "versionInfo": "4.4.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-240",
+      "name": "gensync",
+      "versionInfo": "1.0.0-beta.2",
+      "downloadLocation": "https://registry.npmmirror.com/gensync/-/gensync-1.0.0-beta.2.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-241",
+      "name": "json5",
+      "versionInfo": "2.2.3",
+      "downloadLocation": "https://registry.npmmirror.com/json5/-/json5-2.2.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-242",
+      "name": "semver",
+      "versionInfo": "6.3.1",
+      "downloadLocation": "https://registry.npmmirror.com/semver/-/semver-6.3.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-243",
+      "name": "@babel/plugin-transform-react-jsx-self",
+      "versionInfo": "7.29.7",
+      "downloadLocation": "https://registry.npmmirror.com/@babel/plugin-transform-react-jsx-self/-/plugin-transform-react-jsx-self-7.29.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-244",
+      "name": "@babel/core",
+      "versionInfo": "7.29.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-245",
+      "name": "@babel/helper-plugin-utils",
+      "versionInfo": "7.29.7",
+      "downloadLocation": "https://registry.npmmirror.com/@babel/helper-plugin-utils/-/helper-plugin-utils-7.29.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-246",
+      "name": "@babel/plugin-transform-react-jsx-source",
+      "versionInfo": "7.29.7",
+      "downloadLocation": "https://registry.npmmirror.com/@babel/plugin-transform-react-jsx-source/-/plugin-transform-react-jsx-source-7.29.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-247",
+      "name": "@babel/core",
+      "versionInfo": "7.29.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-248",
+      "name": "@babel/helper-plugin-utils",
+      "versionInfo": "7.29.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-249",
+      "name": "@rolldown/pluginutils",
+      "versionInfo": "1.0.0-beta.27",
+      "downloadLocation": "https://registry.npmmirror.com/@rolldown/pluginutils/-/pluginutils-1.0.0-beta.27.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-250",
+      "name": "@types/babel__core",
+      "versionInfo": "7.20.5",
+      "downloadLocation": "https://registry.npmmirror.com/@types/babel__core/-/babel__core-7.20.5.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-251",
+      "name": "@babel/parser",
+      "versionInfo": "7.29.9",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-252",
+      "name": "@babel/types",
+      "versionInfo": "7.29.8",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-253",
+      "name": "@types/babel__generator",
+      "versionInfo": "7.27.0",
+      "downloadLocation": "https://registry.npmmirror.com/@types/babel__generator/-/babel__generator-7.27.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-254",
+      "name": "@babel/types",
+      "versionInfo": "7.29.8",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-255",
+      "name": "@types/babel__template",
+      "versionInfo": "7.4.4",
+      "downloadLocation": "https://registry.npmmirror.com/@types/babel__template/-/babel__template-7.4.4.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-256",
+      "name": "@babel/parser",
+      "versionInfo": "7.29.9",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-257",
+      "name": "@babel/types",
+      "versionInfo": "7.29.8",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-258",
+      "name": "@types/babel__traverse",
+      "versionInfo": "7.28.0",
+      "downloadLocation": "https://registry.npmmirror.com/@types/babel__traverse/-/babel__traverse-7.28.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-259",
+      "name": "@babel/types",
+      "versionInfo": "7.29.8",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-260",
+      "name": "react-refresh",
+      "versionInfo": "0.17.0",
+      "downloadLocation": "https://registry.npmmirror.com/react-refresh/-/react-refresh-0.17.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-261",
+      "name": "vite",
+      "versionInfo": "6.4.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-262",
+      "name": "cytoscape",
+      "versionInfo": "3.34.3",
+      "downloadLocation": "https://registry.npmmirror.com/cytoscape/-/cytoscape-3.34.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-263",
+      "name": "eslint-plugin-react-hooks",
+      "versionInfo": "5.2.0",
+      "downloadLocation": "https://registry.npmmirror.com/eslint-plugin-react-hooks/-/eslint-plugin-react-hooks-5.2.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-264",
+      "name": "eslint",
+      "versionInfo": "9.39.4",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-265",
+      "name": "eslint-plugin-react-refresh",
+      "versionInfo": "0.4.26",
+      "downloadLocation": "https://registry.npmmirror.com/eslint-plugin-react-refresh/-/eslint-plugin-react-refresh-0.4.26.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-266",
+      "name": "eslint",
+      "versionInfo": "9.39.4",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-267",
+      "name": "eslint",
+      "versionInfo": "9.39.4",
+      "downloadLocation": "https://registry.npmmirror.com/eslint/-/eslint-9.39.4.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-268",
+      "name": "@eslint-community/eslint-utils",
+      "versionInfo": "4.10.1",
+      "downloadLocation": "https://registry.npmmirror.com/@eslint-community/eslint-utils/-/eslint-utils-4.10.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-269",
+      "name": "eslint-visitor-keys",
+      "versionInfo": "3.4.3",
+      "downloadLocation": "https://registry.npmmirror.com/eslint-visitor-keys/-/eslint-visitor-keys-3.4.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-270",
+      "name": "eslint",
+      "versionInfo": "9.39.4",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-271",
+      "name": "@eslint-community/regexpp",
+      "versionInfo": "4.12.2",
+      "downloadLocation": "https://registry.npmmirror.com/@eslint-community/regexpp/-/regexpp-4.12.2.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-272",
+      "name": "@eslint/config-array",
+      "versionInfo": "0.21.2",
+      "downloadLocation": "https://registry.npmmirror.com/@eslint/config-array/-/config-array-0.21.2.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-273",
+      "name": "@eslint/object-schema",
+      "versionInfo": "2.1.7",
+      "downloadLocation": "https://registry.npmmirror.com/@eslint/object-schema/-/object-schema-2.1.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-274",
+      "name": "debug",
+      "versionInfo": "4.4.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-275",
+      "name": "minimatch",
+      "versionInfo": "3.1.5",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-276",
+      "name": "@eslint/config-helpers",
+      "versionInfo": "0.4.2",
+      "downloadLocation": "https://registry.npmmirror.com/@eslint/config-helpers/-/config-helpers-0.4.2.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-277",
+      "name": "@eslint/core",
+      "versionInfo": "0.17.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-278",
+      "name": "@eslint/core",
+      "versionInfo": "0.17.0",
+      "downloadLocation": "https://registry.npmmirror.com/@eslint/core/-/core-0.17.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-279",
+      "name": "@types/json-schema",
+      "versionInfo": "7.0.15",
+      "downloadLocation": "https://registry.npmmirror.com/@types/json-schema/-/json-schema-7.0.15.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-280",
+      "name": "@eslint/eslintrc",
+      "versionInfo": "3.3.7",
+      "downloadLocation": "https://registry.npmmirror.com/@eslint/eslintrc/-/eslintrc-3.3.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-281",
+      "name": "ajv",
+      "versionInfo": "6.15.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-282",
+      "name": "debug",
+      "versionInfo": "4.4.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-283",
+      "name": "espree",
+      "versionInfo": "10.4.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-284",
+      "name": "globals",
+      "versionInfo": "14.0.0",
+      "downloadLocation": "https://registry.npmmirror.com/globals/-/globals-14.0.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-285",
+      "name": "ignore",
+      "versionInfo": "5.3.2",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-286",
+      "name": "import-fresh",
+      "versionInfo": "3.3.1",
+      "downloadLocation": "https://registry.npmmirror.com/import-fresh/-/import-fresh-3.3.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-287",
+      "name": "parent-module",
+      "versionInfo": "1.0.1",
+      "downloadLocation": "https://registry.npmmirror.com/parent-module/-/parent-module-1.0.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-288",
+      "name": "callsites",
+      "versionInfo": "3.1.0",
+      "downloadLocation": "https://registry.npmmirror.com/callsites/-/callsites-3.1.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-289",
+      "name": "resolve-from",
+      "versionInfo": "4.0.0",
+      "downloadLocation": "https://registry.npmmirror.com/resolve-from/-/resolve-from-4.0.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-290",
+      "name": "js-yaml",
+      "versionInfo": "4.3.2",
+      "downloadLocation": "https://registry.npmmirror.com/js-yaml/-/js-yaml-4.3.2.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-291",
+      "name": "argparse",
+      "versionInfo": "2.0.1",
+      "downloadLocation": "https://registry.npmmirror.com/argparse/-/argparse-2.0.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-292",
+      "name": "minimatch",
+      "versionInfo": "3.1.5",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-293",
+      "name": "strip-json-comments",
+      "versionInfo": "3.1.1",
+      "downloadLocation": "https://registry.npmmirror.com/strip-json-comments/-/strip-json-comments-3.1.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-294",
+      "name": "@eslint/js",
+      "versionInfo": "9.39.4",
+      "downloadLocation": "https://registry.npmmirror.com/@eslint/js/-/js-9.39.4.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-295",
+      "name": "@eslint/plugin-kit",
+      "versionInfo": "0.4.1",
+      "downloadLocation": "https://registry.npmmirror.com/@eslint/plugin-kit/-/plugin-kit-0.4.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-296",
+      "name": "@eslint/core",
+      "versionInfo": "0.17.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-297",
+      "name": "levn",
+      "versionInfo": "0.4.1",
+      "downloadLocation": "https://registry.npmmirror.com/levn/-/levn-0.4.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-298",
+      "name": "prelude-ls",
+      "versionInfo": "1.2.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-299",
+      "name": "type-check",
+      "versionInfo": "0.4.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-300",
+      "name": "@humanfs/node",
+      "versionInfo": "0.16.8",
+      "downloadLocation": "https://registry.npmmirror.com/@humanfs/node/-/node-0.16.8.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-301",
+      "name": "@humanfs/core",
+      "versionInfo": "0.19.2",
+      "downloadLocation": "https://registry.npmmirror.com/@humanfs/core/-/core-0.19.2.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-302",
+      "name": "@humanfs/types",
+      "versionInfo": "0.15.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-303",
+      "name": "@humanfs/types",
+      "versionInfo": "0.15.0",
+      "downloadLocation": "https://registry.npmmirror.com/@humanfs/types/-/types-0.15.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-304",
+      "name": "@humanwhocodes/retry",
+      "versionInfo": "0.4.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-305",
+      "name": "@humanwhocodes/module-importer",
+      "versionInfo": "1.0.1",
+      "downloadLocation": "https://registry.npmmirror.com/@humanwhocodes/module-importer/-/module-importer-1.0.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-306",
+      "name": "@humanwhocodes/retry",
+      "versionInfo": "0.4.3",
+      "downloadLocation": "https://registry.npmmirror.com/@humanwhocodes/retry/-/retry-0.4.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-307",
+      "name": "@types/estree",
+      "versionInfo": "1.0.9",
+      "downloadLocation": "https://registry.npmmirror.com/@types/estree/-/estree-1.0.9.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-308",
+      "name": "ajv",
+      "versionInfo": "6.15.0",
+      "downloadLocation": "https://registry.npmmirror.com/ajv/-/ajv-6.15.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-309",
+      "name": "fast-deep-equal",
+      "versionInfo": "3.1.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-310",
+      "name": "fast-json-stable-stringify",
+      "versionInfo": "2.1.0",
+      "downloadLocation": "https://registry.npmmirror.com/fast-json-stable-stringify/-/fast-json-stable-stringify-2.1.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-311",
+      "name": "json-schema-traverse",
+      "versionInfo": "0.4.1",
+      "downloadLocation": "https://registry.npmmirror.com/json-schema-traverse/-/json-schema-traverse-0.4.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-312",
+      "name": "uri-js",
+      "versionInfo": "4.4.1",
+      "downloadLocation": "https://registry.npmmirror.com/uri-js/-/uri-js-4.4.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-313",
+      "name": "punycode",
+      "versionInfo": "2.3.1",
+      "downloadLocation": "https://registry.npmmirror.com/punycode/-/punycode-2.3.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-314",
+      "name": "chalk",
+      "versionInfo": "4.1.2",
+      "downloadLocation": "https://registry.npmmirror.com/chalk/-/chalk-4.1.2.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-315",
+      "name": "ansi-styles",
+      "versionInfo": "4.3.0",
+      "downloadLocation": "https://registry.npmmirror.com/ansi-styles/-/ansi-styles-4.3.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-316",
+      "name": "color-convert",
+      "versionInfo": "2.0.1",
+      "downloadLocation": "https://registry.npmmirror.com/color-convert/-/color-convert-2.0.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-317",
+      "name": "color-name",
+      "versionInfo": "1.1.4",
+      "downloadLocation": "https://registry.npmmirror.com/color-name/-/color-name-1.1.4.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-318",
+      "name": "supports-color",
+      "versionInfo": "7.2.0",
+      "downloadLocation": "https://registry.npmmirror.com/supports-color/-/supports-color-7.2.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-319",
+      "name": "has-flag",
+      "versionInfo": "4.0.0",
+      "downloadLocation": "https://registry.npmmirror.com/has-flag/-/has-flag-4.0.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-320",
+      "name": "cross-spawn",
+      "versionInfo": "7.0.6",
+      "downloadLocation": "https://registry.npmmirror.com/cross-spawn/-/cross-spawn-7.0.6.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-321",
+      "name": "path-key",
+      "versionInfo": "3.1.1",
+      "downloadLocation": "https://registry.npmmirror.com/path-key/-/path-key-3.1.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-322",
+      "name": "shebang-command",
+      "versionInfo": "2.0.0",
+      "downloadLocation": "https://registry.npmmirror.com/shebang-command/-/shebang-command-2.0.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-323",
+      "name": "shebang-regex",
+      "versionInfo": "3.0.0",
+      "downloadLocation": "https://registry.npmmirror.com/shebang-regex/-/shebang-regex-3.0.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-324",
+      "name": "which",
+      "versionInfo": "2.0.2",
+      "downloadLocation": "https://registry.npmmirror.com/which/-/which-2.0.2.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-325",
+      "name": "isexe",
+      "versionInfo": "2.0.0",
+      "downloadLocation": "https://registry.npmmirror.com/isexe/-/isexe-2.0.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-326",
+      "name": "debug",
+      "versionInfo": "4.4.3",
+      "downloadLocation": "https://registry.npmmirror.com/debug/-/debug-4.4.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-327",
+      "name": "ms",
+      "versionInfo": "2.1.3",
+      "downloadLocation": "https://registry.npmmirror.com/ms/-/ms-2.1.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-328",
+      "name": "escape-string-regexp",
+      "versionInfo": "4.0.0",
+      "downloadLocation": "https://registry.npmmirror.com/escape-string-regexp/-/escape-string-regexp-4.0.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-329",
+      "name": "eslint-scope",
+      "versionInfo": "8.4.0",
+      "downloadLocation": "https://registry.npmmirror.com/eslint-scope/-/eslint-scope-8.4.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-330",
+      "name": "esrecurse",
+      "versionInfo": "4.3.0",
+      "downloadLocation": "https://registry.npmmirror.com/esrecurse/-/esrecurse-4.3.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-331",
+      "name": "estraverse",
+      "versionInfo": "5.3.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-332",
+      "name": "estraverse",
+      "versionInfo": "5.3.0",
+      "downloadLocation": "https://registry.npmmirror.com/estraverse/-/estraverse-5.3.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-333",
+      "name": "eslint-visitor-keys",
+      "versionInfo": "4.2.1",
+      "downloadLocation": "https://registry.npmmirror.com/eslint-visitor-keys/-/eslint-visitor-keys-4.2.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-334",
+      "name": "espree",
+      "versionInfo": "10.4.0",
+      "downloadLocation": "https://registry.npmmirror.com/espree/-/espree-10.4.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-335",
+      "name": "acorn-jsx",
+      "versionInfo": "5.3.2",
+      "downloadLocation": "https://registry.npmmirror.com/acorn-jsx/-/acorn-jsx-5.3.2.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-336",
+      "name": "acorn",
+      "versionInfo": "8.18.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-337",
+      "name": "acorn",
+      "versionInfo": "8.18.0",
+      "downloadLocation": "https://registry.npmmirror.com/acorn/-/acorn-8.18.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-338",
+      "name": "eslint-visitor-keys",
+      "versionInfo": "4.2.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-339",
+      "name": "esquery",
+      "versionInfo": "1.7.0",
+      "downloadLocation": "https://registry.npmmirror.com/esquery/-/esquery-1.7.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-340",
+      "name": "estraverse",
+      "versionInfo": "5.3.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-341",
+      "name": "esutils",
+      "versionInfo": "2.0.3",
+      "downloadLocation": "https://registry.npmmirror.com/esutils/-/esutils-2.0.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-342",
+      "name": "fast-deep-equal",
+      "versionInfo": "3.1.3",
+      "downloadLocation": "https://registry.npmmirror.com/fast-deep-equal/-/fast-deep-equal-3.1.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-343",
+      "name": "file-entry-cache",
+      "versionInfo": "8.0.0",
+      "downloadLocation": "https://registry.npmmirror.com/file-entry-cache/-/file-entry-cache-8.0.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-344",
+      "name": "flat-cache",
+      "versionInfo": "4.0.1",
+      "downloadLocation": "https://registry.npmmirror.com/flat-cache/-/flat-cache-4.0.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-345",
+      "name": "flatted",
+      "versionInfo": "3.4.4",
+      "downloadLocation": "https://registry.npmmirror.com/flatted/-/flatted-3.4.4.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-346",
+      "name": "keyv",
+      "versionInfo": "4.5.4",
+      "downloadLocation": "https://registry.npmmirror.com/keyv/-/keyv-4.5.4.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-347",
+      "name": "json-buffer",
+      "versionInfo": "3.0.1",
+      "downloadLocation": "https://registry.npmmirror.com/json-buffer/-/json-buffer-3.0.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-348",
+      "name": "find-up",
+      "versionInfo": "5.0.0",
+      "downloadLocation": "https://registry.npmmirror.com/find-up/-/find-up-5.0.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-349",
+      "name": "locate-path",
+      "versionInfo": "6.0.0",
+      "downloadLocation": "https://registry.npmmirror.com/locate-path/-/locate-path-6.0.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-350",
+      "name": "p-locate",
+      "versionInfo": "5.0.0",
+      "downloadLocation": "https://registry.npmmirror.com/p-locate/-/p-locate-5.0.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-351",
+      "name": "p-limit",
+      "versionInfo": "3.1.0",
+      "downloadLocation": "https://registry.npmmirror.com/p-limit/-/p-limit-3.1.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-352",
+      "name": "yocto-queue",
+      "versionInfo": "0.1.0",
+      "downloadLocation": "https://registry.npmmirror.com/yocto-queue/-/yocto-queue-0.1.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-353",
+      "name": "path-exists",
+      "versionInfo": "4.0.0",
+      "downloadLocation": "https://registry.npmmirror.com/path-exists/-/path-exists-4.0.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-354",
+      "name": "glob-parent",
+      "versionInfo": "6.0.2",
+      "downloadLocation": "https://registry.npmmirror.com/glob-parent/-/glob-parent-6.0.2.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-355",
+      "name": "is-glob",
+      "versionInfo": "4.0.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-356",
+      "name": "ignore",
+      "versionInfo": "5.3.2",
+      "downloadLocation": "https://registry.npmmirror.com/ignore/-/ignore-5.3.2.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-357",
+      "name": "imurmurhash",
+      "versionInfo": "0.1.4",
+      "downloadLocation": "https://registry.npmmirror.com/imurmurhash/-/imurmurhash-0.1.4.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-358",
+      "name": "is-glob",
+      "versionInfo": "4.0.3",
+      "downloadLocation": "https://registry.npmmirror.com/is-glob/-/is-glob-4.0.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-359",
+      "name": "is-extglob",
+      "versionInfo": "2.1.1",
+      "downloadLocation": "https://registry.npmmirror.com/is-extglob/-/is-extglob-2.1.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-360",
+      "name": "jiti",
+      "versionInfo": "2.7.0",
+      "downloadLocation": "https://registry.npmmirror.com/jiti/-/jiti-2.7.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-361",
+      "name": "json-stable-stringify-without-jsonify",
+      "versionInfo": "1.0.1",
+      "downloadLocation": "https://registry.npmmirror.com/json-stable-stringify-without-jsonify/-/json-stable-stringify-without-jsonify-1.0.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-362",
+      "name": "lodash.merge",
+      "versionInfo": "4.6.2",
+      "downloadLocation": "https://registry.npmmirror.com/lodash.merge/-/lodash.merge-4.6.2.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-363",
+      "name": "minimatch",
+      "versionInfo": "3.1.5",
+      "downloadLocation": "https://registry.npmmirror.com/minimatch/-/minimatch-3.1.5.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-364",
+      "name": "brace-expansion",
+      "versionInfo": "1.1.21",
+      "downloadLocation": "https://registry.npmmirror.com/brace-expansion/-/brace-expansion-1.1.21.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-365",
+      "name": "balanced-match",
+      "versionInfo": "1.0.2",
+      "downloadLocation": "https://registry.npmmirror.com/balanced-match/-/balanced-match-1.0.2.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-366",
+      "name": "concat-map",
+      "versionInfo": "0.0.1",
+      "downloadLocation": "https://registry.npmmirror.com/concat-map/-/concat-map-0.0.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-367",
+      "name": "natural-compare",
+      "versionInfo": "1.4.0",
+      "downloadLocation": "https://registry.npmmirror.com/natural-compare/-/natural-compare-1.4.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-368",
+      "name": "optionator",
+      "versionInfo": "0.9.4",
+      "downloadLocation": "https://registry.npmmirror.com/optionator/-/optionator-0.9.4.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-369",
+      "name": "deep-is",
+      "versionInfo": "0.1.4",
+      "downloadLocation": "https://registry.npmmirror.com/deep-is/-/deep-is-0.1.4.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-370",
+      "name": "fast-levenshtein",
+      "versionInfo": "2.0.6",
+      "downloadLocation": "https://registry.npmmirror.com/fast-levenshtein/-/fast-levenshtein-2.0.6.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-371",
+      "name": "levn",
+      "versionInfo": "0.4.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-372",
+      "name": "prelude-ls",
+      "versionInfo": "1.2.1",
+      "downloadLocation": "https://registry.npmmirror.com/prelude-ls/-/prelude-ls-1.2.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-373",
+      "name": "type-check",
+      "versionInfo": "0.4.0",
+      "downloadLocation": "https://registry.npmmirror.com/type-check/-/type-check-0.4.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-374",
+      "name": "prelude-ls",
+      "versionInfo": "1.2.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-375",
+      "name": "word-wrap",
+      "versionInfo": "1.2.5",
+      "downloadLocation": "https://registry.npmmirror.com/word-wrap/-/word-wrap-1.2.5.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-376",
+      "name": "globals",
+      "versionInfo": "15.15.0",
+      "downloadLocation": "https://registry.npmmirror.com/globals/-/globals-15.15.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-377",
+      "name": "jsdom",
+      "versionInfo": "26.1.0",
+      "downloadLocation": "https://registry.npmmirror.com/jsdom/-/jsdom-26.1.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-378",
+      "name": "canvas",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-379",
+      "name": "cssstyle",
+      "versionInfo": "4.6.0",
+      "downloadLocation": "https://registry.npmmirror.com/cssstyle/-/cssstyle-4.6.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-380",
+      "name": "@asamuzakjp/css-color",
+      "versionInfo": "3.2.0",
+      "downloadLocation": "https://registry.npmmirror.com/@asamuzakjp/css-color/-/css-color-3.2.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-381",
+      "name": "@csstools/css-calc",
+      "versionInfo": "2.1.4",
+      "downloadLocation": "https://registry.npmmirror.com/@csstools/css-calc/-/css-calc-2.1.4.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-382",
+      "name": "@csstools/css-parser-algorithms",
+      "versionInfo": "3.0.5",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-383",
+      "name": "@csstools/css-tokenizer",
+      "versionInfo": "3.0.4",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-384",
+      "name": "@csstools/css-color-parser",
+      "versionInfo": "3.1.0",
+      "downloadLocation": "https://registry.npmmirror.com/@csstools/css-color-parser/-/css-color-parser-3.1.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-385",
+      "name": "@csstools/color-helpers",
+      "versionInfo": "5.1.0",
+      "downloadLocation": "https://registry.npmmirror.com/@csstools/color-helpers/-/color-helpers-5.1.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-386",
+      "name": "@csstools/css-calc",
+      "versionInfo": "2.1.4",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-387",
+      "name": "@csstools/css-parser-algorithms",
+      "versionInfo": "3.0.5",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-388",
+      "name": "@csstools/css-tokenizer",
+      "versionInfo": "3.0.4",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-389",
+      "name": "@csstools/css-parser-algorithms",
+      "versionInfo": "3.0.5",
+      "downloadLocation": "https://registry.npmmirror.com/@csstools/css-parser-algorithms/-/css-parser-algorithms-3.0.5.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-390",
+      "name": "@csstools/css-tokenizer",
+      "versionInfo": "3.0.4",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-391",
+      "name": "@csstools/css-tokenizer",
+      "versionInfo": "3.0.4",
+      "downloadLocation": "https://registry.npmmirror.com/@csstools/css-tokenizer/-/css-tokenizer-3.0.4.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-392",
+      "name": "lru-cache",
+      "versionInfo": "10.4.3",
+      "downloadLocation": "https://registry.npmmirror.com/lru-cache/-/lru-cache-10.4.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-393",
+      "name": "rrweb-cssom",
+      "versionInfo": "0.8.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-394",
+      "name": "data-urls",
+      "versionInfo": "5.0.0",
+      "downloadLocation": "https://registry.npmmirror.com/data-urls/-/data-urls-5.0.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-395",
+      "name": "whatwg-mimetype",
+      "versionInfo": "4.0.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-396",
+      "name": "whatwg-url",
+      "versionInfo": "14.2.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-397",
+      "name": "decimal.js",
+      "versionInfo": "10.6.0",
+      "downloadLocation": "https://registry.npmmirror.com/decimal.js/-/decimal.js-10.6.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-398",
+      "name": "html-encoding-sniffer",
+      "versionInfo": "4.0.0",
+      "downloadLocation": "https://registry.npmmirror.com/html-encoding-sniffer/-/html-encoding-sniffer-4.0.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-399",
+      "name": "whatwg-encoding",
+      "versionInfo": "3.1.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-400",
+      "name": "http-proxy-agent",
+      "versionInfo": "7.0.2",
+      "downloadLocation": "https://registry.npmmirror.com/http-proxy-agent/-/http-proxy-agent-7.0.2.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-401",
+      "name": "agent-base",
+      "versionInfo": "7.1.4",
+      "downloadLocation": "https://registry.npmmirror.com/agent-base/-/agent-base-7.1.4.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-402",
+      "name": "debug",
+      "versionInfo": "4.4.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-403",
+      "name": "https-proxy-agent",
+      "versionInfo": "7.0.6",
+      "downloadLocation": "https://registry.npmmirror.com/https-proxy-agent/-/https-proxy-agent-7.0.6.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-404",
+      "name": "agent-base",
+      "versionInfo": "7.1.4",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-405",
+      "name": "debug",
+      "versionInfo": "4.4.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-406",
+      "name": "is-potential-custom-element-name",
+      "versionInfo": "1.0.1",
+      "downloadLocation": "https://registry.npmmirror.com/is-potential-custom-element-name/-/is-potential-custom-element-name-1.0.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-407",
+      "name": "nwsapi",
+      "versionInfo": "2.2.28",
+      "downloadLocation": "https://registry.npmmirror.com/nwsapi/-/nwsapi-2.2.28.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-408",
+      "name": "parse5",
+      "versionInfo": "7.3.0",
+      "downloadLocation": "https://registry.npmmirror.com/parse5/-/parse5-7.3.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-409",
+      "name": "entities",
+      "versionInfo": "6.0.1",
+      "downloadLocation": "https://registry.npmmirror.com/entities/-/entities-6.0.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-410",
+      "name": "rrweb-cssom",
+      "versionInfo": "0.8.0",
+      "downloadLocation": "https://registry.npmmirror.com/rrweb-cssom/-/rrweb-cssom-0.8.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-411",
+      "name": "saxes",
+      "versionInfo": "6.0.0",
+      "downloadLocation": "https://registry.npmmirror.com/saxes/-/saxes-6.0.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-412",
+      "name": "xmlchars",
+      "versionInfo": "2.2.0",
+      "downloadLocation": "https://registry.npmmirror.com/xmlchars/-/xmlchars-2.2.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-413",
+      "name": "symbol-tree",
+      "versionInfo": "3.2.4",
+      "downloadLocation": "https://registry.npmmirror.com/symbol-tree/-/symbol-tree-3.2.4.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-414",
+      "name": "tough-cookie",
+      "versionInfo": "5.1.2",
+      "downloadLocation": "https://registry.npmmirror.com/tough-cookie/-/tough-cookie-5.1.2.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-415",
+      "name": "tldts",
+      "versionInfo": "6.1.86",
+      "downloadLocation": "https://registry.npmmirror.com/tldts/-/tldts-6.1.86.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-416",
+      "name": "tldts-core",
+      "versionInfo": "6.1.86",
+      "downloadLocation": "https://registry.npmmirror.com/tldts-core/-/tldts-core-6.1.86.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-417",
+      "name": "w3c-xmlserializer",
+      "versionInfo": "5.0.0",
+      "downloadLocation": "https://registry.npmmirror.com/w3c-xmlserializer/-/w3c-xmlserializer-5.0.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-418",
+      "name": "xml-name-validator",
+      "versionInfo": "5.0.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-419",
+      "name": "webidl-conversions",
+      "versionInfo": "7.0.0",
+      "downloadLocation": "https://registry.npmmirror.com/webidl-conversions/-/webidl-conversions-7.0.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-420",
+      "name": "whatwg-encoding",
+      "versionInfo": "3.1.1",
+      "downloadLocation": "https://registry.npmmirror.com/whatwg-encoding/-/whatwg-encoding-3.1.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-421",
+      "name": "iconv-lite",
+      "versionInfo": "0.6.3",
+      "downloadLocation": "https://registry.npmmirror.com/iconv-lite/-/iconv-lite-0.6.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-422",
+      "name": "safer-buffer",
+      "versionInfo": "2.1.2",
+      "downloadLocation": "https://registry.npmmirror.com/safer-buffer/-/safer-buffer-2.1.2.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-423",
+      "name": "whatwg-mimetype",
+      "versionInfo": "4.0.0",
+      "downloadLocation": "https://registry.npmmirror.com/whatwg-mimetype/-/whatwg-mimetype-4.0.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-424",
+      "name": "whatwg-url",
+      "versionInfo": "14.2.0",
+      "downloadLocation": "https://registry.npmmirror.com/whatwg-url/-/whatwg-url-14.2.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-425",
+      "name": "tr46",
+      "versionInfo": "5.1.1",
+      "downloadLocation": "https://registry.npmmirror.com/tr46/-/tr46-5.1.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-426",
+      "name": "punycode",
+      "versionInfo": "2.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-427",
+      "name": "webidl-conversions",
+      "versionInfo": "7.0.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-428",
+      "name": "ws",
+      "versionInfo": "8.22.0",
+      "downloadLocation": "https://registry.npmmirror.com/ws/-/ws-8.22.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-429",
+      "name": "bufferutil",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-430",
+      "name": "utf-8-validate",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-431",
+      "name": "xml-name-validator",
+      "versionInfo": "5.0.0",
+      "downloadLocation": "https://registry.npmmirror.com/xml-name-validator/-/xml-name-validator-5.0.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-432",
+      "name": "lucide-react",
+      "versionInfo": "0.474.0",
+      "downloadLocation": "https://registry.npmmirror.com/lucide-react/-/lucide-react-0.474.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-433",
+      "name": "react",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-434",
+      "name": "react-dom",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "https://registry.npmmirror.com/react-dom/-/react-dom-18.3.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-435",
+      "name": "loose-envify",
+      "versionInfo": "1.4.0",
+      "downloadLocation": "https://registry.npmmirror.com/loose-envify/-/loose-envify-1.4.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-436",
+      "name": "js-tokens",
+      "versionInfo": "4.0.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-437",
+      "name": "react",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-438",
+      "name": "scheduler",
+      "versionInfo": "0.23.2",
+      "downloadLocation": "https://registry.npmmirror.com/scheduler/-/scheduler-0.23.2.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-439",
+      "name": "loose-envify",
+      "versionInfo": "1.4.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-440",
+      "name": "react-router",
+      "versionInfo": "7.18.4",
+      "downloadLocation": "https://registry.npmmirror.com/react-router/-/react-router-7.18.4.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-441",
+      "name": "cookie",
+      "versionInfo": "1.1.1",
+      "downloadLocation": "https://registry.npmmirror.com/cookie/-/cookie-1.1.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-442",
+      "name": "react-dom",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-443",
+      "name": "react",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-444",
+      "name": "set-cookie-parser",
+      "versionInfo": "2.7.2",
+      "downloadLocation": "https://registry.npmmirror.com/set-cookie-parser/-/set-cookie-parser-2.7.2.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-445",
+      "name": "react",
+      "versionInfo": "18.3.1",
+      "downloadLocation": "https://registry.npmmirror.com/react/-/react-18.3.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-446",
+      "name": "loose-envify",
+      "versionInfo": "1.4.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-447",
+      "name": "tailwindcss",
+      "versionInfo": "4.3.3",
+      "downloadLocation": "https://registry.npmmirror.com/tailwindcss/-/tailwindcss-4.3.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-448",
+      "name": "typescript-eslint",
+      "versionInfo": "8.71.0",
+      "downloadLocation": "https://registry.npmmirror.com/typescript-eslint/-/typescript-eslint-8.71.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-449",
+      "name": "@typescript-eslint/eslint-plugin",
+      "versionInfo": "8.71.0",
+      "downloadLocation": "https://registry.npmmirror.com/@typescript-eslint/eslint-plugin/-/eslint-plugin-8.71.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-450",
+      "name": "@eslint-community/regexpp",
+      "versionInfo": "4.12.2",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-451",
+      "name": "@typescript-eslint/parser",
+      "versionInfo": "8.71.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-452",
+      "name": "@typescript-eslint/scope-manager",
+      "versionInfo": "8.71.0",
+      "downloadLocation": "https://registry.npmmirror.com/@typescript-eslint/scope-manager/-/scope-manager-8.71.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-453",
+      "name": "@typescript-eslint/types",
+      "versionInfo": "8.71.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-454",
+      "name": "@typescript-eslint/visitor-keys",
+      "versionInfo": "8.71.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-455",
+      "name": "@typescript-eslint/type-utils",
+      "versionInfo": "8.71.0",
+      "downloadLocation": "https://registry.npmmirror.com/@typescript-eslint/type-utils/-/type-utils-8.71.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-456",
+      "name": "@typescript-eslint/types",
+      "versionInfo": "8.71.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-457",
+      "name": "@typescript-eslint/typescript-estree",
+      "versionInfo": "8.71.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-458",
+      "name": "@typescript-eslint/utils",
+      "versionInfo": "8.71.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-459",
+      "name": "debug",
+      "versionInfo": "4.4.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-460",
+      "name": "eslint",
+      "versionInfo": "9.39.4",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-461",
+      "name": "ts-api-utils",
+      "versionInfo": "2.5.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-462",
+      "name": "typescript",
+      "versionInfo": "5.9.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-463",
+      "name": "@typescript-eslint/utils",
+      "versionInfo": "8.71.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-464",
+      "name": "@typescript-eslint/visitor-keys",
+      "versionInfo": "8.71.0",
+      "downloadLocation": "https://registry.npmmirror.com/@typescript-eslint/visitor-keys/-/visitor-keys-8.71.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-465",
+      "name": "@typescript-eslint/types",
+      "versionInfo": "8.71.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-466",
+      "name": "eslint-visitor-keys",
+      "versionInfo": "5.0.1",
+      "downloadLocation": "https://registry.npmmirror.com/eslint-visitor-keys/-/eslint-visitor-keys-5.0.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-467",
+      "name": "eslint",
+      "versionInfo": "9.39.4",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-468",
+      "name": "ignore",
+      "versionInfo": "7.0.10",
+      "downloadLocation": "https://registry.npmmirror.com/ignore/-/ignore-7.0.10.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-469",
+      "name": "natural-compare",
+      "versionInfo": "1.4.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-470",
+      "name": "ts-api-utils",
+      "versionInfo": "2.5.0",
+      "downloadLocation": "https://registry.npmmirror.com/ts-api-utils/-/ts-api-utils-2.5.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-471",
+      "name": "typescript",
+      "versionInfo": "5.9.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-472",
+      "name": "typescript",
+      "versionInfo": "5.9.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-473",
+      "name": "@typescript-eslint/parser",
+      "versionInfo": "8.71.0",
+      "downloadLocation": "https://registry.npmmirror.com/@typescript-eslint/parser/-/parser-8.71.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-474",
+      "name": "@typescript-eslint/scope-manager",
+      "versionInfo": "8.71.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-475",
+      "name": "@typescript-eslint/types",
+      "versionInfo": "8.71.0",
+      "downloadLocation": "https://registry.npmmirror.com/@typescript-eslint/types/-/types-8.71.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-476",
+      "name": "@typescript-eslint/typescript-estree",
+      "versionInfo": "8.71.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-477",
+      "name": "@typescript-eslint/visitor-keys",
+      "versionInfo": "8.71.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-478",
+      "name": "debug",
+      "versionInfo": "4.4.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-479",
+      "name": "eslint",
+      "versionInfo": "9.39.4",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-480",
+      "name": "typescript",
+      "versionInfo": "5.9.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-481",
+      "name": "@typescript-eslint/typescript-estree",
+      "versionInfo": "8.71.0",
+      "downloadLocation": "https://registry.npmmirror.com/@typescript-eslint/typescript-estree/-/typescript-estree-8.71.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-482",
+      "name": "@typescript-eslint/project-service",
+      "versionInfo": "8.71.0",
+      "downloadLocation": "https://registry.npmmirror.com/@typescript-eslint/project-service/-/project-service-8.71.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-483",
+      "name": "@typescript-eslint/tsconfig-utils",
+      "versionInfo": "8.71.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-484",
+      "name": "@typescript-eslint/types",
+      "versionInfo": "8.71.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-485",
+      "name": "debug",
+      "versionInfo": "4.4.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-486",
+      "name": "typescript",
+      "versionInfo": "5.9.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-487",
+      "name": "@typescript-eslint/tsconfig-utils",
+      "versionInfo": "8.71.0",
+      "downloadLocation": "https://registry.npmmirror.com/@typescript-eslint/tsconfig-utils/-/tsconfig-utils-8.71.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-488",
+      "name": "typescript",
+      "versionInfo": "5.9.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-489",
+      "name": "@typescript-eslint/types",
+      "versionInfo": "8.71.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-490",
+      "name": "@typescript-eslint/visitor-keys",
+      "versionInfo": "8.71.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-491",
+      "name": "debug",
+      "versionInfo": "4.4.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-492",
+      "name": "minimatch",
+      "versionInfo": "10.2.6",
+      "downloadLocation": "https://registry.npmmirror.com/minimatch/-/minimatch-10.2.6.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-493",
+      "name": "brace-expansion",
+      "versionInfo": "5.0.12",
+      "downloadLocation": "https://registry.npmmirror.com/brace-expansion/-/brace-expansion-5.0.12.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-494",
+      "name": "balanced-match",
+      "versionInfo": "4.0.4",
+      "downloadLocation": "https://registry.npmmirror.com/balanced-match/-/balanced-match-4.0.4.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-495",
+      "name": "semver",
+      "versionInfo": "7.8.5",
+      "downloadLocation": "https://registry.npmmirror.com/semver/-/semver-7.8.5.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-496",
+      "name": "tinyglobby",
+      "versionInfo": "0.2.17",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-497",
+      "name": "ts-api-utils",
+      "versionInfo": "2.5.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-498",
+      "name": "typescript",
+      "versionInfo": "5.9.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-499",
+      "name": "@typescript-eslint/utils",
+      "versionInfo": "8.71.0",
+      "downloadLocation": "https://registry.npmmirror.com/@typescript-eslint/utils/-/utils-8.71.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-500",
+      "name": "@eslint-community/eslint-utils",
+      "versionInfo": "4.10.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-501",
+      "name": "@typescript-eslint/scope-manager",
+      "versionInfo": "8.71.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-502",
+      "name": "@typescript-eslint/types",
+      "versionInfo": "8.71.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-503",
+      "name": "@typescript-eslint/typescript-estree",
+      "versionInfo": "8.71.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-504",
+      "name": "eslint",
+      "versionInfo": "9.39.4",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-505",
+      "name": "typescript",
+      "versionInfo": "5.9.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-506",
+      "name": "eslint",
+      "versionInfo": "9.39.4",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-507",
+      "name": "typescript",
+      "versionInfo": "5.9.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-508",
+      "name": "typescript",
+      "versionInfo": "5.9.3",
+      "downloadLocation": "https://registry.npmmirror.com/typescript/-/typescript-5.9.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-509",
+      "name": "vite",
+      "versionInfo": "6.4.3",
+      "downloadLocation": "https://registry.npmmirror.com/vite/-/vite-6.4.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-510",
+      "name": "@types/node",
+      "versionInfo": "26.6.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-511",
+      "name": "esbuild",
+      "versionInfo": "0.25.12",
+      "downloadLocation": "https://registry.npmmirror.com/esbuild/-/esbuild-0.25.12.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-512",
+      "name": "@esbuild/aix-ppc64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-513",
+      "name": "@esbuild/android-arm",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-514",
+      "name": "@esbuild/android-arm64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-515",
+      "name": "@esbuild/android-x64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-516",
+      "name": "@esbuild/darwin-arm64",
+      "versionInfo": "0.25.12",
+      "downloadLocation": "https://registry.npmmirror.com/@esbuild/darwin-arm64/-/darwin-arm64-0.25.12.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-517",
+      "name": "@esbuild/darwin-x64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-518",
+      "name": "@esbuild/freebsd-arm64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-519",
+      "name": "@esbuild/freebsd-x64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-520",
+      "name": "@esbuild/linux-arm",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-521",
+      "name": "@esbuild/linux-arm64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-522",
+      "name": "@esbuild/linux-ia32",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-523",
+      "name": "@esbuild/linux-loong64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-524",
+      "name": "@esbuild/linux-mips64el",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-525",
+      "name": "@esbuild/linux-ppc64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-526",
+      "name": "@esbuild/linux-riscv64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-527",
+      "name": "@esbuild/linux-s390x",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-528",
+      "name": "@esbuild/linux-x64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-529",
+      "name": "@esbuild/netbsd-arm64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-530",
+      "name": "@esbuild/netbsd-x64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-531",
+      "name": "@esbuild/openbsd-arm64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-532",
+      "name": "@esbuild/openbsd-x64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-533",
+      "name": "@esbuild/openharmony-arm64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-534",
+      "name": "@esbuild/sunos-x64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-535",
+      "name": "@esbuild/win32-arm64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-536",
+      "name": "@esbuild/win32-ia32",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-537",
+      "name": "@esbuild/win32-x64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-538",
+      "name": "fdir",
+      "versionInfo": "6.5.0",
+      "downloadLocation": "https://registry.npmmirror.com/fdir/-/fdir-6.5.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-539",
+      "name": "picomatch",
+      "versionInfo": "4.0.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-540",
+      "name": "fsevents",
+      "versionInfo": "2.3.3",
+      "downloadLocation": "https://registry.npmmirror.com/fsevents/-/fsevents-2.3.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-541",
+      "name": "jiti",
+      "versionInfo": "2.7.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-542",
+      "name": "less",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-543",
+      "name": "lightningcss",
+      "versionInfo": "1.32.0",
+      "downloadLocation": "https://registry.npmmirror.com/lightningcss/-/lightningcss-1.32.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-544",
+      "name": "detect-libc",
+      "versionInfo": "2.1.2",
+      "downloadLocation": "https://registry.npmmirror.com/detect-libc/-/detect-libc-2.1.2.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-545",
+      "name": "lightningcss-android-arm64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-546",
+      "name": "lightningcss-darwin-arm64",
+      "versionInfo": "1.32.0",
+      "downloadLocation": "https://registry.npmmirror.com/lightningcss-darwin-arm64/-/lightningcss-darwin-arm64-1.32.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-547",
+      "name": "lightningcss-darwin-x64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-548",
+      "name": "lightningcss-freebsd-x64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-549",
+      "name": "lightningcss-linux-arm-gnueabihf",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-550",
+      "name": "lightningcss-linux-arm64-gnu",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-551",
+      "name": "lightningcss-linux-arm64-musl",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-552",
+      "name": "lightningcss-linux-x64-gnu",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-553",
+      "name": "lightningcss-linux-x64-musl",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-554",
+      "name": "lightningcss-win32-arm64-msvc",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-555",
+      "name": "lightningcss-win32-x64-msvc",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-556",
+      "name": "picomatch",
+      "versionInfo": "4.0.7",
+      "downloadLocation": "https://registry.npmmirror.com/picomatch/-/picomatch-4.0.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-557",
+      "name": "postcss",
+      "versionInfo": "8.5.28",
+      "downloadLocation": "https://registry.npmmirror.com/postcss/-/postcss-8.5.28.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-558",
+      "name": "nanoid",
+      "versionInfo": "3.3.19",
+      "downloadLocation": "https://registry.npmmirror.com/nanoid/-/nanoid-3.3.19.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-559",
+      "name": "picocolors",
+      "versionInfo": "1.1.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-560",
+      "name": "source-map-js",
+      "versionInfo": "1.2.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-561",
+      "name": "rollup",
+      "versionInfo": "4.63.5",
+      "downloadLocation": "https://registry.npmmirror.com/rollup/-/rollup-4.63.5.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-562",
+      "name": "@napi-rs/lzma-linux-x64-gnu",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-563",
+      "name": "@rollup/rollup-android-arm-eabi",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-564",
+      "name": "@rollup/rollup-android-arm64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-565",
+      "name": "@rollup/rollup-darwin-arm64",
+      "versionInfo": "4.63.5",
+      "downloadLocation": "https://registry.npmmirror.com/@rollup/rollup-darwin-arm64/-/rollup-darwin-arm64-4.63.5.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-566",
+      "name": "@rollup/rollup-darwin-x64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-567",
+      "name": "@rollup/rollup-freebsd-arm64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-568",
+      "name": "@rollup/rollup-freebsd-x64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-569",
+      "name": "@rollup/rollup-linux-arm-gnueabihf",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-570",
+      "name": "@rollup/rollup-linux-arm-musleabihf",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-571",
+      "name": "@rollup/rollup-linux-arm64-gnu",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-572",
+      "name": "@rollup/rollup-linux-arm64-musl",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-573",
+      "name": "@rollup/rollup-linux-loong64-gnu",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-574",
+      "name": "@rollup/rollup-linux-loong64-musl",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-575",
+      "name": "@rollup/rollup-linux-ppc64-gnu",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-576",
+      "name": "@rollup/rollup-linux-ppc64-musl",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-577",
+      "name": "@rollup/rollup-linux-riscv64-gnu",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-578",
+      "name": "@rollup/rollup-linux-riscv64-musl",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-579",
+      "name": "@rollup/rollup-linux-s390x-gnu",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-580",
+      "name": "@rollup/rollup-linux-x64-gnu",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-581",
+      "name": "@rollup/rollup-linux-x64-musl",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-582",
+      "name": "@rollup/rollup-openbsd-x64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-583",
+      "name": "@rollup/rollup-openharmony-arm64",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-584",
+      "name": "@rollup/rollup-win32-arm64-msvc",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-585",
+      "name": "@rollup/rollup-win32-ia32-msvc",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-586",
+      "name": "@rollup/rollup-win32-x64-gnu",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-587",
+      "name": "@rollup/rollup-win32-x64-msvc",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-588",
+      "name": "@types/estree",
+      "versionInfo": "1.0.9",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-589",
+      "name": "fsevents",
+      "versionInfo": "2.3.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-590",
+      "name": "sass-embedded",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-591",
+      "name": "sass",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-592",
+      "name": "stylus",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-593",
+      "name": "sugarss",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-594",
+      "name": "terser",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-595",
+      "name": "tinyglobby",
+      "versionInfo": "0.2.17",
+      "downloadLocation": "https://registry.npmmirror.com/tinyglobby/-/tinyglobby-0.2.17.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-596",
+      "name": "fdir",
+      "versionInfo": "6.5.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-597",
+      "name": "picomatch",
+      "versionInfo": "4.0.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-598",
+      "name": "tsx",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-599",
+      "name": "yaml",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-600",
+      "name": "vitest",
+      "versionInfo": "3.2.7",
+      "downloadLocation": "https://registry.npmmirror.com/vitest/-/vitest-3.2.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-601",
+      "name": "@edge-runtime/vm",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-602",
+      "name": "@types/chai",
+      "versionInfo": "5.2.3",
+      "downloadLocation": "https://registry.npmmirror.com/@types/chai/-/chai-5.2.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-603",
+      "name": "@types/deep-eql",
+      "versionInfo": "4.0.2",
+      "downloadLocation": "https://registry.npmmirror.com/@types/deep-eql/-/deep-eql-4.0.2.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-604",
+      "name": "assertion-error",
+      "versionInfo": "2.0.1",
+      "downloadLocation": "https://registry.npmmirror.com/assertion-error/-/assertion-error-2.0.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-605",
+      "name": "@types/debug",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-606",
+      "name": "@types/node",
+      "versionInfo": "26.6.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-607",
+      "name": "@vitest/browser",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-608",
+      "name": "@vitest/expect",
+      "versionInfo": "3.2.7",
+      "downloadLocation": "https://registry.npmmirror.com/@vitest/expect/-/expect-3.2.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-609",
+      "name": "@types/chai",
+      "versionInfo": "5.2.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-610",
+      "name": "@vitest/spy",
+      "versionInfo": "3.2.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-611",
+      "name": "@vitest/utils",
+      "versionInfo": "3.2.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-612",
+      "name": "chai",
+      "versionInfo": "5.3.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-613",
+      "name": "tinyrainbow",
+      "versionInfo": "2.0.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-614",
+      "name": "@vitest/mocker",
+      "versionInfo": "3.2.7",
+      "downloadLocation": "https://registry.npmmirror.com/@vitest/mocker/-/mocker-3.2.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-615",
+      "name": "@vitest/spy",
+      "versionInfo": "3.2.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-616",
+      "name": "estree-walker",
+      "versionInfo": "3.0.3",
+      "downloadLocation": "https://registry.npmmirror.com/estree-walker/-/estree-walker-3.0.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-617",
+      "name": "@types/estree",
+      "versionInfo": "1.0.9",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-618",
+      "name": "magic-string",
+      "versionInfo": "0.30.21",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-619",
+      "name": "msw",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-620",
+      "name": "vite",
+      "versionInfo": "6.4.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-621",
+      "name": "@vitest/pretty-format",
+      "versionInfo": "3.2.7",
+      "downloadLocation": "https://registry.npmmirror.com/@vitest/pretty-format/-/pretty-format-3.2.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-622",
+      "name": "tinyrainbow",
+      "versionInfo": "2.0.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-623",
+      "name": "@vitest/runner",
+      "versionInfo": "3.2.7",
+      "downloadLocation": "https://registry.npmmirror.com/@vitest/runner/-/runner-3.2.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-624",
+      "name": "@vitest/utils",
+      "versionInfo": "3.2.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-625",
+      "name": "pathe",
+      "versionInfo": "2.0.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-626",
+      "name": "strip-literal",
+      "versionInfo": "3.1.0",
+      "downloadLocation": "https://registry.npmmirror.com/strip-literal/-/strip-literal-3.1.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-627",
+      "name": "js-tokens",
+      "versionInfo": "9.0.1",
+      "downloadLocation": "https://registry.npmmirror.com/js-tokens/-/js-tokens-9.0.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-628",
+      "name": "@vitest/snapshot",
+      "versionInfo": "3.2.7",
+      "downloadLocation": "https://registry.npmmirror.com/@vitest/snapshot/-/snapshot-3.2.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-629",
+      "name": "@vitest/pretty-format",
+      "versionInfo": "3.2.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-630",
+      "name": "magic-string",
+      "versionInfo": "0.30.21",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-631",
+      "name": "pathe",
+      "versionInfo": "2.0.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-632",
+      "name": "@vitest/spy",
+      "versionInfo": "3.2.7",
+      "downloadLocation": "https://registry.npmmirror.com/@vitest/spy/-/spy-3.2.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-633",
+      "name": "tinyspy",
+      "versionInfo": "4.0.6",
+      "downloadLocation": "https://registry.npmmirror.com/tinyspy/-/tinyspy-4.0.6.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-634",
+      "name": "@vitest/ui",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-635",
+      "name": "@vitest/utils",
+      "versionInfo": "3.2.7",
+      "downloadLocation": "https://registry.npmmirror.com/@vitest/utils/-/utils-3.2.7.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-636",
+      "name": "@vitest/pretty-format",
+      "versionInfo": "3.2.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-637",
+      "name": "loupe",
+      "versionInfo": "3.2.1",
+      "downloadLocation": "https://registry.npmmirror.com/loupe/-/loupe-3.2.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-638",
+      "name": "tinyrainbow",
+      "versionInfo": "2.0.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-639",
+      "name": "chai",
+      "versionInfo": "5.3.3",
+      "downloadLocation": "https://registry.npmmirror.com/chai/-/chai-5.3.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-640",
+      "name": "assertion-error",
+      "versionInfo": "2.0.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-641",
+      "name": "check-error",
+      "versionInfo": "2.1.3",
+      "downloadLocation": "https://registry.npmmirror.com/check-error/-/check-error-2.1.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-642",
+      "name": "deep-eql",
+      "versionInfo": "5.0.2",
+      "downloadLocation": "https://registry.npmmirror.com/deep-eql/-/deep-eql-5.0.2.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-643",
+      "name": "loupe",
+      "versionInfo": "3.2.1",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-644",
+      "name": "pathval",
+      "versionInfo": "2.0.1",
+      "downloadLocation": "https://registry.npmmirror.com/pathval/-/pathval-2.0.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-645",
+      "name": "debug",
+      "versionInfo": "4.4.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-646",
+      "name": "expect-type",
+      "versionInfo": "1.4.0",
+      "downloadLocation": "https://registry.npmmirror.com/expect-type/-/expect-type-1.4.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-647",
+      "name": "happy-dom",
+      "versionInfo": "?",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-648",
+      "name": "jsdom",
+      "versionInfo": "26.1.0",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-649",
+      "name": "magic-string",
+      "versionInfo": "0.30.21",
+      "downloadLocation": "https://registry.npmmirror.com/magic-string/-/magic-string-0.30.21.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-650",
+      "name": "@jridgewell/sourcemap-codec",
+      "versionInfo": "1.6.0",
+      "downloadLocation": "https://registry.npmmirror.com/@jridgewell/sourcemap-codec/-/sourcemap-codec-1.6.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-651",
+      "name": "pathe",
+      "versionInfo": "2.0.3",
+      "downloadLocation": "https://registry.npmmirror.com/pathe/-/pathe-2.0.3.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-652",
+      "name": "picomatch",
+      "versionInfo": "4.0.7",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-653",
+      "name": "std-env",
+      "versionInfo": "3.10.0",
+      "downloadLocation": "https://registry.npmmirror.com/std-env/-/std-env-3.10.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-654",
+      "name": "tinybench",
+      "versionInfo": "2.9.0",
+      "downloadLocation": "https://registry.npmmirror.com/tinybench/-/tinybench-2.9.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-655",
+      "name": "tinyexec",
+      "versionInfo": "0.3.2",
+      "downloadLocation": "https://registry.npmmirror.com/tinyexec/-/tinyexec-0.3.2.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-656",
+      "name": "tinyglobby",
+      "versionInfo": "0.2.17",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-657",
+      "name": "tinypool",
+      "versionInfo": "1.1.1",
+      "downloadLocation": "https://registry.npmmirror.com/tinypool/-/tinypool-1.1.1.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-658",
+      "name": "tinyrainbow",
+      "versionInfo": "2.0.0",
+      "downloadLocation": "https://registry.npmmirror.com/tinyrainbow/-/tinyrainbow-2.0.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-659",
+      "name": "vite-node",
+      "versionInfo": "3.2.4",
+      "downloadLocation": "https://registry.npmmirror.com/vite-node/-/vite-node-3.2.4.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-660",
+      "name": "cac",
+      "versionInfo": "6.7.14",
+      "downloadLocation": "https://registry.npmmirror.com/cac/-/cac-6.7.14.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-661",
+      "name": "debug",
+      "versionInfo": "4.4.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-662",
+      "name": "es-module-lexer",
+      "versionInfo": "1.7.0",
+      "downloadLocation": "https://registry.npmmirror.com/es-module-lexer/-/es-module-lexer-1.7.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-663",
+      "name": "pathe",
+      "versionInfo": "2.0.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-664",
+      "name": "vite",
+      "versionInfo": "6.4.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-665",
+      "name": "vite",
+      "versionInfo": "6.4.3",
+      "downloadLocation": "NOASSERTION",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-666",
+      "name": "why-is-node-running",
+      "versionInfo": "2.3.0",
+      "downloadLocation": "https://registry.npmmirror.com/why-is-node-running/-/why-is-node-running-2.3.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-667",
+      "name": "siginfo",
+      "versionInfo": "2.0.0",
+      "downloadLocation": "https://registry.npmmirror.com/siginfo/-/siginfo-2.0.0.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-668",
+      "name": "stackback",
+      "versionInfo": "0.0.2",
+      "downloadLocation": "https://registry.npmmirror.com/stackback/-/stackback-0.0.2.tgz",
+      "licenseConcluded": "UNKNOWN",
+      "licenseDeclared": "UNKNOWN"
+    }
+  ]
+}

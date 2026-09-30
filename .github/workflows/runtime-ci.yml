@@ -192,6 +192,10 @@ jobs:
         # （豁免须在 web/scripts/license-audit.mjs 的 WAIVERS 登记理由）
         run: npm run license:audit
 
+      - name: SBOM consistency check
+        # sbom.spdx.json 与实际安装树数量一致（漂移即失败）
+        run: node scripts/sbom-check.mjs
+
   # 后端契约漂移检测：OpenAPI 快照与代码不同步即失败（前端类型契约的锚点）
   contract:
     runs-on: ubuntu-latest
@@ -218,6 +222,115 @@ jobs:
             diff /tmp/openapi.json web/openapi.json | head -40
             exit 1
           fi
+
+  # 浏览器 E2E + 无障碍门禁（issue #34）：compose 栈 + 真实浏览器
+  # CI 不跑 Playwright 的替代（vitest 已在 web job）——这是真实服务证据
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      TEST_DATABASE_DSN: postgresql://postgres:postgres@localhost:5432/postgres
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up uv (pinned Python 3.11)
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.11"
+          enable-cache: true
+
+      - name: Set up Node (pinned major)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install backend dependencies
+        run: uv sync --frozen
+
+      - name: Install frontend dependencies
+        working-directory: web
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: web
+        run: npx playwright install chromium --with-deps
+
+      - name: Build MVP snapshot database
+        run: |
+          uv run python -c "
+          from src.db.testing import run_alembic
+          run_alembic('upgrade','head','$TEST_DATABASE_DSN')"
+          uv run python -c "
+          import pathlib
+          from scripts.build_mvp_snapshot import build_snapshot
+          build_snapshot('$TEST_DATABASE_DSN',
+              output_dir=pathlib.Path('/tmp/snap'))"
+
+      - name: Start API with review enabled
+        run: |
+          nohup uv run python -c "
+          import hashlib, uvicorn
+          from apps.api.app import create_app
+          from src.core.config import Settings
+          s = Settings(postgres_host='127.0.0.1', postgres_port=5432,
+              postgres_db='postgres', postgres_user='postgres',
+              postgres_password='postgres',
+              neo4j_uri='bolt://127.0.0.1:7687', neo4j_user='neo4j',
+              neo4j_password='ci-neo4j', environment='ci',
+              review_write_enabled=True,
+              review_api_key_hashes=hashlib.sha256(b'ci-reviewer-key').hexdigest())
+          uvicorn.run(create_app(s), host='127.0.0.1', port=8111, log_level='warning')
+          " > /tmp/api.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8111/readyz > /dev/null && echo API-UP && break
+            sleep 1
+          done
+
+      - name: Start vite dev server
+        working-directory: web
+        run: |
+          BUILD_ID=ci-${{ github.sha }} nohup node_modules/.bin/vite --port 4173 --strictPort > /tmp/vite.log 2>&1 &
+          for i in $(seq 1 20); do
+            curl -sf http://localhost:4173/ > /dev/null && echo WEB-UP && break
+            sleep 1
+          done
+        env:
+          VITE_API_PROXY: http://127.0.0.1:8111
+
+      - name: Browser E2E + WCAG 2.2 AA accessibility suite
+        working-directory: web
+        run: npx playwright test
+        env:
+          E2E_BASE_URL: http://localhost:4173
+          E2E_REVIEWER_KEY: ci-reviewer-key
+
+      - name: Upload E2E screenshots and reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-evidence
+          path: |
+            web/screenshots/
+            web/test-results/
+          retention-days: 14
+          if-no-files-found: ignore
 
   secret-scan:
     runs-on: ubuntu-latest
