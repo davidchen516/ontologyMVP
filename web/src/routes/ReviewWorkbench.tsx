@@ -92,7 +92,19 @@ export function ReviewWorkbench() {
     },
     onError: (error) => {
       if (error instanceof ApiClientError && error.status === 409) {
-        setConflict("该任务已被其他审核者处理（并发冲突）——请刷新查看最新状态。");
+        // 后端 409 detail 可能是对象（并发冲突+当前状态）或字符串
+        // （状态机/证据拒绝——具体可修复原因）——都如实呈现
+        const detail = error.detail;
+        if (typeof detail === "string") {
+          setConflict(`决定被拒绝：${detail}`);
+        } else if (detail && typeof detail === "object") {
+          const d = detail as { message?: string; current_claim_status?: string };
+          setConflict(
+            `并发冲突：${d.message ?? ""}（当前状态：${d.current_claim_status ?? "未知"}）——请刷新查看最新状态。`,
+          );
+        } else {
+          setConflict("该任务已被其他审核者处理（并发冲突）——请刷新查看最新状态。");
+        }
         void queue.refetch();
       }
     },

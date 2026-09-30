@@ -21,10 +21,10 @@ V0.2 #33 要求审核写操作（接受/拒绝 Claim）必须先有认证、授�
 | 授权 | 持有有效 key ⇒ Reviewer 角色（写审核）；无 key ⇒ 只读 | 角色单一——#33 的写面只有审核决定 |
 | 开关 | `Settings.review_write_enabled`（默认 False）——关闭时写端点返回 503 + 能力 UNAVAILABLE，UI 登录入口不渲染 | Epic 回滚要求：默认关，关掉只留只读 |
 | 并发 | 沿用 #7 `review_decide` 的乐观并发（`ReviewConflictError` → HTTP 409 + 当前版本回传） | 既有资产，不重复造 |
-| 幂等 | `Idempotency-Key` 请求头（客户端生成 UUID）：同 key 重放返回首次结果（审计唯一键 `review:{key}` 查重） | GWT：网络重试不产生第二个决定 |
-| CSRF | 无 Cookie 会话 ⇒ CSRF 面不存在；CORS 同源 only（`CORSMiddleware` allow_origins=[]，同源 fetch 不需要 CORS 放行） | API-Key 方案的天然属性 |
+| 幂等 | `Idempotency-Key` 请求头（客户端生成 UUID）：决定提交后以 `ops.audit_event`（event_type=REVIEW_DECISION_IDEMPOTENCY + payload.idempotency_key）锚点查重，同 key 重放返回任务终态 | GWT：网络重试不产生第二个决定 |
+| CSRF | 无 Cookie 会话 ⇒ CSRF 面不存在；未配置 CORSMiddleware ⇒ 严格同源（跨域请求被浏览器默认拦截——比显式空 allowlist 更直接） | API-Key 方案的天然属性 |
 | 审计 | 沿用 `accept_claim`/review 事务内 `audit_event`（决定/理由/审核人/前后状态/trace_id）+ `reviewed_by = key 的 reviewer 标识` | 既有资产 |
-| 密钥存储 | 服务端只存 SHA-256 哈希；明文仅存在于运维交付渠道（.env 不入库——gitleaks + 启动校验拒绝明文 "sha256:" 前缀以外的弱值） | Secret 不入仓库/日志（红线） |
+| 密钥存储 | 服务端只存 SHA-256 哈希；明文仅存在于运维交付渠道（.env 不入库——gitleaks 扫描 + 哈希对哈希比对的 fail-closed：误配明文密钥时哈希不匹配、认证恒失败） | Secret 不入仓库/日志（红线） |
 
 **升级路径（触发条件即换）**：多人协作/跨网络访问/细粒度角色 → 标准
 OIDC（Keycloak/Auth0）+ 短时会话；本方案的路由守卫/幂等/审计层不变，

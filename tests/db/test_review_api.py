@@ -254,3 +254,63 @@ def test_decision_validation(uow_factory, main_dsn) -> None:
         headers={**AUTH, "Idempotency-Key": uuid.uuid4().hex},
     )
     assert r2.status_code == 422
+
+
+def test_true_concurrent_decision_returns_409_with_state(uow_factory, main_dsn) -> None:
+    """B1 回归：悲观锁竞争（真并发窗口）→ 409 + 当前状态（非 500）。
+
+    外部事务持 FOR UPDATE 锁期间提交决定 = 第二位 Reviewer 的真实并发。
+    """
+    import threading
+
+    seeded = seed_review_task(uow_factory)
+    client = review_client(main_dsn)
+
+    # 外部长事务持锁：模拟第一位 Reviewer 正在处理
+    conn_holding = psycopg.connect(main_dsn)
+    conn_holding.execute("BEGIN")
+    conn_holding.execute(
+        "SELECT id FROM fact.claim WHERE id = %s FOR UPDATE",
+        (str(seeded["claim"]["id"]),),
+    )
+
+    result: dict = {}
+
+    def second_reviewer():
+        r = client.post(
+            f"/api/v1/review/tasks/{seeded['task']['id']}/decision",
+            json={"decision": "ACCEPTED", "reason": "second reviewer"},
+            headers={**AUTH, "Idempotency-Key": uuid.uuid4().hex},
+        )
+        result["status"] = r.status_code
+        result["body"] = r.json()
+
+    thread = threading.Thread(target=second_reviewer)
+    thread.start()
+    thread.join(timeout=15)
+    conn_holding.rollback()
+    conn_holding.close()
+
+    # 真并发：锁竞争 → 409（而非未捕获异常 500），detail 携带当前状态
+    assert result["status"] == 409, result
+    detail = result["body"]["detail"]
+    assert detail["message"] == "review task was modified by another reviewer"
+    assert "reason" in detail  # 根因可见（ConcurrentClaimUpdateError）
+    assert detail["current_claim_status"] == "NEEDS_REVIEW"  # 锁回滚后原状态
+
+    with psycopg.connect(main_dsn) as conn:
+        status = conn.execute(
+            "SELECT claim_status FROM fact.claim WHERE id = %s",
+            (seeded["claim"]["id"],),
+        ).fetchone()[0]
+    assert status == "NEEDS_REVIEW"  # 后到者零副作用（不覆盖）
+
+
+def test_queue_invalid_status_422(uow_factory, main_dsn) -> None:
+    """M3 回归：非法 status → 422（而非 DB 枚举转换 500）。"""
+    client = review_client(main_dsn)
+    r = client.get(
+        "/api/v1/review/queue", params={"status": "BOGUS_ENUM"}, headers=AUTH,
+    )
+    assert r.status_code == 422
+    assert "OPEN" in str(r.json()["detail"])

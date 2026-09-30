@@ -14,11 +14,15 @@ async function adminList(
 ): Promise<Array<Record<string, unknown>>> {
   const data = await apiFetch<
     | Array<Record<string, unknown>>
-    | { items?: Array<Record<string, unknown>>; runs?: Array<Record<string, unknown>> }
+    | {
+        items?: Array<Record<string, unknown>>;
+        runs?: Array<Record<string, unknown>>;
+        review_tasks?: Array<Record<string, unknown>>;
+      }
   >(path, { signal });
-  // 裸数组（如 /admin/capabilities 的 source_capability 行）或 {items}/{runs}
+  // 裸数组（如 /admin/capabilities）或 {items}/{runs}/{review_tasks} 信封
   if (Array.isArray(data)) return data;
-  return data.items ?? data.runs ?? [];
+  return data.items ?? data.runs ?? data.review_tasks ?? [];
 }
 
 export function OpsPage() {

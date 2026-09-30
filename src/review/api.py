@@ -2,8 +2,9 @@
 
 POST /api/v1/review/tasks/{task_id}/decision
 - 认证：X-Reviewer-Key（SHA-256 哈希比对）+ 服务端开关（默认 503）；
-- 幂等：Idempotency-Key 头（客户端 UUID）——同 key 重放返回首次结果，
-  审计侧以 ops.audit_event 唯一 activity_id 查重（不产生第二个决定）；
+- 幂等：Idempotency-Key 头（客户端 UUID）——决定提交后以
+  ops.audit_event（event_type=REVIEW_DECISION_IDEMPOTENCY +
+  payload.idempotency_key）锚点查重，同 key 重放返回任务终态；
 - 并发：#7 review_decide 的乐观并发（ReviewConflictError → 409 +
   当前状态回传供刷新差异）；
 - 事务：决定经 review_decide → accept_claim/状态机 原子提交
@@ -21,6 +22,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
 from src.claims.review import ReviewConflictError, review_decide
+from src.db.repositories import ConcurrentClaimUpdateError
 from src.db.uow import UnitOfWorkFactory
 from src.domain.claim_service import ClaimAcceptanceError
 from src.query.api import _connect_read_only
@@ -50,6 +52,13 @@ async def review_queue(
 ) -> dict[str, Any]:
     """待审队列（Reviewer 只读）：任务 + Claim 摘要 + 证据计数。"""
     settings = request.app.state.settings
+    # status 白名单校验（非法枚举 → 422，而非 DB 转换错误 500）
+    allowed_statuses = {"OPEN", "IN_PROGRESS", "COMPLETED", "CANCELLED"}
+    if status not in allowed_statuses:
+        raise HTTPException(
+            status_code=422,
+            detail=f"status must be one of {sorted(allowed_statuses)}",
+        )
     with _connect_read_only(settings.postgres_dsn) as conn:
         rows = conn.execute(
             """
@@ -150,8 +159,9 @@ async def submit_review_decision(
             )
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except ReviewConflictError as exc:
-        # 乐观并发冲突：回传当前状态供 UI 刷新差异
+    except (ReviewConflictError, ConcurrentClaimUpdateError) as exc:
+        # 并发冲突（乐观守卫/悲观锁 NOWAIT——另一审核者正在处理或已决定）：
+        # 回传当前状态供 UI 刷新差异（绝不让后到者覆盖）
         with _connect_read_only(settings.postgres_dsn) as conn:
             current = conn.execute(
                 "SELECT status, decision FROM fact.review_task WHERE id = %s",
@@ -166,6 +176,7 @@ async def submit_review_decision(
             status_code=409,
             detail={
                 "message": "review task was modified by another reviewer",
+                "reason": str(exc),
                 "current_task_status": current[0] if current else None,
                 "current_decision": current[1] if current else None,
                 "current_claim_status": claim_state[0] if claim_state else None,

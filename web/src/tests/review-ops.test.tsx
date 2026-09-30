@@ -60,7 +60,11 @@ describe("审核工作台（issue #33 关闭条件）", () => {
     expect(screen.queryByLabelText("Reviewer Key")).not.toBeInTheDocument();
   });
 
-  it("GWT：Reviewer 进入队列 → 任务摘要 + 决定须理由 + 409 冲突提示", async () => {
+  it(
+    "GWT：Reviewer 进入队列 → 任务摘要 + 决定须理由 + 409 冲突提示",
+    { timeout: 10_000 },
+    async () => {
+    const user = userEvent.setup({ delay: null });
     let decided = false;
     vi.stubGlobal("fetch", vi.fn(async (path: string) => {
       if (path === "/readyz") {
@@ -75,7 +79,11 @@ describe("审核工作台（issue #33 关闭条件）", () => {
         if (decided) {
           return { ok: false, status: 409, headers: new Headers(),
                    json: async () => ({ detail: {
-                     message: "review task was modified by another reviewer" } }) } as Response;
+                     message: "review task was modified by another reviewer",
+                     reason: "concurrent update on claim c-1",
+                     current_task_status: "COMPLETED",
+                     current_decision: "ACCEPT",
+                     current_claim_status: "ACCEPTED" } }) } as Response;
         }
         decided = true;
         return { ok: true, status: 200, headers: new Headers(),
@@ -87,8 +95,8 @@ describe("审核工作台（issue #33 关闭条件）", () => {
     renderPage(<ReviewWorkbench />);
 
     // 登录（key 内存态）
-    await userEvent.type(await screen.findByLabelText("Reviewer Key"), "valid-key");
-    await userEvent.click(screen.getByRole("button", { name: "进入审核工作台" }));
+    await user.type(await screen.findByLabelText("Reviewer Key"), "valid-key");
+    await user.click(screen.getByRole("button", { name: "进入审核工作台" }));
 
     // 队列渲染：任务摘要字段
     expect(await screen.findByText(/PRODUCES/)).toBeInTheDocument();
@@ -96,24 +104,30 @@ describe("审核工作台（issue #33 关闭条件）", () => {
     expect(screen.getByText(/优先级 HIGH/)).toBeInTheDocument();
 
     // 接受 → 理由必填 → 提交
-    await userEvent.click(screen.getByRole("button", { name: "接受" }));
+    await user.click(screen.getByRole("button", { name: "接受" }));
     expect(screen.getByRole("dialog", { name: "审核决定" })).toBeInTheDocument();
     // 状态机后果可见
     expect(screen.getByText(/NEEDS_REVIEW → ACCEPTED/)).toBeInTheDocument();
     const submit = screen.getByRole("button", { name: "确认提交" });
     expect(submit).toBeDisabled(); // 理由为空时禁用
-    await userEvent.type(screen.getByLabelText("决定理由"), "证据充分");
-    await userEvent.click(submit);
+    await user.type(screen.getByLabelText("决定理由"), "证据充分");
+    await user.click(submit);
 
-    // 第一次成功 → 队列刷新 → 再操作第二个决定 → 409 冲突提示可见
+    // 第一次成功 → 再决定 → 409 冲突（decided=true 后 mock 全返回 409）
     await waitFor(() => expect(decided).toBe(true));
-    await userEvent.click(await screen.findByRole("button", { name: "接受" }));
-    await userEvent.type(screen.getByLabelText("决定理由"), "再次提交");
-    await userEvent.click(screen.getByRole("button", { name: "确认提交" }));
+    await user.click(screen.getByRole("button", { name: "接受" }));
+    // 第二个对话框打开后填写提交
+    const reason2 = await screen.findByLabelText("决定理由");
+    await user.type(reason2, "再次提交");
+    await user.click(screen.getByRole("button", { name: "确认提交" }));
     await waitFor(() =>
       expect(screen.getByRole("alert")).toHaveTextContent("并发冲突"),
+      { timeout: 4000 },
     );
-  });
+    // B1 修复契约：后端回传的当前状态也如实渲染
+    expect(screen.getByRole("alert")).toHaveTextContent("ACCEPTED");
+    },
+  );
 
   it("Reviewer key 不入 localStorage/URL", async () => {
     vi.stubGlobal("fetch", vi.fn(async (path: string) => {
@@ -146,7 +160,7 @@ describe("运维页（issue #33）", () => {
         "/admin/capabilities": [
           { source_system: "TUSHARE", api_name: "stock_basic", status: "OK" },
         ],
-        "/admin/ingest-runs": { items: [
+        "/admin/ingest-runs": { runs: [
           { dataset_name: "tushare:stock_basic", status: "SUCCEEDED" },
         ] },
         "/admin/normalization-runs": { runs: [
@@ -155,9 +169,9 @@ describe("运维页（issue #33）", () => {
         "/admin/projection/status": { outbox: { pending: 0 } },
         "/admin/projection/reconciliation": { business_edges: { total: 340 } },
         "/admin/data-freshness": { latest_claim_at: "2026-09-30T00:00:00Z" },
-        "/admin/review-tasks": { items: [
+        "/admin/review-tasks": { review_tasks: [
           { id: "r1", status: "OPEN" },
-        ] },
+        ], count: 1 },
       };
       for (const [prefix, payload] of Object.entries(payloads)) {
         if (path.startsWith(prefix)) {

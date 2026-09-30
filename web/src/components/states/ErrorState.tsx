@@ -21,7 +21,11 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
       </div>
       <p className="text-sm text-fg-muted">{apiError.message}</p>
       {apiError.kind === "validation" && apiError.detail ? (
-        <p className="text-sm text-fg-muted">原因：{apiError.detail}</p>
+        <p className="text-sm text-fg-muted">
+          原因：{typeof apiError.detail === "string"
+            ? apiError.detail
+            : JSON.stringify(apiError.detail)}
+        </p>
       ) : null}
       {apiError.traceId ? (
         <p className="font-mono text-xs text-fg-muted">
