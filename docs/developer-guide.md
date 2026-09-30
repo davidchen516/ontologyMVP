@@ -9,7 +9,7 @@ permalink: /developer-guide.html
 
 ## 先确认仓库阶段
 
-当前 `main` 已具备可启动的 API/Worker/Compose 工程基线，但还不是完整产品。开始代码工作前先查看 [V0.1 Epic](https://github.com/davidchen516/ontologyMVP/issues/12) 与对应子 Issue，确认依赖、已实现边界和验收门禁。
+当前 `main` 已完成 V0.1 后端纵向闭环（#1～#12），包括采集、标准化、语义、证据、Claim、图投影、查询和质量门禁；当前产品缺口是可交互 Web UI。开始界面工作前先查看 [V0.2 Epic #29](https://github.com/davidchen516/ontologyMVP/issues/29)、[产品界面设计](product-ui.html)与对应子 Issue。
 
 ## 仓库地图
 
@@ -26,6 +26,7 @@ permalink: /developer-guide.html
 ├── docker-compose.yml     PostgreSQL、Neo4j、API 与 Worker
 ├── pyproject.toml         Python 依赖与工具配置
 ├── uv.lock                精确 Python 依赖锁
+├── web/                    V0.2 计划新增的产品 Web UI（尚未创建）
 ├── _config.yml            Jekyll / Just the Docs 配置
 ├── Gemfile                文档构建依赖
 ├── README.md              仓库入口
@@ -33,7 +34,7 @@ permalink: /developer-guide.html
 └── SECURITY.md            安全报告入口
 ```
 
-工程脚手架对应的 [Issue #1](https://github.com/davidchen516/ontologyMVP/issues/1) 已关闭；数据库 Schema/Alembic 迁移仍由 [Issue #2](https://github.com/davidchen516/ontologyMVP/issues/2) 跟踪，后续模块按 [Roadmap](roadmap.html) 逐步落地。
+V0.1 收尾证据见 [Epic 收尾报告](epic-closeout.html)和[MVP 验收报告](mvp-acceptance-report.html)。V0.2 按 [Roadmap](roadmap.html) 和 #30～#34 推进；在 #30 完成前不要预建另一套前端框架。
 
 ## 本地代码工作流
 
@@ -86,7 +87,7 @@ bundle exec jekyll build --strict_front_matter
 5. 对最难需求的最小 PoC；
 6. 精确或兼容版本、锁文件和许可证通知。
 
-文档站选型示例见 [ADR-0004](adr/0004-documentation-site.html)。
+文档站选型见 [ADR-0004](adr/0004-documentation-site.html)，产品界面选型见 [ADR-0005](adr/0005-product-ui-stack.html)。
 
 ## 变更类型
 

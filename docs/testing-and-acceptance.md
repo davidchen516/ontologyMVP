@@ -11,7 +11,10 @@ permalink: /testing-and-acceptance.html
 
 当前 GitHub Actions 已分为三条流水线：
 
-- **Runtime CI**：按 `uv.lock` 冻结安装，运行 Ruff、pytest、设计资产校验和 Gitleaks；
+- **Runtime CI / test**：按 `uv.lock` 冻结安装，运行 Ruff、离线单元/集成测试和设计资产校验；
+- **Runtime CI / db**：启动真实 PostgreSQL/pgvector 与 Neo4j，运行迁移、数据库/图谱/黄金查询、覆盖率门禁和恢复测试；
+- **Runtime CI / quality**：导出锁定依赖并执行漏洞审计；
+- **Runtime CI / secret-scan**：扫描完整 Git 历史中的 Secret；
 - **Validate design assets**：独立运行 `scripts/validate_design.py`；
 - **GitHub Pages**：严格构建文档，只有 `main` 可以部署。
 
@@ -22,7 +25,7 @@ permalink: /testing-and-acceptance.html
 - YAML 语法；
 - README 和 `docs/` 下的本地 Markdown 链接。
 
-当前 pytest 覆盖配置快速失败、健康/就绪状态、日志脱敏、`trace_id`、Worker 生命周期、依赖不可达故障注入和 Semantica 导入边界。这些检查保证工程基线行为，但不访问真实 TuShare，也不替代真实 PostgreSQL/Neo4j、数据库迁移、并发事务或完整业务链路验收。
+V0.1 已覆盖迁移、数据库角色、采集与标准化、Semantica 契约、文档、Claim 状态机与并发审核、Outbox 租约/乱序/重建、受控查询、30 条黄金用例和端到端追溯。CI 默认不访问真实 TuShare/LLM/官方站点；业务验收使用明确标注的合成快照。实际覆盖与限制见 [MVP 验收报告](mvp-acceptance-report.html)。V0.2 还需增加真实浏览器、无障碍、视觉和前端回滚门禁。
 
 ## 完整测试层次
 

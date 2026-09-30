@@ -7,7 +7,7 @@ permalink: /getting-started.html
 
 # 快速开始
 
-这份指南帮助你启动当前工程基线、检查健康状态、运行测试并预览文档。工程基线能够启动 API、Worker、PostgreSQL 和 Neo4j，但尚未实现数据库迁移、TuShare 采集、Claim 业务流程、图投影和完整查询场景。
+这份指南帮助你启动 V0.1 后端闭环、检查健康状态、运行测试并预览文档。数据库迁移、TuShare 采集、Claim/Evidence、Neo4j 投影和证据化查询已经实现；当前尚未提供正式产品 Web UI，使用入口是 API、演示脚本和测试快照。
 
 ## 你现在可以做什么
 
@@ -16,7 +16,8 @@ permalink: /getting-started.html
 - 运行 Python 单元/集成测试、静态检查和设计资产校验；
 - 加载并检查 Turtle 本体、YAML 规则、TuShare 映射和本地链接；
 - 本地预览本 GitHub Pages 站点；
-- 基于现有 ADR 和 Issues 继续实现业务能力。
+- 构建合成 MVP 快照并运行黄金查询/演示脚本；
+- 按 V0.2 设计继续实现产品 Web UI。
 
 ## 环境要求
 
@@ -24,11 +25,12 @@ permalink: /getting-started.html
 |---|---|---|
 | 应用与校验 | Python 3.11、`uv`、`uv.lock` | 已配置 |
 | 文档站点 | Ruby 3.3、Jekyll 4.4.1、Just the Docs 0.12.0 | 已配置 |
-| 语义运行时 | Semantica `0.7.0` | 已锁版并建立端口；Adapter/契约待 #5 |
-| 事实主库 | `pgvector/pgvector:pg16` | 容器已配置；Schema/迁移待 #2 |
-| 图查询投影 | Neo4j `5.26` | 容器已配置；投影/重建待 #8 |
-| 本地运行拓扑 | Docker Compose v2 | 已实现工程基线 |
-| 结构化数据源 | TuShare Pro 账号和用户自己的 Token | 可选配置已接入；Connector 待 #3 |
+| 语义运行时 | Semantica `0.7.0` | Adapter、持久化 Provenance 与契约测试已实现 |
+| 事实主库 | `pgvector/pgvector:pg16` | Schema、9 个 Alembic 迁移与角色边界已实现 |
+| 图查询投影 | Neo4j `5.26` | Outbox、对账与全量重建已实现 |
+| 本地运行拓扑 | Docker Compose v2 | API、Worker、PostgreSQL、Neo4j 已配置 |
+| 结构化数据源 | TuShare Pro 账号和用户自己的 Token | Connector 已实现；无 Token 可使用合成快照 |
+| 产品 Web UI | React/Vite（V0.2 计划） | 尚未实现，见 Epic #29 |
 
 ## 1. 获取仓库
 
@@ -80,7 +82,7 @@ uv run pytest
 uv run python scripts/validate_design.py
 ```
 
-设计校验覆盖 Turtle、YAML、本地链接和必需文件；运行时测试覆盖当前配置、健康检查、日志、追踪、Worker 和 Semantica 导入边界。这些结果证明工程基线行为，**不证明尚未实现的完整业务链路正确**。
+设计校验覆盖 Turtle、YAML、本地链接和必需文件；完整 CI 还覆盖真实 PostgreSQL/Neo4j、迁移、状态机、并发/崩溃恢复、Semantica 契约、图重建、30 条黄金查询、覆盖率、依赖与 Secret 扫描。V0.1 的合成快照闭环已经通过，但**合成验收不代表真实 TuShare 数据质量已经达标**。
 
 ## 5. 预览文档站点
 
@@ -100,7 +102,7 @@ bundle exec jekyll build --baseurl /ontologyMVP --strict_front_matter
 
 ## 6. TuShare 安全配置
 
-当前配置层能识别 TuShare Token 并在就绪响应中报告能力状态，但尚未实现 TuShare Connector。实现 #3 后，Token 仍必须通过环境变量或 Secret 管理系统注入，不得写入代码、示例、日志、Fixture、Issue 或截图。
+TuShare Connector 已实现能力探针、限流、断点续跑和 Raw 幂等采集。Token 必须通过环境变量或 Secret 管理系统注入，不得写入代码、示例、日志、Fixture、Issue 或截图。
 
 本地 `.env` 示例只使用占位符：
 
@@ -123,5 +125,5 @@ TUSHARE_TOKEN=replace-with-your-own-token
 
 - 想理解系统：阅读[架构与组件](components.html)。
 - 想改本体：阅读[本体指南](ontology-guide.html)和[贡献指南](contributing.html)。
-- 想实现业务能力：从 [Roadmap 中依赖已满足的开放 Issue](roadmap.html) 开始，并遵守 ADR 的权威边界。
+- 想实现产品界面：阅读[产品界面设计](product-ui.html)，从 [#30 前端基础](https://github.com/davidchen516/ontologyMVP/issues/30)开始。
 - 想评估完成度：使用[测试与验收](testing-and-acceptance.html)，不要把“CI 绿”当作唯一关闭条件。

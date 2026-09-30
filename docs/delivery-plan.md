@@ -7,6 +7,10 @@ permalink: /delivery-plan.html
 
 # 实施路线与验收标准
 
+> 状态更新（2026-09-30）：V0.1 的 #1～#12 已关闭并形成
+> [Epic 收尾报告](epic-closeout.html)和[MVP 验收报告](mvp-acceptance-report.html)。
+> 下一阶段是 [V0.2 产品界面 Epic #29](https://github.com/davidchen516/ontologyMVP/issues/29)。
+
 ## 1. 实施策略
 
 采用“纵向切片优先”，而不是先建设一套庞大的全市场图谱。
@@ -414,3 +418,31 @@ Value > 0
 通过标准：黄金查询相对于简单关键词或平台标签，在准确率、解释性和时间查询上有明确提升。
 
 只有通过 Checkpoint D，才进入更多产业主题和全市场扩展。
+
+## 9. V0.2：可交互产品界面
+
+### 9.1 目标
+
+在不改变 V0.1 数据与安全边界的前提下，为研究、证据核验、Claim 审核和运行状态提供正式 Web UI。参考界面采用顶部全局入口、左侧导航、首页概览、查询、图谱、证据和公司表格的信息结构。
+
+### 9.2 工作包
+
+1. [#30 前端工程、设计系统与应用壳](https://github.com/davidchen516/ontologyMVP/issues/30)；
+2. [#31 查询、公司分析与 Grounded 结果研究工作台](https://github.com/davidchen516/ontologyMVP/issues/31)；
+3. [#32 产品图谱、推理路径与文档证据浏览器](https://github.com/davidchen516/ontologyMVP/issues/32)；
+4. [#33 Claim 审核与系统运营工作台](https://github.com/davidchen516/ontologyMVP/issues/33)；
+5. [#34 前端可访问性、浏览器 E2E 与可回滚发布门禁](https://github.com/davidchen516/ontologyMVP/issues/34)。
+
+依赖顺序为 `#30 -> (#31, #32, #33) -> #34`。#34 在 #30 后开始持续建设，最终覆盖全部产品路径。
+
+### 9.3 退出标准
+
+- 新用户可从 UI 完成证据化查询、查看公司、图谱、Claim 和原文；
+- Reviewer 在服务端认证/授权、幂等和并发保护下完成审核；
+- Operator 能看到能力、新鲜度、采集、投影与对账，不暴露 Secret；
+- 结果完整显示排除、未知、冲突和降级，不以伪数据填充；
+- 关键流程通过真实 Compose 浏览器验收、WCAG 2.2 AA、故障注入和回滚演练；
+- 仅 CI 绿或组件测试通过不足以关闭 V0.2。
+
+详细需求见[产品界面设计](product-ui.html)，技术选型见
+[ADR-0005](adr/0005-product-ui-stack.html)。

@@ -82,6 +82,7 @@ flowchart LR
 - [TuShare 与数据接入](docs/data-sources-and-ingestion.md)
 - [Semantica 集成设计](docs/semantica-integration.md)
 - [查询与 API 设计](docs/query-and-api.md)
+- [产品界面设计](docs/product-ui.md)
 - [数据库核心表结构](docs/database-schema.sql)
 - [Neo4j 约束与索引](docs/neo4j-schema.cypher)
 - [质量与测试方案](docs/quality-and-testing.md)
@@ -89,6 +90,7 @@ flowchart LR
 - [ADR-0001：事实库与图投影职责](docs/adr/0001-storage-responsibilities.md)
 - [ADR-0002：采用 Claim 中心模型](docs/adr/0002-claim-centered-model.md)
 - [ADR-0003：Semantica 作为可替换语义运行时](docs/adr/0003-semantica-runtime-adapter.md)
+- [ADR-0005：产品 Web UI 技术栈与边界](docs/adr/0005-product-ui-stack.md)
 
 ### 本体与语义资产
 
@@ -354,6 +356,7 @@ TuShare 概念成员
 - [x] 受控 QueryPlan、图/财务联合查询与证据化 API（见「受控查询与证据化 API」）
 - [x] PostgreSQL Schema 与 Alembic 迁移、事实事务边界（Neo4j 为可重建投影，无迁移需求）
 - [x] 首个纵向场景：人形机器人核心零部件证据化筛选（合成快照闭环 + 30 黄金查询 + 端到端追溯，见 `docs/mvp-acceptance-report.md` 与 `docs/epic-closeout.md`；演示：`uv run python scripts/demo_mvp_query.py --dsn <快照库>`）
+- [ ] V0.2 可交互产品界面与研究工作台（[#29](https://github.com/davidchen516/ontologyMVP/issues/29)：查询、公司、图谱、证据、审核与运维界面）
 
 > V0.1 MVP 已交付（#1~#11 全部关闭，Epic #12 随收尾 PR 关闭）：TuShare 采集 → PostgreSQL 标准化 →
 > 证据化 Claim（Provenance Hash 链）→ Neo4j 投影（可重建）→ 受控

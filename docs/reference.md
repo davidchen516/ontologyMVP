@@ -16,6 +16,7 @@ permalink: /reference.html
 - [TuShare 与数据接入](data-sources-and-ingestion.html)
 - [Semantica 集成设计](semantica-integration.html)
 - [查询、推理与 API 设计](query-and-api.html)
+- [产品界面设计](product-ui.html)
 - [质量、安全与测试方案](quality-and-testing.html)
 - [实施路线与验收标准](delivery-plan.html)
 
@@ -40,3 +41,4 @@ permalink: /reference.html
 - [ADR-0002：Claim 中心事实模型](adr/0002-claim-centered-model.html)
 - [ADR-0003：Semantica 可替换语义运行时](adr/0003-semantica-runtime-adapter.html)
 - [ADR-0004：GitHub Pages 文档站选型](adr/0004-documentation-site.html)
+- [ADR-0005：产品 Web UI 技术栈与边界](adr/0005-product-ui-stack.html)

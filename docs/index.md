@@ -17,12 +17,12 @@ ontologyMVP 是一个面向 A 股产业研究的本体查询系统工程基线�
 
 [5 分钟了解项目](getting-started.html){: .btn .btn-primary }
 [查看架构](components.html){: .btn }
-[跟踪 V0.1 Epic](https://github.com/davidchen516/ontologyMVP/issues/12){: .btn }
+[跟踪 V0.2 界面 Epic](https://github.com/davidchen516/ontologyMVP/issues/29){: .btn }
 
 </div>
 
 {: .warning }
-**当前是可运行的工程基线，不是完整业务系统。** 仓库已经提供 API、Worker、PostgreSQL/Neo4j Compose 拓扑、健康检查、运行时 CI，以及架构、ADR 和 OWL/SKOS/SHACL 资产；数据库迁移、TuShare Connector、Claim 流程、图投影和完整数据集仍由 [V0.1 Issues](roadmap.html) 跟踪。
+**V0.1 后端闭环已经完成，产品界面尚未实现。** 仓库已经提供采集、标准化、Semantica、Claim/Evidence、Neo4j 投影、受控查询、真实数据库 CI 和合成快照验收；当前需要通过 [V0.2 产品界面](product-ui.html)把这些能力变成可供研究、核验和审核的 Web 工作台。真实 TuShare 数据仍需使用者自己的 Token 重建并验收。
 
 ## 项目价值
 
@@ -96,6 +96,7 @@ flowchart LR
 | 理解 Claim、Evidence 和双时态 | [数据与证据模型](data-and-evidence.html) |
 | 阅读 OWL、SKOS 与 SHACL 资产 | [本体指南](ontology-guide.html) |
 | 参与开发或提交本体变更 | [开发者指南](developer-guide.html) 与 [贡献指南](contributing.html) |
+| 了解计划中的使用界面 | [产品界面设计](product-ui.html) 与 [V0.2 Roadmap](roadmap.html) |
 | 判断功能何时真正完成 | [测试与验收](testing-and-acceptance.html) |
 | 查看实施顺序和状态 | [Roadmap](roadmap.html) |
 

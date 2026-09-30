@@ -9,7 +9,7 @@ permalink: /faq.html
 
 ## 现在能直接启动完整系统吗？
 
-可以启动工程基线，但不能运行完整业务场景。当前仓库能启动 PostgreSQL、Neo4j、API 和 Worker，并提供健康检查；数据库迁移、TuShare 数据管道、Claim/Outbox、图投影和证据化查询仍由 [Roadmap](roadmap.html) 跟踪。启动方法见[快速开始](getting-started.html)。
+可以运行 V0.1 后端业务闭环：PostgreSQL、Neo4j、API、Worker、采集/标准化、Claim/Evidence、图投影和证据化查询已经交付，并可使用合成快照演示。当前还没有正式 Web 产品界面，需要通过 API 或脚本使用；界面由 [V0.2 Roadmap](roadmap.html) 跟踪。启动方法见[快速开始](getting-started.html)。
 
 ## 为什么同时使用 PostgreSQL 和 Neo4j？
 
@@ -21,7 +21,7 @@ PostgreSQL 适合权威事务、财务计算、证据、审核和任务状态；
 
 ## Semantica 是硬依赖吗？
 
-V0.1 计划使用 Semantica `0.7.0`，但业务层只依赖项目的 `SemanticRuntime` 端口。如果契约、维护或运维要求不再满足，可以替换 Adapter，而不重写领域模型。
+V0.1 已锁定并实现 Semantica `0.7.0` Adapter，但业务层只依赖项目的 `SemanticRuntime` 端口。如果契约、维护或运维要求不再满足，可以替换 Adapter，而不重写领域模型。
 
 ## 没有找到证据，是否说明公司没有这项业务？
 
@@ -29,11 +29,15 @@ V0.1 计划使用 Semantica `0.7.0`，但业务层只依赖项目的 `SemanticRu
 
 ## TuShare Token 放在哪里？
 
-复制 `.env.example` 为未跟踪的 `.env`，仅在其中填写自己的 `TUSHARE_TOKEN`，或使用 Secret Store/环境变量注入。当前配置层会据此报告能力状态，但 Connector 尚未实现。不要把 Token 写入仓库、Issue、日志、Fixture 或截图；Pull Request CI 不需要真实 Token。
+复制 `.env.example` 为未跟踪的 `.env`，仅在其中填写自己的 `TUSHARE_TOKEN`，或使用 Secret Store/环境变量注入。Connector 会先执行能力探针，并区分无权限、限流和网络错误。不要把 Token 写入仓库、Issue、日志、Fixture 或截图；Pull Request CI 不需要真实 Token。
 
 ## 是否可以执行任意自然语言查询？
 
-自然语言只能被转换为受控 `QueryPlan`。实体、关系、指标、操作符、跳数和结果数都经过白名单校验；LLM 返回的 SQL、Cypher、URL 或工具指令不会执行。
+当前 API 支持受控 `QueryPlan` 与结构化 Screen 请求，自然语言 Planner 尚未接入。V0.2 界面会先提供受控表单；未来自然语言只能转换为可预览/确认的 QueryPlan，LLM 返回的 SQL、Cypher、URL 或工具指令不会执行。
+
+## 什么时候会有可点击的使用界面？
+
+V0.2 产品界面已经形成[完整设计](product-ui.html)，由 [Epic #29](https://github.com/davidchen516/ontologyMVP/issues/29)及 #30～#34 实施。参考图中的首页、查询、公司、图谱、证据、审核和系统状态均已进入范围，但统计、登录和自然语言入口只有在真实后端能力存在时才启用。
 
 ## 这个项目会给出投资建议吗？
 

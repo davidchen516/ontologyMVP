@@ -224,6 +224,20 @@ class SemanticRuntime(Protocol):
 2. **财务数值过滤**：现金流、收入、毛利率、研发费用等；
 3. **证据加载与解释**：返回Claim、原文、数据口径和推理路径。
 
+### 4.7 Product Web UI
+
+产品界面是 API 的非权威客户端，不是新的业务层：
+
+- 使用受控 QueryPlan/Screen API，不在浏览器拼接 SQL 或 Cypher；
+- 展示公司、产品、概念、财务、Claim、Evidence、双时态和推理路径；
+- 对 `results/excluded/unknowns/conflicts/degradation_notes` 完整呈现；
+- 图谱只加载受控子图，并提供可访问的表格/路径替代视图；
+- 审核决定仍由后端状态机、权限、乐观并发和审计控制；
+- 数据或能力不可用时显示空态/降级，不使用伪数据或死按钮。
+
+产品需求见[产品界面设计](product-ui.html)，技术边界见
+[ADR-0005](adr/0005-product-ui-stack.html)。
+
 ## 5. 数据流
 
 ### 5.1 结构化数据流
@@ -282,10 +296,15 @@ postgres   Raw/Standard/Fact/Task/pgvector
 neo4j      图查询投影
 ```
 
+V0.2 增加：
+
+```text
+web        React/Vite 静态产品界面，仅通过 FastAPI 访问系统
+```
+
 可选：
 
 ```text
-admin-ui   Streamlit或React审核界面
 minio      PDF和解析产物对象存储
 ```
 
@@ -338,6 +357,8 @@ Graph Worker
 - 管理接口与查询接口分权；
 - 人工审核操作记录用户、时间、前后值和理由；
 - 原始文件和证据片段保留Hash，防止未检测的内容变化。
+- 浏览器不接收数据库、Neo4j、TuShare 或 LLM 凭证；证据原文按不可信纯文本渲染；
+- 审核写操作只有在标准认证、Reviewer 权限、CSRF、幂等和乐观并发门禁齐全时开放。
 
 ## 9. 可观测性
 
@@ -367,6 +388,9 @@ Graph Worker
 | 数据采集幂等性 | 重跑不产生重复事实 |
 | 图谱可恢复性 | 清空Neo4j后可由PostgreSQL重建 |
 | 查询可解释性 | 每个命中结果提供路径和证据 |
+| UI 无障碍 | 关键流程满足 WCAG 2.2 AA，键盘可完成查询与审核 |
+| UI 响应式 | 375/768/1024/1440px 无阻塞性溢出或遮挡 |
+| 图谱可用性 | 图形和等价路径表格均可回到 Claim/Evidence |
 
 ## 11. 演进路径
 
@@ -376,7 +400,7 @@ Graph Worker
 
 ### V1
 
-扩展到多个产业链；增加本体版本迁移、审核工作台、增量公告解析和更完善的冲突治理。
+先交付 V0.2 产品研究与审核工作台，再扩展到多个产业链；增加本体版本迁移、增量公告解析和更完善的冲突治理。
 
 ### V2
 

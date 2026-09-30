@@ -49,6 +49,7 @@ flowchart TB
       NEO[(Neo4j Projection)]
       ORCH[Query Orchestrator]
       API[Grounded API]
+      WEB[Product Web UI - V0.2]
     end
 
     TS --> PROBE --> COL --> RAW --> NORM --> STD
@@ -58,7 +59,7 @@ flowchart TB
     FACT --> OUT --> NEO
     STD --> ORCH
     NEO --> ORCH
-    FACT --> ORCH --> API
+    FACT --> ORCH --> API --> WEB
 ```
 
 ## 组件责任边界
@@ -73,6 +74,7 @@ flowchart TB
 | Transactional Outbox | 在事实事务中记录待投影事件 | 跨库同步双写 |
 | Neo4j | 产品层级、产业路径、关系解释 | 成为唯一事实库 |
 | Query Orchestrator | 验证 QueryPlan、组合图/财务/证据结果 | 执行 LLM 返回的任意 SQL/Cypher |
+| Product Web UI | 查询、公司、图谱、证据、审核和运维交互 | 重新实现业务规则、直连数据库或隐藏不确定性 |
 
 ## Semantica、PostgreSQL 与 Neo4j
 

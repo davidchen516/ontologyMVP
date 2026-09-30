@@ -10,6 +10,13 @@ destination: _site
 theme: just-the-docs
 color_scheme: light
 
+defaults:
+  - scope:
+      path: ""
+      type: pages
+    values:
+      layout: default
+
 logo: /assets/images/mark.svg
 favicon_ico: /assets/images/favicon.svg
 
@@ -35,6 +42,8 @@ aux_links:
     - https://github.com/davidchen516/ontologyMVP
   V0.1 Epic:
     - https://github.com/davidchen516/ontologyMVP/issues/12
+  V0.2 界面 Epic:
+    - https://github.com/davidchen516/ontologyMVP/issues/29
 aux_links_new_tab: true
 
 gh_edit_link: true
