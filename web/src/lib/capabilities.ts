@@ -29,8 +29,6 @@ const graphGate = (report: ReadinessReport): string | null => {
     : "Neo4j 图组件不可用";
 };
 
-const authGate = (): string => "认证/授权未启用（V0.2 后续交付）";
-
 export const NAV_ITEMS: NavItem[] = [
   { to: "/", label: "首页", availableIn: "#30", gate: () => null },
   {
@@ -61,7 +59,7 @@ export const NAV_ITEMS: NavItem[] = [
     to: "/review",
     label: "Claim 审核",
     availableIn: "#33",
-    gate: authGate,
+    gate: () => null,
   },
   {
     to: "/ops",
