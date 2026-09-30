@@ -1,13 +1,16 @@
 import { apiFetch } from "./client";
 import type {
+  ClaimLineageResponse,
   ClaimRecord,
   CompanyListResponse,
+  DocumentEvidenceResponse,
   CompanyRecord,
   OverviewStats,
   QueryResponse,
   ReadinessReport,
   RecentRunsResponse,
   ScreenRequest,
+  SubgraphResponse,
 } from "./types";
 
 export const api = {
@@ -57,4 +60,32 @@ export const overviewApi = {
     const qs = search.size > 0 ? `?${search.toString()}` : "";
     return apiFetch<CompanyListResponse>(`/api/v1/companies${qs}`, { signal });
   },
+};
+
+export const graphApi = {
+  subgraph: (
+    params: { company_id: string; hops?: number; max_nodes?: number },
+    signal?: AbortSignal,
+  ) => {
+    const search = new URLSearchParams({ company_id: params.company_id });
+    if (params.hops) search.set("hops", String(params.hops));
+    if (params.max_nodes) search.set("max_nodes", String(params.max_nodes));
+    return apiFetch<SubgraphResponse>(
+      `/api/v1/graph/subgraph?${search.toString()}`,
+      { signal },
+    );
+  },
+  claimLineage: (claimId: string, signal?: AbortSignal) =>
+    apiFetch<ClaimLineageResponse>(`/api/v1/claims/${claimId}/lineage`, {
+      signal,
+    }),
+  documentEvidence: (
+    documentId: string,
+    limit: number,
+    signal?: AbortSignal,
+  ) =>
+    apiFetch<DocumentEvidenceResponse>(
+      `/api/v1/documents/${documentId}/evidence?limit=${limit}`,
+      { signal },
+    ),
 };

@@ -52,13 +52,18 @@ describe("应用壳（#30）", () => {
     renderWithQuery();
     expect(await screen.findByText("Stock Ontology MVP")).toBeInTheDocument();
     expect(await screen.findByText("系统概览")).toBeInTheDocument();
-    // 能力感知导航：#30 里程碑仅首页启用（外层 span 含 "未启用" 标记）
-    const queryItem = screen.getByText("查询工作台").parentElement;
-    expect(queryItem).toHaveTextContent("未启用");
+    // 能力感知导航：#30~#32 已交付 → 首页/查询/公司/图谱/证据均为可点击
+    // 链接（NavLink 渲染为 <a>）；#33 未交付项为 aria-disabled span + 原因
+    for (const label of ["查询工作台", "公司列表", "图谱浏览器", "证据浏览器"]) {
+      expect(screen.getByRole("link", { name: label })).toBeInTheDocument();
+    }
+    const reviewItem = screen.getByText("Claim 审核").parentElement;
+    expect(reviewItem).toHaveAttribute("title", "将于 #33 交付");
     expect(screen.getAllByText("首页")[0]).toBeInTheDocument();
   });
 
-  it("Given 未到交付里程碑，When 渲染导航，Then 图谱入口显示未启用+里程碑原因", async () => {
+  it("Given Neo4j 组件不可用，When 渲染导航，Then 图谱入口显示未启用+组件原因", async () => {
+    // #32 已实装：图谱门禁从里程碑变为 Neo4j 组件门禁
     mockReadyz({
       ...READY_OK,
       components: { postgres: { status: "OK" }, neo4j: { status: "FAIL" } },
@@ -66,8 +71,18 @@ describe("应用壳（#30）", () => {
     renderWithQuery();
     const graphItem = (await screen.findByText("图谱浏览器")).parentElement;
     expect(graphItem).toHaveTextContent("未启用");
-    // 里程碑门禁优先于能力门禁（#32 交付后能力门禁才开始生效）
-    expect(graphItem).toHaveAttribute("title", "将于 #32 交付");
+    // readyz 异步 resolve 后组件门禁生效（先为"加载中"再为组件原因）
+    await waitFor(() =>
+      expect(graphItem).toHaveAttribute("title", "Neo4j 图组件不可用"),
+    );
+  });
+
+  it("Given 未到 #33 里程碑，When 渲染导航，Then 审核入口显示里程碑原因", async () => {
+    mockReadyz(READY_OK);
+    renderWithQuery();
+    const reviewItem = (await screen.findByText("Claim 审核")).parentElement;
+    expect(reviewItem).toHaveTextContent("未启用");
+    expect(reviewItem).toHaveAttribute("title", "将于 #33 交付");
   });
 
   it("Given 未知路由，Then 404 页面", async () => {

@@ -586,7 +586,7 @@ def build_snapshot(
             for pid, name in product_rows:
                 projector.project_entity("Product", str(pid), {"name": name})
             for cid, name in company_rows:
-                projector.project_entity("Company", str(cid), {"canonical_name": name})
+                projector.project_entity("Company", str(cid), {"name": name})
             # 概念/Theme 腿：Concept 节点 + TAGGED_AS 成员边（缺失时图模式
             # 概念筛选会"静默空结果"——违反绝不静默不变量）
             with uow_factory.transaction() as uow:

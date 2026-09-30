@@ -5,3 +5,5 @@ coverage
 openapi.json.tmp
 
 *.tsbuildinfo
+
+.vite/

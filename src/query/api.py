@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import datetime as dt
 import time
+import uuid
 from collections.abc import Callable
 from typing import Any
 from uuid import UUID
@@ -23,6 +24,7 @@ from psycopg.types.json import Json
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from src.query.compiler import QUERY_EXECUTION_VERSION, QueryOrchestrator
+from src.query.graph_subgraph import build_subgraph
 from src.query.models import (
     NumericFilter,
     PathOperator,
@@ -225,6 +227,165 @@ def _execute_plan(
         duration_ms=duration_ms, response=result,
     )
     return result
+
+
+# ---- 产品图谱/证据浏览器（issue #32：受控子图 + Claim lineage + 证据详情）----
+
+
+@router.get("/graph/subgraph")
+async def graph_subgraph(
+    request: Request,
+    company_id: str = Query(default=None, max_length=64),
+    hops: int = Query(default=1, ge=1, le=2),
+    max_nodes: int = Query(default=100, ge=1, le=300),
+) -> dict[str, Any]:
+    """受控子图：白名单 Cypher 模板（后端执行），限制跳数与节点数。
+
+    图后端不可用/超限时返回 DEGRADED/STALE + PG 事实列表回退
+    （issue #32 GWT：明确降级且保留 PostgreSQL 事实）。
+    """
+    settings = request.app.state.settings
+    executor = getattr(request.app.state, "query_graph_executor", None)
+    # PG 回查连接：STALE 检测需要（图空但 PG 有事实时判定投影水位落后）
+    pg_conn = None
+    if executor is not None:
+        try:
+            pg_conn = psycopg.connect(settings.postgres_dsn)
+            pg_conn.execute("BEGIN READ ONLY")
+        except Exception:  # noqa: BLE001 - PG 不可达时跳过 STALE 检测
+            if pg_conn is not None:
+                pg_conn.close()
+            pg_conn = None
+    try:
+        return build_subgraph(
+            executor,
+            company_id=company_id,
+            hops=hops,
+            max_nodes=max_nodes,
+            pg_conn=pg_conn,
+        )
+    finally:
+        if pg_conn is not None:
+            pg_conn.close()
+
+
+@router.get("/claims/{claim_id}/lineage")
+async def claim_lineage(claim_id: str, request: Request) -> dict[str, Any]:
+    """Claim lineage：经营边 → Claim → Evidence → Document 的追溯链。"""
+    # UUID 格式先校验（非 UUID → 422，而非数据库层 500）
+    try:
+        uuid.UUID(claim_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=422, detail="claim id must be a UUID"
+        ) from exc
+    settings = request.app.state.settings
+
+    with _connect_read_only(settings.postgres_dsn) as conn:
+        claim = conn.execute(
+            """
+            SELECT id, predicate_code, claim_status, business_stage,
+                   evidence_state, confidence, valid_from, valid_to,
+                   recorded_at, object_entity_id
+            FROM fact.claim WHERE id = %s
+            """,
+            (claim_id,),
+        ).fetchone()
+        if claim is None:
+            raise HTTPException(status_code=404, detail="claim not found")
+        evidence = conn.execute(
+            """
+            SELECT f.id, f.document_id, f.page_number, f.quote_text,
+                   f.char_start, f.char_end, f.document_version_id
+            FROM fact.claim_evidence ce
+            JOIN fact.evidence_fragment f ON f.id = ce.evidence_id
+            WHERE ce.claim_id = %s
+            """,
+            (claim_id,),
+        ).fetchall()
+        documents = []
+        for row in evidence:
+            doc = conn.execute(
+                """
+                SELECT d.id, d.document_type, d.source_system, d.title,
+                       d.published_at, dv.version, dv.parse_status
+                FROM fact.document d
+                LEFT JOIN fact.document_version dv ON dv.id = %s
+                WHERE d.id = %s
+                """,
+                (row[6], row[1]),
+            ).fetchone()
+            documents.append(doc)
+
+    claim_cols = ["id", "predicate_code", "claim_status", "business_stage",
+                  "evidence_state", "confidence", "valid_from", "valid_to",
+                  "recorded_at", "object_entity_id"]
+    ev_cols = ["id", "document_id", "page_number", "quote_text",
+               "char_start", "char_end", "document_version_id"]
+    doc_cols = ["id", "document_type", "source_system", "title",
+                "published_at", "version", "parse_status"]
+
+    return {
+        "claim": dict(zip(claim_cols, claim, strict=True)),
+        "evidence": [dict(zip(ev_cols, r, strict=True)) for r in evidence],
+        "documents": [
+            dict(zip(doc_cols, d, strict=True)) if d else None
+            for d in documents
+        ],
+    }
+
+
+@router.get("/documents/{document_id}/evidence")
+async def document_evidence(
+    document_id: str, request: Request,
+    limit: int = Query(default=50, ge=1, le=200),
+) -> dict[str, Any]:
+    """文档证据列表：片段（页码/原文/字符区间）+ 版本状态。"""
+    try:
+        uuid.UUID(document_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=422, detail="document id must be a UUID"
+        ) from exc
+    settings = request.app.state.settings
+
+    with _connect_read_only(settings.postgres_dsn) as conn:
+        doc = conn.execute(
+            """
+            SELECT d.id, d.document_type, d.source_system, d.title,
+                   d.published_at, d.parse_status, dv.version, dv.id AS version_id
+            FROM fact.document d
+            LEFT JOIN fact.document_version dv
+              ON dv.document_id = d.id
+             AND dv.version = (SELECT max(version) FROM fact.document_version
+                               WHERE document_id = d.id)
+            WHERE d.id = %s
+            """,
+            (document_id,),
+        ).fetchone()
+        if doc is None:
+            raise HTTPException(status_code=404, detail="document not found")
+        fragments = conn.execute(
+            """
+            SELECT f.id, f.page_number, f.quote_text, f.char_start,
+                   f.char_end, f.document_version_id
+            FROM fact.evidence_fragment f
+            WHERE f.document_id = %s
+            ORDER BY f.page_number, f.char_start
+            LIMIT %s
+            """,
+            (document_id, limit),
+        ).fetchall()
+
+    doc_cols = ["id", "document_type", "source_system", "title",
+                "published_at", "parse_status", "version", "version_id"]
+    frag_cols = ["id", "page_number", "quote_text", "char_start",
+                 "char_end", "document_version_id"]
+    return {
+        "document": dict(zip(doc_cols, doc, strict=True)),
+        "fragments": [dict(zip(frag_cols, r, strict=True)) for r in fragments],
+        "count": len(fragments),
+    }
 
 
 @router.post("/query", response_model=QueryResponse)

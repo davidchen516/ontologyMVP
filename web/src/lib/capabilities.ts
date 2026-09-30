@@ -71,14 +71,20 @@ export const NAV_ITEMS: NavItem[] = [
   },
 ];
 
-/** 里程碑检查：#30 应用壳 + #31 查询/公司已实装；其余按里程碑声明。 */
-export const CURRENT_MILESTONE = "#31";
+/** 里程碑检查：#30 应用壳 + #31 查询/公司 + #32 图谱/证据已实装；其余按里程碑声明。 */
+export const CURRENT_MILESTONE = "#32";
+
+/** 里程碑序比较：availableIn 序 <= 当前序 ⇒ 已交付（启用）。 */
+function milestoneNumber(milestone: string): number {
+  const match = /#(\d+)/.exec(milestone);
+  return match ? Number(match[1]) : 0;
+}
 
 export function navAvailability(
   item: NavItem,
   report: ReadinessReport | null,
 ): { enabled: boolean; reason: string | null } {
-  if (item.availableIn !== CURRENT_MILESTONE) {
+  if (milestoneNumber(item.availableIn) > milestoneNumber(CURRENT_MILESTONE)) {
     return { enabled: false, reason: `将于 ${item.availableIn} 交付` };
   }
   if (report === null) {
