@@ -20,7 +20,7 @@ V0.2 #33 要求审核写操作（接受/拒绝 Claim）必须先有认证、授�
 | 传输 | 仅同源（nginx 反代）+ 现有 TLS/本地边界；生产必须 HTTPS | compose 拓扑内不引入新端口 |
 | 授权 | 持有有效 key ⇒ Reviewer 角色（写审核）；无 key ⇒ 只读 | 角色单一——#33 的写面只有审核决定 |
 | 开关 | `Settings.review_write_enabled`（默认 False）——关闭时写端点返回 503 + 能力 UNAVAILABLE，UI 登录入口不渲染 | Epic 回滚要求：默认关，关掉只留只读 |
-| 并发 | 沿用 #7 `review_decide` 的乐观并发（`ReviewConflictError` → HTTP 409 + 当前版本回传） | 既有资产，不重复造 |
+| 并发 | 沿用 #7 `review_decide` 的悲观锁 NOWAIT + 乐观守卫（`ConcurrentClaimUpdateError` → HTTP 409 + 当前任务/Claim 状态回传） | 既有资产，不重复造 |
 | 幂等 | `Idempotency-Key` 请求头（客户端生成 UUID）：决定提交后以 `ops.audit_event`（event_type=REVIEW_DECISION_IDEMPOTENCY + payload.idempotency_key）锚点查重，同 key 重放返回任务终态 | GWT：网络重试不产生第二个决定 |
 | CSRF | 无 Cookie 会话 ⇒ CSRF 面不存在；未配置 CORSMiddleware ⇒ 严格同源（跨域请求被浏览器默认拦截——比显式空 allowlist 更直接） | API-Key 方案的天然属性 |
 | 审计 | 沿用 `accept_claim`/review 事务内 `audit_event`（决定/理由/审核人/前后状态/trace_id）+ `reviewed_by = key 的 reviewer 标识` | 既有资产 |

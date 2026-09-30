@@ -36,7 +36,3 @@ web/.vite/
 
 .vite/
 test-results/
-
-.vite/
-test-results/
-web/test-results/

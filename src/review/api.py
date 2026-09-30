@@ -5,8 +5,8 @@ POST /api/v1/review/tasks/{task_id}/decision
 - 幂等：Idempotency-Key 头（客户端 UUID）——决定提交后以
   ops.audit_event（event_type=REVIEW_DECISION_IDEMPOTENCY +
   payload.idempotency_key）锚点查重，同 key 重放返回任务终态；
-- 并发：#7 review_decide 的乐观并发（ReviewConflictError → 409 +
-  当前状态回传供刷新差异）；
+- 并发：#7 review_decide 的悲观锁 NOWAIT/乐观守卫
+  （ConcurrentClaimUpdateError → 409 + 当前状态回传供刷新差异）；
 - 事务：决定经 review_decide → accept_claim/状态机 原子提交
   （Claim/Evidence/Provenance/审计/Outbox 同事务——既有资产）。
 """
@@ -160,6 +160,8 @@ async def submit_review_decision(
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except (ReviewConflictError, ConcurrentClaimUpdateError) as exc:
+        # ConcurrentClaimUpdateError=真实并发（FOR UPDATE NOWAIT/乐观守卫）；
+        # ReviewConflictError=防御性保留（若 review_decide 未来改抛）
         # 并发冲突（乐观守卫/悲观锁 NOWAIT——另一审核者正在处理或已决定）：
         # 回传当前状态供 UI 刷新差异（绝不让后到者覆盖）
         with _connect_read_only(settings.postgres_dsn) as conn:
