@@ -314,9 +314,6 @@ def test_mvp_snapshot_scale_requirements(mvp_dsn: str) -> None:
         products = conn.execute(
             "SELECT count(*) FROM master.product"
         ).fetchone()[0]
-        accepted = conn.execute(
-            "SELECT count(*) FROM fact.claim WHERE claim_status = 'ACCEPTED'"
-        ).fetchone()[0]
     assert companies == 30
     assert products >= 10, "core-component product entities must be materialized"
     assert candidates >= 500, f"candidates {candidates} < 500 (验收 3)"

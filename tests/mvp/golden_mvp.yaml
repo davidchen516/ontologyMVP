@@ -91,21 +91,18 @@ cases:
     min_evidence_grounding: 1.0
 
   # ---- 双时态 ----
-  - id: g05_as_of_narrows_window
+  - id: g05_as_of_claim_temporal_validity
     request: {path: /api/v1/query,
               body: {plan: {intent: SEMANTIC_SCREEN,
                             semantic_filter: {business_stage: MASS_PRODUCTION},
                             numeric_filter: {metric_code: NET_CF_OPERATING,
                                              operator: TOTAL_POSITIVE},
                             as_of: "2023-06-30T00:00:00Z", max_results: 100}}}
-    expected_company_names: [辛示机器人01号, 辛示机器人02号, 辛示机器人03号,
-                             辛示机器人04号, 辛示机器人05号, 辛示机器人06号,
-                             辛示机器人07号, 辛示机器人08号, 辛示机器人09号,
-                             辛示机器人10号, 辛示机器人11号, 辛示机器人12号]
-    must_not_contain: [辛示机器人30号]   # as_of 窗口内不足 3FY
-    expected_financial_value:
-      辛示机器人01号: 730.0            # FY2020..2022: 260+160+310
-      辛示机器人12号: 1060.0           # 260+160+310+... -> 370+270+420
+    # 业务有效时间（双时态-业务侧）：量产 Claim 来自 2024 年报，
+    # valid_from=2024-01-01 → as_of=2023-06-30 时该事实尚未生效，
+    # 正确行为是无命中（不得用披露日期替代业务有效日期，也不得无视 as_of）
+    expected_company_names: []
+    must_not_contain: [辛示机器人01号, 辛示机器人12号, 辛示机器人30号]
     min_precision: 1.0
     min_recall: 1.0
     min_evidence_grounding: 1.0
@@ -281,7 +278,7 @@ cases:
       - currency
       - financial_detail
     require_nonempty: [claim_ids, evidence_ids, evidence_quotes, security_code,
-                       standard_product, reasoning_path]
+                       standard_product, valid_from, reasoning_path]
     min_precision: 1.0
     min_recall: 1.0
     min_evidence_grounding: 1.0
@@ -335,7 +332,8 @@ cases:
               body: {business_stage: MASS_PRODUCTION, metric_code: NET_CF_OPERATING,
                      operator: TOTAL_POSITIVE, as_of: "2023-06-30T00:00:00Z",
                      max_results: 100}}
-    must_not_contain: [辛示机器人30号]
+    # 与 g05 同语义（/screen 入口）：2024 年报事实在 as_of 时尚未生效
+    must_not_contain: [辛示机器人01号, 辛示机器人30号]
     min_precision: 1.0
     min_recall: 1.0
     min_evidence_grounding: 1.0

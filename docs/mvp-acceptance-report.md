@@ -49,7 +49,8 @@ USCC 前缀 `SIN-`，ts_code 使用合成段 3001xx.SZ）为**明确标注的合
 | RESTATE（财务重述） | 1 | 当前值视图选最新公告 |
 
 实测统计（manifest）：fragments 600、候选 Claim 540、Accepted 400、
-NEEDS_REVIEW 64+、产品实体 10、PRODUCES→产品映射 423、经营图边 340
+NEEDS_REVIEW 83 + 冲突挂起 57、产品实体 10、PRODUCES→产品映射 423、
+概念成员投影（Concept 节点 + TAGGED_AS 边 90）、经营图边 340
 （claim_id 覆盖 100%）、Outbox 全部 PROCESSED（无积压）。
 
 ## 3. 验收标准逐条对照
@@ -63,7 +64,7 @@ NEEDS_REVIEW 64+、产品实体 10、PRODUCES→产品映射 423、经营图边 
 | 5 | 经营图边含 claim_id 100%；对账一致率 ≥99.9% | 达成 | reconciliation 实测 340 边全部含 claim_id（100%）；Claim 节点覆盖率 100%；对账报告入 manifest |
 | 6 | 删 Neo4j 重建后黄金结果和解释路径一致 | 达成 | `test_mvp_rebuild_consistency`：清图 → full_rebuild → 结果集+推理路径+证据指纹一致 |
 | 7 | ≥30 条黄金查询；Precision ≥90% Recall ≥85% | 达成 | `golden_mvp.yaml` 30 用例（include/exclude/双时态/口径/注入）；include 型用例集合断言等价 P/R=100%（阈值由 `_evaluate` 消费） |
-| 8 | 首个筛选问题返回每家公司完整证据包 | 达成 | 响应含：证券（security_code）、标准产品（standard_product）、业务阶段、Claim ID、证据（evidence_ids + evidence_quotes 含页码/原文）、有效期（valid_from/valid_to）、三年现金流+口径（financial_detail/period_rule）、推理路径、新鲜度（data_freshness）、未知项（unknowns/excluded）——demo 实测输出 |
+| 8 | 首个筛选问题返回每家公司完整证据包 | 达成 | 响应含：证券（security_code）、标准产品（standard_product）、业务阶段、Claim ID、证据（evidence_ids + evidence_quotes 含页码/原文）、有效期（valid_from——快照中为报告期年初，valid_to 开放至被状态机关闭）、三年现金流+口径（financial_detail/period_rule）、推理路径、新鲜度（data_freshness）、未知项（unknowns/excluded）——demo 实测输出 |
 | 9 | 负向黄金样例结果正确 | 达成 | g07~g12 + g05/g06/g24 全部通过；hedge 与否认红线 DB 实证 |
 | 10 | 关键故障和恢复测试通过，最新 CI 全部成功 | 达成 | #10 故障矩阵 + CI 七 job 全绿 |
 | 11 | 验收报告记录快照/版本/限制/边界 | 达成 | 本报告（第二轮修订版） |

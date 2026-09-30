@@ -435,6 +435,10 @@ def build_documents_claims(
 
         output = extractor.extract(fragments, ontology_version="0.1.0")
         stats["candidates"] += len(output.claims)
+        # 报告期-derived 业务有效期：年报披露的经营事实自报告期年起有效
+        #（valid_to 开放——由 SUPERSEDED/CONTRADICTED 状态机关闭）
+        report_year = max(year for year, _ in
+                          COMPANIES[seq - 1]["fy_values"])
         # checksum 与片段生成同源（insert_evidence_fragment 返回值不含 checksum）
         checksums = [
             _stable_hash(f"frag:{company_name}:{i}:{t[:24]}")
@@ -452,6 +456,12 @@ def build_documents_claims(
                     auto_accept=auto_accept,
                     shacl_validate=False,      # 快照构建用快速谓词校验
                     check_conflicts=True,
+                )
+            with uow_factory.transaction() as uow:
+                uow._conn.execute(  # noqa: SLF001
+                    "UPDATE fact.claim SET valid_from = %s WHERE id = %s "
+                    "AND valid_from IS NULL",
+                    (f"{report_year}-01-01", outcome.claim_id),
                 )
             if outcome.status == "ACCEPTED":
                 stats["accepted"] += 1
@@ -520,7 +530,7 @@ def write_manifest(output_dir: Path, stats: dict[str, Any]) -> Path:
         "ontology_version": "0.1.0",
         "mapping_version": "tushare-mappings-0.1.0",
         "extraction_version": "rules-extractor-0.1.0",
-        "data_mode": "synthetic",
+        "data_mode": stats.get("data_mode", "synthetic"),
         "generated_at": datetime.now(UTC).isoformat(),
         "stats": stats,
         "disclaimer": (
@@ -577,6 +587,28 @@ def build_snapshot(
                 projector.project_entity("Product", str(pid), {"name": name})
             for cid, name in company_rows:
                 projector.project_entity("Company", str(cid), {"canonical_name": name})
+            # 概念/Theme 腿：Concept 节点 + TAGGED_AS 成员边（缺失时图模式
+            # 概念筛选会"静默空结果"——违反绝不静默不变量）
+            with uow_factory.transaction() as uow:
+                concept_rows = uow._conn.execute(  # noqa: SLF001
+                    "SELECT id, name FROM master.concept"
+                ).fetchall()
+                member_rows = uow._conn.execute(  # noqa: SLF001
+                    "SELECT m.company_id, m.concept_id, m.snapshot_date "
+                    "FROM master.company_concept_membership m"
+                ).fetchall()
+            for concept_id, concept_name in concept_rows:
+                projector.project_entity(
+                    "Concept", str(concept_id), {"canonical_name": concept_name}
+                )
+            for member_company, member_concept, snapshot in member_rows:
+                projector.project_membership(
+                    rel_type="TAGGED_AS",
+                    source_id=str(member_company),
+                    target_id=str(member_concept),
+                    props={"snapshot_date": str(snapshot),
+                           "active": True},
+                )
             graph_stats = project_to_graph(uow_factory, driver)
         finally:
             driver.close()
