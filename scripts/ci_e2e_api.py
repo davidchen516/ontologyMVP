@@ -15,7 +15,6 @@ sys.path.insert(0, str(REPO_ROOT))
 
 def main() -> None:
     import uvicorn
-
     from apps.api.app import create_app
     from src.core.config import Settings
 
