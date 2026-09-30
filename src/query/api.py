@@ -253,6 +253,8 @@ async def graph_subgraph(
             pg_conn = psycopg.connect(settings.postgres_dsn)
             pg_conn.execute("BEGIN READ ONLY")
         except Exception:  # noqa: BLE001 - PG 不可达时跳过 STALE 检测
+            if pg_conn is not None:
+                pg_conn.close()
             pg_conn = None
     try:
         return build_subgraph(

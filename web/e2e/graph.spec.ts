@@ -47,7 +47,7 @@ test("#32 图谱：选择公司 → 子图加载 → 表格视图 → 证据追�
     path: `${SHOTS}/evidence-drawer.png`,
     fullPage: true,
   });
-  await page.getByRole("button", { name: "关闭" }).click();
+  await page.getByRole("button", { name: "关闭", exact: true }).click();
 });
 
 test("#32 图谱降级：停图后端 → DEGRADED + 原因 + PG 提示", async ({ page }) => {

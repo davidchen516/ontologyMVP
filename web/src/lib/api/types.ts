@@ -150,12 +150,20 @@ export interface SubgraphEdge {
   claim_id: string | null;
 }
 
+export interface SubgraphFallbackClaim {
+  id: string;
+  predicate_code: string;
+  business_stage: string | null;
+  claim_status: string;
+}
+
 export interface SubgraphResponse {
-  status: "SUCCEEDED" | "DEGRADED" | "REJECTED";
+  status: "SUCCEEDED" | "DEGRADED" | "STALE" | "REJECTED";
   reason: string | null;
   center: { id: string; name: string } | null;
   nodes: SubgraphNode[];
   edges: SubgraphEdge[];
+  pg_fallback: SubgraphFallbackClaim[] | null;
   hops: number;
   max_nodes: number;
   truncated: boolean;

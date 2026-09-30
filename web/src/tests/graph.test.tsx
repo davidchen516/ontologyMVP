@@ -28,6 +28,7 @@ const SUBGRAPH_OK: SubgraphResponse = {
     { id: "k-1", labels: ["Concept"], name: "人形机器人" },
   ],
   edges: [{ type: "PRODUCES", claim_id: "cl-1" }],
+  pg_fallback: null,
   hops: 1,
   max_nodes: 100,
   truncated: false,
@@ -37,6 +38,7 @@ const SUBGRAPH_DEGRADED: SubgraphResponse = {
   status: "DEGRADED",
   reason: "graph backend unreachable: ServiceUnavailable",
   center: null, nodes: [], edges: [],
+  pg_fallback: null,
   hops: 1, max_nodes: 100, truncated: false,
 };
 
@@ -46,7 +48,8 @@ const SUBGRAPH_TRUNCATED: SubgraphResponse = {
   nodes: Array.from({ length: 100 }, (_, i) => ({
     id: `n-${i}`, labels: ["Product"], name: `产品${i}`,
   })),
-  edges: [], hops: 2, max_nodes: 100, truncated: true,
+  edges: [], pg_fallback: null,
+  hops: 2, max_nodes: 100, truncated: true,
 };
 
 const LINEAGE: ClaimLineageResponse = {
@@ -213,5 +216,48 @@ describe("证据浏览器（issue #32）", () => {
     expect(screen.getByText(/伺服系统已实现量产/)).toBeInTheDocument();
     // 版本缺失如实呈现（不伪造）
     expect(screen.getByText(/版本 无/)).toBeInTheDocument();
+  });
+});
+
+describe("STALE 投影水位落后（二审 N3 回归）", () => {
+  beforeEach(() => vi.unstubAllGlobals());
+
+  it("STALE → 横幅说明 + PG 事实回退表格 + 证据链入口", async () => {
+    vi.stubGlobal("fetch", mockFetchByPath({
+      "/api/v1/graph/subgraph": {
+        status: "STALE",
+        reason: "graph projection returned no paths while the company exists in PG with 1 accepted claim(s) - projection lagging; PG facts attached",
+        center: null,
+        nodes: [], edges: [],
+        pg_fallback: [{
+          id: "cl-9", predicate_code: "PRODUCES",
+          business_stage: "MASS_PRODUCTION", claim_status: "ACCEPTED",
+        }],
+        hops: 1, max_nodes: 100, truncated: false,
+      },
+      "/api/v1/companies": COMPANIES_MOCK,
+    }));
+    renderPage(<GraphBrowser />);
+    const option = await screen.findByRole("option", { name: "中心公司" });
+    await userEvent.selectOptions(
+      screen.getByLabelText("选择公司"),
+      (option as HTMLOptionElement).value,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "加载子图" }));
+
+    expect(
+      await screen.findByText(/图投影水位落后（STALE）/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/projection lagging/)).toBeInTheDocument();
+    // PG 事实回退表格（GWT-2：绝不静默空）
+    expect(
+      screen.getByRole("table", { name: /PostgreSQL 事实回退/ }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("PRODUCES")).toBeInTheDocument();
+    expect(screen.getByText("MASS_PRODUCTION")).toBeInTheDocument();
+    // 证据链入口可达
+    expect(
+      screen.getByRole("button", { name: "查看证据链" }),
+    ).toBeInTheDocument();
   });
 });

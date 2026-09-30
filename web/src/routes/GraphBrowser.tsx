@@ -166,6 +166,56 @@ function SubgraphResult({
       </div>
     );
   }
+  if (data.status === "STALE") {
+    // 投影水位落后：图无路径但 PG 有该公司——绝不静默空（GWT-2）
+    return (
+      <div role="status" className="space-y-3">
+        <div className="rounded-card border border-warning-muted bg-warning-muted p-4 text-sm">
+          <strong>图投影水位落后（STALE）</strong>：{data.reason}
+        </div>
+        {data.pg_fallback && data.pg_fallback.length > 0 ? (
+          <div className="overflow-x-auto rounded-card border border-border bg-surface">
+            <table className="w-full text-sm">
+              <caption className="sr-only">
+                PostgreSQL 事实回退：该公司 ACCEPTED Claim 列表
+              </caption>
+              <thead className="border-b border-border text-left text-xs text-fg-muted">
+                <tr>
+                  <th scope="col" className="px-4 py-3">谓词</th>
+                  <th scope="col" className="px-4 py-3">业务阶段</th>
+                  <th scope="col" className="px-4 py-3">状态</th>
+                  <th scope="col" className="px-4 py-3">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.pg_fallback.map((claim) => (
+                  <tr key={claim.id} className="border-b border-border last:border-0">
+                    <td className="px-4 py-3 font-mono text-xs">{claim.predicate_code}</td>
+                    <td className="px-4 py-3">{claim.business_stage ?? "—"}</td>
+                    <td className="px-4 py-3">{claim.claim_status}</td>
+                    <td className="px-4 py-3">
+                      <button
+                        type="button"
+                        onClick={() => onSelectClaim(claim.id)}
+                        className="text-primary hover:underline"
+                      >
+                        查看证据链
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <EmptyState
+            title="该公司在图中暂无投影路径"
+            hint="PG 中该公司已存在——图投影恢复后将自动展示；上方为其 PostgreSQL 事实。"
+          />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">

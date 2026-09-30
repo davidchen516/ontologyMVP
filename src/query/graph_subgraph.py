@@ -22,7 +22,8 @@ RETURN c.id AS center_id, c.name AS center_name,
        [p IN nodes(path) | {id: p.id, labels: labels(p),
         name: coalesce(p.name, p.canonical_name)}] AS node_path,
        [rel IN relationships(path) | {type: type(rel),
-        claim_id: rel.claim_id}] AS edge_path
+        claim_id: rel.claim_id,
+        rel_id: elementId(rel)}] AS edge_path
 LIMIT $max_paths
 """
 
@@ -128,7 +129,10 @@ def build_subgraph(
     truncated = False
 
     for row in rows:
-        for node in row.get("node_path", []):
+        # OPTIONAL MATCH 空路径时 node_path/edge_path 为 None——视作 0 路径
+        node_path = row.get("node_path") or []
+        edge_path = row.get("edge_path") or []
+        for node in node_path:
             if not isinstance(node, dict) or not node.get("id"):
                 continue
             if node["id"] not in nodes:
@@ -140,13 +144,14 @@ def build_subgraph(
                     "labels": node.get("labels", []),
                     "name": node.get("name"),
                 }
-        for edge in row.get("edge_path", []):
-            # 去重键含端点信息：无 claim_id 的边（如 TAGGED_AS 成员）不因
-            # 同 type 塌缩为一条——每条路径实例独立保留
-            key = (
-                f"{edge.get('type')}:{edge.get('claim_id')}"
-                f":{edge.get('source_id', '')}:{edge.get('target_id', '')}"
-                f":{len(edges)}"
+        for edge in edge_path:
+            if not isinstance(edge, dict):
+                continue
+            # 去重键 = Cypher elementId（稳定边实例标识）：同一条边在多条
+            # 路径中出现只计一次；无 claim_id 的结构边按实例保留不塌缩
+            key = str(
+                edge.get("rel_id")
+                or f"{edge.get('type')}:{edge.get('claim_id')}"
             )
             if key not in edge_keys:
                 edge_keys.add(key)
@@ -160,22 +165,22 @@ def build_subgraph(
     if not rows and pg_conn is not None:
         fallback = _pg_fallback_for_company(pg_conn, company_id)
         if fallback is not None:
-            has_graph_center = False
-            pg_has_claims = len(fallback) > 0
-            if pg_has_claims or not has_graph_center:
-                return {
-                    "status": "STALE",
-                    "reason": (
-                        "graph projection returned no paths while PG holds "
-                        f"{len(fallback)} accepted claim(s) for this company "
-                        "- projection lagging; PG facts attached"
-                    ),
-                    "center": None,
-                    "nodes": [], "edges": [],
-                    "pg_fallback": fallback,
-                    "hops": hops_int, "max_nodes": max_nodes,
-                    "truncated": False,
-                }
+            # PG 公司存在但图无路径 → 投影水位落后（快照构建器物化全部
+            # 公司节点与成员边，图缺公司即投影未跟上）；0 claim 时也如实
+            # 说明公司存在而图缺投影。
+            return {
+                "status": "STALE",
+                "reason": (
+                    "graph projection returned no paths while the company "
+                    f"exists in PG with {len(fallback)} accepted claim(s) "
+                    "- projection lagging; PG facts attached"
+                ),
+                "center": None,
+                "nodes": [], "edges": [],
+                "pg_fallback": fallback,
+                "hops": hops_int, "max_nodes": max_nodes,
+                "truncated": False,
+            }
 
     return {
         "status": "SUCCEEDED",
