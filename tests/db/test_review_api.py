@@ -5,10 +5,8 @@ from __future__ import annotations
 import uuid
 
 import psycopg
-import pytest
 from fastapi.testclient import TestClient
 from psycopg.conninfo import conninfo_to_dict
-
 from src.domain.enums import ClaimStatus
 
 from tests.helpers import make_settings

@@ -51,6 +51,8 @@ interface RequestOptions {
   body?: unknown;
   signal?: AbortSignal;
   timeoutMs?: number;
+  /** 附加请求头（认证等；绝不接受用户控制的 Content-Type 之外的白名单） */
+  headers?: Record<string, string>;
 }
 
 function statusToKind(status: number): ApiErrorKind {
@@ -106,7 +108,10 @@ export async function apiFetch<T>(
   try {
     response = await fetch(path, {
       method,
-      headers: body === undefined ? undefined : { "Content-Type": "application/json" },
+      headers: {
+        ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+        ...options.headers,
+      },
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: controller.signal,
     });

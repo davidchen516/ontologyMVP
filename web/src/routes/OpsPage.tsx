@@ -9,29 +9,41 @@ import { LoadingSkeleton } from "../components/states/States";
  * 但密钥/内部细节绝不渲染。
  */
 
-interface AdminListResponse<T> {
-  items?: T[];
-  runs?: T[];
-  total?: number;
-}
-
-async function adminList<T>(path: string, signal?: AbortSignal): Promise<T[]> {
-  const data = await apiFetch<AdminListResponse<T>>(path, { signal });
+async function adminList(
+  path: string, signal?: AbortSignal,
+): Promise<Array<Record<string, unknown>>> {
+  const data = await apiFetch<
+    | Array<Record<string, unknown>>
+    | { items?: Array<Record<string, unknown>>; runs?: Array<Record<string, unknown>> }
+  >(path, { signal });
+  // 裸数组（如 /admin/capabilities 的 source_capability 行）或 {items}/{runs}
+  if (Array.isArray(data)) return data;
   return data.items ?? data.runs ?? [];
 }
 
 export function OpsPage() {
-  const capabilities = useQuery({
-    queryKey: ["admin-capabilities"],
-    queryFn: (ctx) => apiFetch<Record<string, unknown>>("/admin/capabilities", { signal: ctx.signal }),
+  // 能力矩阵 = /readyz（components + capabilities 真实形状）；
+  // /admin/capabilities 是 source_capability 数据源探针行——单独面板
+  const readiness = useQuery({
+    queryKey: ["ops-readyz"],
+    queryFn: (ctx) => apiFetch<{
+      status: string;
+      components: Record<string, { status: string }>;
+      capabilities: Record<string, { status: string }>;
+    }>("/readyz", { signal: ctx.signal }),
+    refetchInterval: 30_000,
+  });
+  const sourceCapabilities = useQuery({
+    queryKey: ["admin-source-capabilities"],
+    queryFn: (ctx) => adminList("/admin/capabilities", ctx.signal),
   });
   const ingestRuns = useQuery({
     queryKey: ["admin-ingest-runs"],
-    queryFn: (ctx) => adminList<Record<string, unknown>>("/admin/ingest-runs?limit=10", ctx.signal),
+    queryFn: (ctx) => adminList("/admin/ingest-runs?limit=10", ctx.signal),
   });
   const normalizationRuns = useQuery({
     queryKey: ["admin-normalization-runs"],
-    queryFn: (ctx) => adminList<Record<string, unknown>>("/admin/normalization-runs?limit=10", ctx.signal),
+    queryFn: (ctx) => adminList("/admin/normalization-runs?limit=10", ctx.signal),
   });
   const projection = useQuery({
     queryKey: ["admin-projection"],
@@ -47,7 +59,7 @@ export function OpsPage() {
   });
   const reviewTasks = useQuery({
     queryKey: ["admin-review-tasks"],
-    queryFn: (ctx) => adminList<Record<string, unknown>>("/admin/review-tasks?limit=5", ctx.signal),
+    queryFn: (ctx) => adminList("/admin/review-tasks?limit=5", ctx.signal),
   });
 
   return (
@@ -59,19 +71,49 @@ export function OpsPage() {
         </p>
       </header>
 
-      <Panel title="能力矩阵" query={capabilities}>
-        {(data) => (
+      <div className="grid gap-4 md:grid-cols-2">
+        <Panel title="核心组件（readyz）" query={readiness}>
+          {(data) => (
+            <ul className="space-y-1 text-sm">
+              {Object.entries(data.components).map(([name, comp]) => (
+                <li key={name} className="flex items-center justify-between">
+                  <span>{name}</span>
+                  <span className={comp.status === "OK" ? "text-success" : "text-danger"}>
+                    {comp.status}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+        <Panel title="可选能力（readyz）" query={readiness}>
+          {(data) => (
+            <ul className="space-y-1 text-sm">
+              {Object.entries(data.capabilities).map(([name, cap]) => (
+                <li key={name} className="flex items-center justify-between">
+                  <span>{name}</span>
+                  <span className={cap.status === "OK" ? "text-success" : "text-fg-muted"}>
+                    {cap.status === "OK" ? "可用" : "未启用"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+      </div>
+
+      <Panel title="数据源能力探针（source_capability）" query={sourceCapabilities}>
+        {(rows) => (
           <ul className="space-y-1 text-sm">
-            {Object.entries(
-              (data["capabilities"] as Record<string, unknown>) ?? data,
-            ).map(([name, state]) => (
-              <li key={name} className="flex items-center justify-between">
-                <span>{name}</span>
-                <span className={String(state).includes("OK") ? "text-success" : "text-fg-muted"}>
-                  {String(state)}
+            {rows.slice(0, 10).map((row, i) => (
+              <li key={i} className="flex items-center justify-between">
+                <span className="truncate">
+                  {String(row["source_system"] ?? "")} · {String(row["api_name"] ?? "")}
                 </span>
+                <span>{String(row["status"] ?? "—")}</span>
               </li>
             ))}
+            {rows.length === 0 ? <li className="text-fg-muted">暂无探针记录</li> : null}
           </ul>
         )}
       </Panel>
@@ -149,12 +191,17 @@ export function OpsPage() {
 }
 
 /** 面板壳：加载/错误态统一（失败不隐藏——Operator 必须看到异常）。 */
-function Panel({
+function Panel<TData, TError = unknown>({
   title, query, children,
 }: {
   title: string;
-  query: { isPending: boolean; error: unknown; data: unknown; refetch: () => unknown };
-  children: (data: never) => React.ReactNode;
+  query: {
+    isPending: boolean;
+    error: TError | null;
+    data: TData | undefined;
+    refetch: () => unknown;
+  };
+  children: (data: TData) => React.ReactNode;
 }) {
   return (
     <div className="rounded-card border border-border bg-surface p-4 shadow-card">
@@ -164,7 +211,7 @@ function Panel({
         <ErrorState error={query.error} onRetry={() => void query.refetch()} />
       ) : null}
       {!query.isPending && !query.error && query.data !== undefined
-        ? children(query.data as never)
+        ? children(query.data)
         : null}
     </div>
   );

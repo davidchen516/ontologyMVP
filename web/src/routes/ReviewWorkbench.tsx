@@ -101,7 +101,7 @@ export function ReviewWorkbench() {
   // 登录入口只在能力可用时渲染（能力感知：readyz.capabilities.review_write）
   const readiness = useQuery({
     queryKey: ["readyz-review"],
-    queryFn: (ctx) => apiFetch<{ capabilities: Record<string, { status: string }> }>("/readyz", ctx.signal),
+    queryFn: (ctx) => apiFetch<{ capabilities: Record<string, { status: string }> }>("/readyz", { signal: ctx.signal }),
   });
   const writeCapability =
     readiness.data?.capabilities?.["review_write"]?.status === "OK";

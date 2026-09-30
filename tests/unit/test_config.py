@@ -130,12 +130,12 @@ def test_capabilities_missing_token_means_unavailable():
     from tests.helpers import make_settings
 
     without = make_settings()
-    assert without.capability_states() == {"tushare": False, "llm": False}
+    assert without.capability_states() == {"tushare": False, "llm": False, "review_write": False}
 
     with_both = make_settings(
         tushare_token=SecretStr("t"), llm_api_key=SecretStr("k")
     )
-    assert with_both.capability_states() == {"tushare": True, "llm": True}
+    assert with_both.capability_states() == {"tushare": True, "llm": True, "review_write": False}
 
 
 def test_empty_string_token_is_unavailable():
@@ -143,4 +143,4 @@ def test_empty_string_token_is_unavailable():
     from tests.helpers import make_settings
 
     settings = make_settings(tushare_token="", llm_api_key="")
-    assert settings.capability_states() == {"tushare": False, "llm": False}
+    assert settings.capability_states() == {"tushare": False, "llm": False, "review_write": False}

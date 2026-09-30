@@ -123,8 +123,10 @@ describe("深链接刷新（SPA fallback 由 nginx try_files 提供，路由层�
       </QueryClientProvider>,
     );
     await waitFor(() => {
-      // PlaceholderPage 正文（区别于侧栏导航项的"运维视图"）
-      expect(screen.getByText("此工作台将于 #33 交付")).toBeInTheDocument();
+      // OpsPage 真实渲染（#33 已实装——占位期断言过期）
+      expect(
+        screen.getByRole("heading", { name: "运维视图" }),
+      ).toBeInTheDocument();
     });
   });
 });

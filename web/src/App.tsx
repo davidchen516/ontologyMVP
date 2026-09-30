@@ -9,7 +9,6 @@ import { GraphBrowser } from "./routes/GraphBrowser";
 import { EvidenceBrowser } from "./routes/EvidenceBrowser";
 import { ReviewWorkbench } from "./routes/ReviewWorkbench";
 import { OpsPage } from "./routes/OpsPage";
-import { PlaceholderPage } from "./routes/PlaceholderPage";
 import { NotFoundPage } from "./routes/NotFoundPage";
 
 /**
@@ -27,14 +26,8 @@ export const router = createBrowserRouter([
         path: "/workbench/companies/:companyId",
         element: <CompanyDetailPage />,
       },
-      {
-        path: "/graph",
-        element: <PlaceholderPage milestone="#32" title="图谱浏览器" />,
-      },
-      {
-        path: "/evidence",
-        element: <PlaceholderPage milestone="#32" title="证据浏览器" />,
-      },
+      { path: "/graph", element: <GraphBrowser /> },
+      { path: "/evidence", element: <EvidenceBrowser /> },
       { path: "/review", element: <ReviewWorkbench /> },
       { path: "/ops", element: <OpsPage /> },
       { path: "*", element: <NotFoundPage /> },
