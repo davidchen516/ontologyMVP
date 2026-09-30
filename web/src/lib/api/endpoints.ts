@@ -1,9 +1,12 @@
 import { apiFetch } from "./client";
 import type {
   ClaimRecord,
+  CompanyListResponse,
   CompanyRecord,
+  OverviewStats,
   QueryResponse,
   ReadinessReport,
+  RecentRunsResponse,
   ScreenRequest,
 } from "./types";
 
@@ -35,4 +38,23 @@ export const api = {
       `/api/v1/companies/${companyId}/timeline`,
       { signal },
     ),
+};
+
+export const overviewApi = {
+  stats: (signal?: AbortSignal) =>
+    apiFetch<OverviewStats>("/api/v1/overview/stats", { signal }),
+  recentRuns: (signal?: AbortSignal) =>
+    apiFetch<RecentRunsResponse>("/api/v1/overview/recent-runs", { signal }),
+  companies: (
+    params: { q?: string; stage?: string; limit?: number; offset?: number },
+    signal?: AbortSignal,
+  ) => {
+    const search = new URLSearchParams();
+    if (params.q) search.set("q", params.q);
+    if (params.stage) search.set("stage", params.stage);
+    if (params.limit) search.set("limit", String(params.limit));
+    if (params.offset) search.set("offset", String(params.offset));
+    const qs = search.size > 0 ? `?${search.toString()}` : "";
+    return apiFetch<CompanyListResponse>(`/api/v1/companies${qs}`, { signal });
+  },
 };

@@ -2,6 +2,9 @@ import { createBrowserRouter, RouterProvider } from "react-router";
 import { AppShell } from "./components/shell/AppShell";
 import { ErrorBoundary } from "./app/ErrorBoundary";
 import { HomePage } from "./routes/HomePage";
+import { QueryWorkbench } from "./routes/QueryWorkbench";
+import { CompaniesPage } from "./routes/CompaniesPage";
+import { CompanyDetailPage } from "./routes/CompanyDetailPage";
 import { PlaceholderPage } from "./routes/PlaceholderPage";
 import { NotFoundPage } from "./routes/NotFoundPage";
 
@@ -15,9 +18,11 @@ export const router = createBrowserRouter([
     errorElement: <ErrorBoundary />,
     children: [
       { path: "/", element: <HomePage /> },
+      { path: "/workbench/query", element: <QueryWorkbench /> },
+      { path: "/workbench/companies", element: <CompaniesPage /> },
       {
-        path: "/workbench/query",
-        element: <PlaceholderPage milestone="#31" title="查询工作台" />,
+        path: "/workbench/companies/:companyId",
+        element: <CompanyDetailPage />,
       },
       {
         path: "/graph",

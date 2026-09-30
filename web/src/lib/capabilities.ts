@@ -40,6 +40,12 @@ export const NAV_ITEMS: NavItem[] = [
     gate: apiGate,
   },
   {
+    to: "/workbench/companies",
+    label: "公司列表",
+    availableIn: "#31",
+    gate: apiGate,
+  },
+  {
     to: "/graph",
     label: "图谱浏览器",
     availableIn: "#32",
@@ -65,8 +71,8 @@ export const NAV_ITEMS: NavItem[] = [
   },
 ];
 
-/** 里程碑检查：本壳层只实装 #30 的入口（首页），其余按里程碑声明。 */
-export const CURRENT_MILESTONE = "#30";
+/** 里程碑检查：#30 应用壳 + #31 查询/公司已实装；其余按里程碑声明。 */
+export const CURRENT_MILESTONE = "#31";
 
 export function navAvailability(
   item: NavItem,
