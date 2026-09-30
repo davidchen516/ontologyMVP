@@ -12,8 +12,9 @@
   8px 基数、375/768/1024/1440 断点、tabular-nums）；
   React Router（SPA fallback）+ TanStack Query + lucide-react。
 - 依赖锁定：`package-lock.json`（npm ci 可复现）；许可审计
-  `npm run license:audit`（665 包全部宽松许可证：MIT×493/Apache-2.0×38/
-  ISC×24/BSD×16/MPL-2.0×3/其他宽松；零豁免）。
+  `npm run license:audit`（314 个安装包全部宽松许可证：MIT×259/
+  Apache-2.0×22/ISC×16/BSD×11/MPL-2.0×2/MIT-0/BlueOak/Python-2.0/CC-BY-4.0
+  各 1；零豁免）。
 
 ## 2. 应用壳
 
@@ -53,9 +54,11 @@ curl -X POST :5173/api/v1/screen  # 200 真实查询响应
 #           docker compose start api → readyz 200（恢复）
 ```
 
-浏览器验收（Playwright 对 compose 生产栈）：`web/screenshots/` 6 张真实
-截图（亮/暗 1440px、375px 移动端、深链接、错误态、键盘焦点）。
-- 375px 无横向溢出（`scrollWidth - clientWidth <= 0` 断言）。
+浏览器验收（Playwright 对 compose 生产栈 + dev 代理）：`web/screenshots/`
+9 张真实截图（375/768/1024/1440px 亮色、1280px 暗色、深链接、错误态、
+键盘焦点）。
+- 375/768/1024/1440px 全部无横向溢出（`scrollWidth - clientWidth <= 0`
+  硬断言；issue 要求的四个断点全部真实视口截图）。
 - API 中断时 `[role=alert]` 分类错误 + 重试按钮 + trace_id，无 psycopg/
   Traceback 泄露（断言）。
 - 键盘 Tab 焦点可见（`:focus-visible` outline）。
@@ -70,6 +73,15 @@ bundle 报告 → 许可审计）与 `contract` job（OpenAPI 快照漂移检测
 - web 为独立静态服务：`docker compose stop web` 即下线，不影响
   API/Worker/数据库；回退 = 回退镜像/静态产物 tag。
 - 前端依赖由 lockfile 固定；升级失败回退 lockfile + 构建产物。
+
+## 6.5 审查遗留项（已修 / 移交）
+
+- 已修（本轮提交）：evidence 许可数字失实（665→实测 314）、截图断点补齐
+  （768/1024/1440 真实视口）、抽屉图标不切换、键盘断言恒真（改为断言
+  真实焦点目标：品牌链接 → 主题开关）。
+- 移交（#31/#34）：types.ts ScreenRequest 补 known_at/period_rule 反向
+  契约守护；429 rate-limit 分类；Radix Dialog 焦点陷阱；e2e 进 CI（#34
+  浏览器矩阵）；tsbuildinfo 不入库。
 
 ## 7. 已知限制（移交后续轮）
 

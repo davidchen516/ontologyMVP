@@ -130,7 +130,7 @@ export function AppShell() {
           className="rounded-md p-2 hover:bg-surface-muted md:hidden"
           onClick={() => setMobileOpen(!mobileOpen)}
         >
-          {mobileOpen ? <Menu aria-hidden className="size-5" /> : <Menu aria-hidden className="size-5" />}
+          {mobileOpen ? <X aria-hidden className="size-5" /> : <Menu aria-hidden className="size-5" />}
         </button>
         <NavLink to="/" className="text-sm font-semibold tracking-tight">
           Stock Ontology MVP

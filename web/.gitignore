@@ -3,3 +3,5 @@ dist
 coverage
 *.local
 openapi.json.tmp
+
+*.tsbuildinfo

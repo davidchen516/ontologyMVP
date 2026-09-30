@@ -70,11 +70,47 @@ test("移动端 375px 无横向溢出且导航为抽屉", async ({ page }) => {
   await page.screenshot({ path: `${SHOTS}/home-375-light.png`, fullPage: true });
 });
 
-test("键盘可导航：Tab 到侧栏并聚焦可见", async ({ page }) => {
+test("键盘可导航：焦点依次落在真实交互元素上", async ({ page }) => {
   await page.goto("/");
+  // 桌面视口下首个 Tab 目标是品牌链接（真实交互元素，非 body——
+  // 移动端抽屉按钮在 md:hidden 下不参与焦点序）
   await page.keyboard.press("Tab");
+  const first = await page.evaluate(() => {
+    const el = document.activeElement;
+    return el
+      ? { tag: el.tagName, text: (el.textContent ?? "").trim().slice(0, 20) }
+      : { tag: "", text: "" };
+  });
+  expect(first.tag).toBe("A");
+  expect(first.text).toContain("Stock Ontology MVP");
+  // 继续 Tab 到达主题开关（role=switch，可验证焦点环渲染）
   await page.keyboard.press("Tab");
-  const focused = await page.evaluate(() => document.activeElement?.tagName ?? "");
-  expect(focused.length).toBeGreaterThan(0);
+  const second = await page.evaluate(() => {
+    const el = document.activeElement;
+    return el
+      ? { role: el.getAttribute("role") ?? "", label: el.getAttribute("aria-label") ?? "" }
+      : { role: "", label: "" };
+  });
+  expect(second.role).toBe("switch");
+  expect(second.label).toContain("主题");
   await page.screenshot({ path: `${SHOTS}/keyboard-focus.png` });
 });
+
+// MINOR #2：issue 要求 375/768/1024/1440px 截图（真实视口）
+for (const width of [768, 1024, 1440] as const) {
+  test(`断点 ${width}px 真实视口截图与无横向溢出`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/");
+    await expect(page.getByRole("heading", { name: "系统概览" })).toBeVisible();
+    const overflow = await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth -
+        document.documentElement.clientWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(0);
+    await page.screenshot({
+      path: `${SHOTS}/home-${width}-light.png`,
+      fullPage: true,
+    });
+  });
+}
