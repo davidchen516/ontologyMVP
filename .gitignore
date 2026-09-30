@@ -21,3 +21,7 @@ htmlcov/
 .jekyll-metadata
 _site/
 vendor/bundle/
+
+# 快照构建产物（每次 build 生成，manifest 由验收报告引用本地文件）
+docs/snapshots/
+tests/mvp/snapshots/

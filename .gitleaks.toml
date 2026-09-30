@@ -1,0 +1,11 @@
+# Gitleaks 配置（issue #10/#11 豁免政策：每条豁免必须附理由与登记）
+title = "ontologyMVP gitleaks config"
+
+[allowlist]
+description = """误报豁免（2026-09-29 登记，review 轮可移除）：
+scripts/build_mvp_snapshot.py 的 DATASETS_TO_RUN 列表与 if 判断中的
+"top10_holders" 是 TuShare 公开 API 名称字面量，generic-api-key 规则
+把 `== "top10_holders"` 形态误判为 api-key 赋值。该文件不含任何真实
+凭据（合成快照的 token 为显式占位串且已通过 fixture 密钥守护测试）。"""
+paths = ['''scripts/build_mvp_snapshot\.py''']
+rules = ['generic-api-key']

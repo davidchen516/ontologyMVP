@@ -165,20 +165,29 @@ class QueryStatus(StrEnum):
 
 
 class GroundedResult(BaseModel):
-    """每个命中公司的结构化证据包（验收 10）。"""
+    """每个命中公司的结构化证据包（验收 10 + issue #11 验收 8）。
+
+    证券/标准产品/原文引文/双时态有效期由查询链路加载——
+    每条经营结论可回溯至 Claim 与可定位 Evidence。
+    """
 
     model_config = ConfigDict(frozen=True)
 
     company_id: UUID
     company_name: str
+    security_code: str | None = None  # 证券代码（ts_code）
+    standard_product: str | None = None  # 标准产品（PRODUCES 对象实体名）
     claim_ids: list[UUID] = Field(default_factory=list)
     business_stage: str | None = None
     evidence_state: str | None = None
+    valid_from: str | None = None  # Claim 业务有效时间（双时态-业务侧）
+    valid_to: str | None = None
     financial_value: float | None = None
     report_period: str | None = None
     currency: str | None = None
     financial_detail: list[dict[str, Any]] = Field(default_factory=list)
     evidence_ids: list[UUID] = Field(default_factory=list)
+    evidence_quotes: list[dict[str, Any]] = Field(default_factory=list)
     reasoning_path: list[str] = Field(default_factory=list)
     data_freshness: str | None = None
 

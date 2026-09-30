@@ -32,13 +32,13 @@ GRAPH_TEMPLATES: dict[str, str] = {
     "companies_by_concept":
         "MATCH (c:Company)-[t:TAGGED_AS]->(k:Concept) "
         "WHERE k.canonical_name = $concept_name "
-        "RETURN c.id AS company_id, c.canonical_name AS company_name, "
+        "RETURN DISTINCT c.id AS company_id, c.canonical_name AS company_name, "
         "k.canonical_name AS concept, t.snapshot_date AS snapshot",
     "companies_by_stage":
         "MATCH (c:Company)-[r:PRODUCES]->(p:Product) "
         "WHERE r.business_stage = $business_stage AND r.active = true "
-        "RETURN c.id AS company_id, c.canonical_name AS company_name, "
-        "r.claim_id AS claim_id, r.business_stage AS stage",
+        "RETURN DISTINCT c.id AS company_id, c.canonical_name AS company_name, "
+        "r.business_stage AS stage",
     "explain_relation":
         "MATCH path = (c1:Company {id: $source_id})-"
         "[:PRODUCES|SUPPLIES_TO|USES_TECHNOLOGY*1..{max_hops}]-(c2) "
@@ -214,7 +214,8 @@ def evaluate_numeric_filter(
     threshold = nf.threshold if nf.threshold is not None else 0.0
 
     evaluations: dict[Any, dict[str, Any]] = {}
-    for company_id, fy_map in by_company.items():
+    for company_key, fy_map in by_company.items():
+        company_id = str(company_key)
         fys = sorted(fy_map.items(), key=lambda item: item[0], reverse=True)
         window = fys[: nf.fiscal_years]
         values = [entry[0] for _, entry in window]
@@ -270,7 +271,8 @@ def _load_claims_for_company(conn: Any, company_id: Any, plan: QueryPlan) -> lis
     rows = conn.execute(  # noqa: SLF001
         f"""
         SELECT c.id, c.predicate_code, c.business_stage, c.evidence_state,
-               c.confidence, c.valid_from, c.valid_to, c.recorded_at
+               c.confidence, c.valid_from, c.valid_to, c.recorded_at,
+               c.object_entity_id
         FROM fact.claim c
         WHERE {' AND '.join(conditions)}
         ORDER BY c.recorded_at DESC
@@ -279,7 +281,8 @@ def _load_claims_for_company(conn: Any, company_id: Any, plan: QueryPlan) -> lis
         (*params, plan.max_results),
     ).fetchall()
     columns = ["id", "predicate_code", "business_stage", "evidence_state",
-               "confidence", "valid_from", "valid_to", "recorded_at"]
+               "confidence", "valid_from", "valid_to", "recorded_at",
+               "object_entity_id"]
     return [dict(zip(columns, row, strict=True)) for row in rows]
 
 
@@ -319,10 +322,15 @@ class QueryOrchestrator:
         candidates, candidate_source = self._semantic_candidates(conn, plan, notes)
 
         # 2. 逐候选：财务过滤 + Claim/Evidence 加载 + 冲突检查
+        seen_companies: set[str] = set()
         for candidate in candidates[: plan.max_results]:
-            company_id = candidate.get("company_id")
-            if company_id is None:
+            raw_id = candidate.get("company_id")
+            if raw_id is None:
                 continue
+            company_id = str(raw_id)  # 图候选为 str，PG 候选为 UUID——统一
+            if company_id in seen_companies:
+                continue
+            seen_companies.add(company_id)
             row = conn.execute(  # noqa: SLF001
                 "SELECT canonical_name FROM master.company WHERE id = %s",
                 (company_id,),
@@ -359,15 +367,23 @@ class QueryOrchestrator:
                     )
                     continue
 
-            # Evidence 检查
+            # Evidence 检查 + 可定位引文（来源/页码/原文——issue #11 验收 8）
             evidence_ids: list[Any] = []
+            evidence_quotes: list[dict[str, Any]] = []
             for claim in claims:
                 ev_rows = conn.execute(  # noqa: SLF001
-                    "SELECT evidence_id FROM fact.claim_evidence "
-                    "WHERE claim_id = %s LIMIT 5",
+                    "SELECT f.id, f.page_number, f.quote_text "
+                    "FROM fact.claim_evidence ce "
+                    "JOIN fact.evidence_fragment f ON f.id = ce.evidence_id "
+                    "WHERE ce.claim_id = %s LIMIT 5",
                     (claim["id"],),
                 ).fetchall()
                 evidence_ids.extend(r[0] for r in ev_rows)
+                evidence_quotes.extend({
+                    "evidence_id": str(r[0]),
+                    "page_number": r[1],
+                    "quote_text": r[2],
+                } for r in ev_rows)
 
             if plan.evidence_required and not evidence_ids:
                 unknowns.append(
@@ -382,20 +398,46 @@ class QueryOrchestrator:
                     "claim(s) present - results carry this warning"
                 )
 
+            # 证券代码 + 标准产品（PRODUCES 对象实体）
+            security_row = conn.execute(  # noqa: SLF001
+                "SELECT s.ts_code FROM master.company_security cs "
+                "JOIN master.security s ON s.id = cs.security_id "
+                "WHERE cs.company_id = %s LIMIT 1",
+                (company_id,),
+            ).fetchone()
+            product_row = None
+            for claim in claims:
+                if not claim.get("object_entity_id"):
+                    continue
+                product_row = conn.execute(  # noqa: SLF001
+                    "SELECT canonical_name FROM master.product "
+                    "WHERE id = %s LIMIT 1",
+                    (claim["object_entity_id"],),
+                ).fetchone()
+                if product_row:
+                    break
+
             # 推理路径：只描述实际执行过的步骤
             reasoning = self._reasoning_path(plan, candidate_source, claims,
                                              evidence_ids, fin)
             results.append(GroundedResult(
                 company_id=company_id,
                 company_name=company_name,
+                security_code=security_row[0] if security_row else None,
+                standard_product=product_row[0] if product_row else None,
                 claim_ids=[c["id"] for c in claims[:5]],
                 business_stage=claims[0].get("business_stage"),
                 evidence_state=claims[0].get("evidence_state"),
+                valid_from=str(claims[0]["valid_from"])
+                if claims[0].get("valid_from") else None,
+                valid_to=str(claims[0]["valid_to"])
+                if claims[0].get("valid_to") else None,
                 financial_value=fin["value"] if fin else None,
                 report_period=self._report_period(fin),
                 currency=fin["currency"] if fin else None,
                 financial_detail=fin["detail"] if fin else [],
                 evidence_ids=[str(e) for e in evidence_ids[:5]],
+                evidence_quotes=evidence_quotes[:5],
                 reasoning_path=reasoning,
                 data_freshness=self._freshness(candidate_source),
             ))
