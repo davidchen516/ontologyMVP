@@ -82,8 +82,9 @@ cases:
     request: {path: /api/v1/screen,
               body: {business_stage: MASS_PRODUCTION, metric_code: NET_CF_OPERATING,
                      operator: MIN_VALUE, threshold: 200.0, max_results: 100}}
-    expected_company_names: [辛示机器人11号, 辛示机器人12号, 辛示机器人30号]
-    must_not_contain: [辛示机器人01号]   # 最近 FY=110 < 200
+    expected_company_names: [辛示机器人10号, 辛示机器人11号, 辛示机器人12号,
+                             辛示机器人30号]
+    must_not_contain: [辛示机器人01号, 辛示机器人09号]   # 最近 FY 110/190 < 200
     expected_status: DEGRADED
     min_precision: 1.0
     min_recall: 1.0
@@ -172,7 +173,11 @@ cases:
     request: {path: /api/v1/screen,
               body: {business_stage: MASS_PRODUCTION, metric_code: NET_CF_OPERATING,
                      operator: TOTAL_POSITIVE, max_results: 100}}
-    expected_company_names: [辛示机器人30号]
+    expected_company_names: [辛示机器人01号, 辛示机器人02号, 辛示机器人03号,
+                             辛示机器人04号, 辛示机器人05号, 辛示机器人06号,
+                             辛示机器人07号, 辛示机器人08号, 辛示机器人09号,
+                             辛示机器人10号, 辛示机器人11号, 辛示机器人12号,
+                             辛示机器人28号, 辛示机器人29号, 辛示机器人30号]
     expected_financial_value:
       辛示机器人30号: 1299.0           # 重述 999+200+100（当前值视图最新公告）
     min_precision: 1.0
@@ -264,13 +269,19 @@ cases:
       - claim_ids
       - business_stage
       - evidence_ids
+      - evidence_quotes
+      - security_code
+      - standard_product
+      - valid_from
+      - valid_to
       - reasoning_path
       - data_freshness
       - financial_value
       - report_period
       - currency
       - financial_detail
-    require_nonempty: [claim_ids, evidence_ids, reasoning_path]
+    require_nonempty: [claim_ids, evidence_ids, evidence_quotes, security_code,
+                       standard_product, reasoning_path]
     min_precision: 1.0
     min_recall: 1.0
     min_evidence_grounding: 1.0

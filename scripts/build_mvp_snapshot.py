@@ -74,6 +74,7 @@ TXT_RESEARCH = "公司正在研发{product}相关技术，产品尚未量产。"
 TXT_DENIAL = "公司澄清：目前不涉及{product}业务，未参与任何相关生产环节。"
 TXT_THIRD_PARTY = "据外部报道，该公司{product}或有望实现量产，尚待公司确认。"
 TXT_NO_BUSINESS = "公司报告期内主营业务不涉及机器人零部件制造，未参与相关生产。"
+TXT_NEUTRAL = "公司经营情况详见年度报告全文及董事会报告相关章节。"
 
 FY_VALUES: dict[str, list[tuple[int, float]]] = {
     "MASS_PROD": [(2024, 150.0), (2023, 220.0), (2022, 310.0)],
@@ -141,28 +142,35 @@ class SyntheticTransport:
                 [c["ts_code"], f"{c['name']}（旧称）", "20200630"]
                 for c in COMPANIES[:5]]
         if api == "ths_index":
+            # 字段语义：ts_code=概念码、name=概念名（ConceptIndexProcessor）
             return self._fields_of(api), [
-                ["883018.SI", THEME_NAME, len(COMPANIES), "SW"],
-                ["883019.SI", CORE_COMPONENT_CONCEPT, len(COMPANIES), "SW"],
+                ["883018", THEME_NAME, len(COMPANIES), "SW"],
+                ["883019", CORE_COMPONENT_CONCEPT, len(COMPANIES), "SW"],
             ]
         if api == "ths_member":
+            # ts_code=成员股、con_code=概念码、in_date=快照日（ConceptMemberProcessor）
             return self._fields_of(api), [
-                [idx, c["ts_code"], "20200101", name]
-                for idx, name in ((0, THEME_NAME), (1, CORE_COMPONENT_CONCEPT))
+                [c["ts_code"], concept_code, "20200101", concept_name]
+                for concept_code, concept_name in (
+                    ("883018", THEME_NAME), ("883019", CORE_COMPONENT_CONCEPT))
                 for c in COMPANIES]
         if api == "dc_index":
             return self._fields_of(api), [
-                ["BK1184.DC", THEME_NAME, len(COMPANIES)]]
+                ["BK1184", THEME_NAME, len(COMPANIES)]]
         if api == "dc_member":
+            # dc fields [con_code, in_date, ts_code, code]：con_code 为成员股、
+            # code 为概念码（ConceptMemberProcessor 读 ts_code/code/in_date）
             return self._fields_of(api), [
-                ["BK1184.DC", c["ts_code"], "20200101", THEME_NAME]
+                [c["ts_code"], "20200101", c["ts_code"], "BK1184"]
                 for c in COMPANIES]
         if api == "index_classify":
+            # index_code/industry_name/level/parent_code（IndexClassifyProcessor）
             return self._fields_of(api), [
-                ["801010.SI", "辛示综合", "20200101", "801010", "1"]]
+                ["801010.SI", "辛示综合", "L1", ""]]
         if api == "index_member_all":
+            # ts_code/in_date/out_date/is_new/index_code（IndexMemberProcessor）
             return self._fields_of(api), [
-                [c["ts_code"], "801010.SI", "辛示综合", "20200101", "1"]
+                [c["ts_code"], "20200101", "", "Y", "801010.SI"]
                 for c in COMPANIES]
         if api == "fina_mainbz_vip":
             items: list[list[Any]] = []
@@ -211,15 +219,30 @@ DATASETS_TO_RUN = [
 ]
 
 
-def run_pipeline(uow_factory: UnitOfWorkFactory, *, settings: Any) -> dict[str, Any]:
-    """真实采集+标准化管线（SyntheticTransport 只替代 HTTP）。"""
-    stats: dict[str, Any] = {"ingested": {}, "normalized": {}}
-    transport = SyntheticTransport()
+def run_pipeline(
+    uow_factory: UnitOfWorkFactory, *, settings: Any, token: str | None,
+) -> dict[str, Any]:
+    """真实采集+标准化管线。
+
+    token 为 None → SyntheticTransport（仅替代 HTTP 层）；
+    token 提供且 --real → http_transport 走真实 TuShare API（同一管线）。
+    """
+    stats: dict[str, Any] = {"ingested": {}, "normalized": {},
+                             "data_mode": "synthetic" if not token else "real"}
+    if token:
+        from src.connectors.tushare_client import http_transport
+
+        transport = http_transport(
+            settings.tushare_base_url, token,
+            settings.tushare_timeout_seconds,
+        )
+    else:
+        transport = SyntheticTransport()
     datasets = load_datasets()
     for api in DATASETS_TO_RUN:
         connector = TushareConnector(
             datasets[api], settings=settings,
-            token="synthetic-not-a-real-token",
+            token=token or "synthetic-not-a-real-token",
             transport=transport,
         )
         with uow_factory.transaction() as uow:
@@ -260,21 +283,24 @@ def _announcement_texts(scenario: str) -> list[str]:
         texts = [TXT_THIRD_PARTY.format(product=PRODUCTS[0]),
                  TXT_NO_BUSINESS]
     elif scenario == "CONCEPT_ONLY":
-        texts = ["公司主营为传统工业自动化设备，报告期内经营稳健。"]
+        # 中性段落：不命中任何阶段/否认/对冲词表 → 无产品 Claim
+        #（"只有概念标签"语义——概念成员不代表任何经营陈述）
+        texts = ["公司经营情况详见年度报告全文及董事会报告相关章节。"]
     elif scenario in ("FIN_SHORT", "FIN_NEGATIVE"):
         texts = [TXT_MASS.format(product=p) for p in PRODUCTS[:6]]
     else:  # pragma: no cover - 场景表已穷举
         texts = []
-    # 补齐到每家 >=18 段（30 家 × 18 = 540 片段 → 候选 ≥500，验收 3 下限）。
+    # 补齐到每家 >=20 段（30×20=600 片段；CONCEPT_ONLY 中性段不产 Claim，
+    # 有效候选仍 ≥500——验收 3 下限）。
     # 补齐文本必须与情景同语义：绝不能把量产文本填进非量产情景。
     filler_template = {
         "MASS_PROD": TXT_MASS, "RESTATE": TXT_MASS,
         "FIN_SHORT": TXT_MASS, "FIN_NEGATIVE": TXT_MASS,
         "RESEARCH_ONLY": TXT_RESEARCH, "DENIAL": TXT_DENIAL,
-        "CONCEPT_ONLY": TXT_NO_BUSINESS, "THIRD_PARTY": TXT_NO_BUSINESS,
+        "CONCEPT_ONLY": TXT_NEUTRAL, "THIRD_PARTY": TXT_NO_BUSINESS,
     }[scenario]
     filler = 0
-    while len(texts) < 18:
+    while len(texts) < 20:
         texts.append(
             filler_template.format(product=PRODUCTS[filler % len(PRODUCTS)])
             + (f"本期交付批次编号 B{filler:03d}。"
@@ -284,6 +310,62 @@ def _announcement_texts(scenario: str) -> list[str]:
     # 段落唯一化：claim 幂等键含原文文本——相同文本会去重为同一条 Claim，
     # 导致候选总数低于验收下限；段落编号保证 540 段全部唯一
     return [f"{text}（公告段落 {i + 1}）" for i, text in enumerate(texts)]
+
+
+def materialize_products(uow_factory: UnitOfWorkFactory) -> dict[str, Any]:
+    """物化产品实体（issue #11 产品映射步骤）。
+
+    #4 标准化管线无产品写入点（master.product 由映射层维护）——
+    快照在此把词表首批标准产品物化为实体，供 Claim object 关联。
+    名称唯一约束保证幂等。
+    """
+    with uow_factory.transaction() as uow:
+        for product in PRODUCTS:
+            uow._conn.execute(  # noqa: SLF001
+                "INSERT INTO master.product (iri, canonical_name, "
+                "ontology_version) VALUES (%s, %s, '0.1.0') "
+                "ON CONFLICT (iri) DO NOTHING",
+                (f"https://ontology.example.com/product#MVP_{hashlib.sha256(product.encode()).hexdigest()[:10]}",
+                 product),
+            )
+        rows = uow._conn.execute(  # noqa: SLF001
+            "SELECT canonical_name, id FROM master.product"
+        ).fetchall()
+    return {name: pid for name, pid in rows}
+
+
+def map_claim_objects(
+    uow_factory: UnitOfWorkFactory, product_ids: dict[str, Any],
+) -> dict[str, int]:
+    """PRODUCES Claim → 标准产品映射（黄金产品映射依据）。
+
+    映射规则：quote_text 精确包含产品标准名 → object_entity_id 指向该
+    产品（object_entity_type='Product'）。无匹配保持 NULL（不猜测映射）。
+    """
+    mapped = 0
+    with uow_factory.transaction() as uow:
+        claims = uow._conn.execute(  # noqa: SLF001
+            "SELECT id FROM fact.claim WHERE predicate_code = 'PRODUCES'"
+        ).fetchall()
+        for (claim_id,) in claims:
+            quote = uow._conn.execute(  # noqa: SLF001
+                "SELECT f.quote_text FROM fact.claim_evidence ce "
+                "JOIN fact.evidence_fragment f ON f.id = ce.evidence_id "
+                "WHERE ce.claim_id = %s LIMIT 1",
+                (claim_id,),
+            ).fetchone()
+            if not quote:
+                continue
+            for name, pid in product_ids.items():
+                if name in quote[0]:
+                    uow._conn.execute(  # noqa: SLF001
+                        "UPDATE fact.claim SET object_entity_type = 'Product', "
+                        "object_entity_id = %s WHERE id = %s",
+                        (pid, claim_id),
+                    )
+                    mapped += 1
+                    break
+    return {"mapped_objects": mapped}
 
 
 def build_documents_claims(
@@ -375,42 +457,59 @@ def build_documents_claims(
                 stats["accepted"] += 1
             elif outcome.status == "NEEDS_REVIEW":
                 stats["needs_review"] += 1
+            elif outcome.status == "VALIDATED":
+                # VALIDATED 且未自动接受 = 冲突挂起（有 OPEN 审核任务）
+                stats["validated_pending_review"] = (
+                    stats.get("validated_pending_review", 0) + 1
+                )
             else:
                 stats["rejected"] += 1
     return stats
 
 
+class _GraphDriverExecutor:
+    def __init__(self, driver: Any) -> None:
+        self._driver = driver
+
+    def execute(self, template: str, params: dict[str, Any]) -> list[dict[str, Any]]:
+        with self._driver.session() as session:
+            return [dict(r) for r in session.run(template, params)]
+
+
 def project_to_graph(uow_factory: UnitOfWorkFactory, neo4j_driver: Any) -> dict[str, Any]:
-    """Outbox → Neo4j（真实 dispatcher）+ 对账报告。"""
+    """Outbox → Neo4j（#8 真实 worker 周期：领取→投影→标记）+ 对账报告。"""
 
-    class _DriverExecutor:
-        def __init__(self, driver: Any) -> None:
-            self._driver = driver
+    from src.projection.worker import run_worker_cycle
 
-        def execute(self, template: str, params: dict[str, Any]) -> list[dict[str, Any]]:
-            with self._driver.session() as session:
-                return [dict(r) for r in session.run(template, params)]
+    executor = _GraphDriverExecutor(neo4j_driver)
+    projector = Neo4jProjector(executor)
 
-    executor = _DriverExecutor(neo4j_driver)
-    dispatcher = EventDispatcher(Neo4jProjector(executor))
+    def project_fn(uow: Any, event: dict[str, Any]) -> None:
+        EventDispatcher(projector).dispatch(uow, event)
 
-    with uow_factory.transaction() as uow:
-        pending = uow._conn.execute(  # noqa: SLF001
-            "SELECT event_type, aggregate_type, aggregate_id, payload "
-            "FROM ops.graph_outbox WHERE status = 'PENDING' ORDER BY seq LIMIT 20000"
-        ).fetchall()
-    for event_type, aggregate_type, aggregate_id, payload in pending:
-        with uow_factory.transaction() as uow:
-            dispatcher.dispatch(uow, {
-                "event_type": event_type,
-                "aggregate_type": aggregate_type,
-                "aggregate_id": aggregate_id,
-                "payload": payload,
-            })
+    def verify_fn(uow: Any, event: dict[str, Any]) -> bool:
+        # 读后校验：Claim 节点必须已存在（worker verify 钩子）
+        claim_id = str(event.get("aggregate_id") or "")
+        rows = executor.execute(
+            "MATCH (n:Claim {id: $id}) RETURN n.id AS id LIMIT 1", {"id": claim_id}
+        )
+        return bool(rows)
+
+    results = []
+    while True:
+        batch = run_worker_cycle(
+            uow_factory, project_fn=project_fn, verify_fn=verify_fn,
+            batch_size=500,
+        )
+        results.extend(batch)
+        if len(batch) < 500:
+            break
 
     with uow_factory.transaction() as uow:
         report = reconciliation_report(uow, executor)
-    return {"dispatched": len(pending), "reconciliation": report}
+    processed = sum(1 for r in results if str(r.status) == "PROCESSED")
+    return {"dispatched": len(results), "processed": processed,
+            "reconciliation": report}
 
 
 def write_manifest(output_dir: Path, stats: dict[str, Any]) -> Path:
@@ -446,9 +545,14 @@ def build_snapshot(
 
     settings = make_settings(tushare_token=token)
     uow_factory = UnitOfWorkFactory(dsn)
-    stats: dict[str, Any] = run_pipeline(uow_factory, settings=settings)
+    stats: dict[str, Any] = run_pipeline(
+        uow_factory, settings=settings, token=token,
+    )
+    product_ids = materialize_products(uow_factory)
+    stats["products"] = len(product_ids)
     claim_stats = build_documents_claims(uow_factory, auto_accept=True)
     stats.update(claim_stats)
+    stats.update(map_claim_objects(uow_factory, product_ids))
 
     if neo4j_uri and neo4j_password:
         from neo4j import GraphDatabase
@@ -457,6 +561,22 @@ def build_snapshot(
             neo4j_uri, auth=(neo4j_user, neo4j_password), connection_timeout=10,
         )
         try:
+            # 实体节点先行投影（EDGE_MERGE 的 MATCH 要求两端节点存在；
+            # 标准化层不发实体 Outbox 事件——快照直接物化，full_rebuild
+            # 亦从 PG 重建同构实体）
+            with uow_factory.transaction() as uow:
+                product_rows = uow._conn.execute(  # noqa: SLF001
+                    "SELECT id, canonical_name FROM master.product"
+                ).fetchall()
+                company_rows = uow._conn.execute(  # noqa: SLF001
+                    "SELECT id, canonical_name FROM master.company "
+                    "WHERE canonical_name LIKE '辛示%'"
+                ).fetchall()
+            projector = Neo4jProjector(_GraphDriverExecutor(driver))
+            for pid, name in product_rows:
+                projector.project_entity("Product", str(pid), {"name": name})
+            for cid, name in company_rows:
+                projector.project_entity("Company", str(cid), {"canonical_name": name})
             graph_stats = project_to_graph(uow_factory, driver)
         finally:
             driver.close()
@@ -484,7 +604,7 @@ def main() -> int:
         parser.error("--real requires --token")
     manifest = build_snapshot(
         args.dsn, neo4j_uri=args.neo4j_uri, neo4j_user=args.neo4j_user,
-        neo4j_password=args.neo4j_password,
+        neo4j_password=args.neo4j_password, token=args.token,
         output_dir=Path(args.output_dir) if args.output_dir else None,
     )
     print(f"snapshot manifest: {manifest}")

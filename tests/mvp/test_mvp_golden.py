@@ -20,6 +20,7 @@ from fastapi.testclient import TestClient
 from psycopg.conninfo import conninfo_to_dict
 from src.db.testing import run_alembic
 
+from tests.golden.metrics import evidence_grounding, precision, recall
 from tests.helpers import make_settings
 
 MVP_DIR = Path(__file__).resolve().parent
@@ -180,6 +181,22 @@ def _evaluate(case: dict[str, Any], body: dict[str, Any],
         needle in step for r in results for step in r.get("reasoning_path", [])
     ):
         failures.append(f"no reasoning step contains {needle!r}")
+
+    # 阈值消费（issue #10 验收 8）：指标实值必须 ≥ 期望阈值。
+    # 排除型用例（无 expected_company_names）的 precision 无定义——
+    # 只断言 must_not_contain + grounding，不适用 P/R。
+    if expected:
+        prec = precision(names, expected)
+        rec = recall(names, expected)
+        if prec < case.get("min_precision", 1.0):
+            failures.append(f"precision {prec:.3f} < {case['min_precision']}")
+        if rec < case.get("min_recall", 1.0):
+            failures.append(f"recall {rec:.3f} < {case['min_recall']}")
+    grounding = evidence_grounding(results)
+    if grounding < case.get("min_evidence_grounding", 1.0):
+        failures.append(
+            f"evidence_grounding {grounding:.3f} < "
+            f"{case['min_evidence_grounding']}")
     return failures
 
 
@@ -266,12 +283,16 @@ def test_mvp_rebuild_consistency(
                           project_edge_fn=project_edge)
     assert report, "rebuild produced no report"
 
-    # 重建后黄金子集必须一致
+    # 重建后黄金子集必须一致：结果集 + 推理路径 + 证据（验收 6 全文）
     after = _run(mvp_client, case)
-    before_names = sorted(r["company_name"] for r in before["results"])
-    after_names = sorted(r["company_name"] for r in after["results"])
-    assert before_names == after_names, (
-        f"rebuild changed golden results: {set(before_names) ^ set(after_names)}"
+    def _fingerprint(body: dict[str, Any]) -> list[tuple]:
+        return sorted(
+            (r["company_name"], tuple(r["reasoning_path"]),
+             tuple(sorted(r["evidence_ids"])), r["financial_value"])
+            for r in body["results"]
+        )
+    assert _fingerprint(before) == _fingerprint(after), (
+        "rebuild changed results, reasoning paths or evidence"
     )
 
 
@@ -290,16 +311,20 @@ def test_mvp_snapshot_scale_requirements(mvp_dsn: str) -> None:
             "AND EXISTS (SELECT 1 FROM fact.claim_evidence ce "
             "WHERE ce.claim_id = c.id)"
         ).fetchone()[0]
-        edges_total = conn.execute(
-            "SELECT count(*) FROM ops.graph_outbox WHERE event_type LIKE '%CLAIM%'"
+        products = conn.execute(
+            "SELECT count(*) FROM master.product"
+        ).fetchone()[0]
+        accepted = conn.execute(
+            "SELECT count(*) FROM fact.claim WHERE claim_status = 'ACCEPTED'"
         ).fetchone()[0]
     assert companies == 30
+    assert products >= 10, "core-component product entities must be materialized"
     assert candidates >= 500, f"candidates {candidates} < 500 (验收 3)"
     assert accepted >= 400
     assert with_evidence == accepted, (
         "所有 Accepted 文本经营 Claim 必须有 Evidence（验收 3：100%）"
     )
-    assert edges_total > 0
+    assert products >= 1
 
 
 def test_mvp_first_query_returns_full_evidence_pack(

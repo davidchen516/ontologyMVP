@@ -85,13 +85,20 @@ def main() -> int:
           f"排除 {len(body['excluded'])}；证据不足 {len(body['unknowns'])}"
           f"；冲突警告 {len(body['conflicts'])}")
     for i, result in enumerate(body["results"], start=1):
-        print(f"\n[{i}] {result['company_name']} ({result['company_id']})")
+        print(f"\n[{i}] {result['company_name']}"
+              f"  证券：{result.get('security_code') or '未映射'}"
+              f"  标准产品：{result.get('standard_product') or '未映射'}")
         print(f"    业务阶段：{result['business_stage']}"
-              f"  证据状态：{result['evidence_state']}")
+              f"  证据状态：{result['evidence_state']}"
+              f"  有效期：{result.get('valid_from') or '开放式'}"
+              f" ~ {result.get('valid_to') or '至今'}")
         print(f"    Claim ID：{', '.join(result['claim_ids'][:3])}"
               f"{' …' if len(result['claim_ids']) > 3 else ''}")
         print(f"    证据片段：{', '.join(result['evidence_ids'][:2])}"
               f"{' …' if len(result['evidence_ids']) > 2 else ''}")
+        for quote in result.get("evidence_quotes", [])[:2]:
+            page = quote.get("page_number") or "?"
+            print(f"      原文（第{page}页）：{quote['quote_text'][:60]}…")
         print(f"    三年现金流合计：{result['financial_value']} "
               f"{result['currency']}  报告期：{result['report_period']}")
         for detail in result["financial_detail"]:
