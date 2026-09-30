@@ -3,16 +3,14 @@ import { useState } from "react";
 import { graphApi } from "../lib/api/endpoints";
 import { ErrorState } from "../components/states/ErrorState";
 import { EmptyState, LoadingSkeleton } from "../components/states/States";
-import { EvidenceDrawer } from "../components/graph/EvidenceDrawer";
 
 /**
  * 证据浏览器（issue #32）：文档 → 证据片段（页码/原文/字符区间）。
- * 按文档浏览全部片段；点片段进入 Claim 追溯抽屉。
+ * 按文档浏览全部可定位证据片段（页码/字符区间/原文）。
  */
 export function EvidenceBrowser() {
   const [documentId, setDocumentId] = useState("");
   const [submittedId, setSubmittedId] = useState("");
-  const [selectedClaimId, setSelectedClaimId] = useState<string | null>(null);
 
   const evidence = useQuery({
     queryKey: ["document-evidence", submittedId],
@@ -97,12 +95,6 @@ export function EvidenceBrowser() {
         </div>
       ) : null}
 
-      {selectedClaimId ? (
-        <EvidenceDrawer
-          claimId={selectedClaimId}
-          onClose={() => setSelectedClaimId(null)}
-        />
-      ) : null}
     </section>
   );
 }

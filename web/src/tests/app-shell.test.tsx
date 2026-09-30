@@ -52,9 +52,13 @@ describe("应用壳（#30）", () => {
     renderWithQuery();
     expect(await screen.findByText("Stock Ontology MVP")).toBeInTheDocument();
     expect(await screen.findByText("系统概览")).toBeInTheDocument();
-    // 能力感知导航：#30 里程碑仅首页启用（外层 span 含 "未启用" 标记）
-    const queryItem = screen.getByText("查询工作台").parentElement;
-    expect(queryItem).toHaveTextContent("未启用");
+    // 能力感知导航：#30~#32 已交付 → 首页/查询/公司/图谱/证据均为可点击
+    // 链接（NavLink 渲染为 <a>）；#33 未交付项为 aria-disabled span + 原因
+    for (const label of ["查询工作台", "公司列表", "图谱浏览器", "证据浏览器"]) {
+      expect(screen.getByRole("link", { name: label })).toBeInTheDocument();
+    }
+    const reviewItem = screen.getByText("Claim 审核").parentElement;
+    expect(reviewItem).toHaveAttribute("title", "将于 #33 交付");
     expect(screen.getAllByText("首页")[0]).toBeInTheDocument();
   });
 

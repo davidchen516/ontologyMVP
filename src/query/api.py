@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import datetime as dt
 import time
+import uuid
 from collections.abc import Callable
 from typing import Any
 from uuid import UUID
@@ -243,18 +244,39 @@ async def graph_subgraph(
     图后端不可用/超限时返回 DEGRADED/STALE + PG 事实列表回退
     （issue #32 GWT：明确降级且保留 PostgreSQL 事实）。
     """
+    settings = request.app.state.settings
     executor = getattr(request.app.state, "query_graph_executor", None)
-    return build_subgraph(
-        executor,
-        company_id=company_id,
-        hops=hops,
-        max_nodes=max_nodes,
-    )
+    # PG 回查连接：STALE 检测需要（图空但 PG 有事实时判定投影水位落后）
+    pg_conn = None
+    if executor is not None:
+        try:
+            pg_conn = psycopg.connect(settings.postgres_dsn)
+            pg_conn.execute("BEGIN READ ONLY")
+        except Exception:  # noqa: BLE001 - PG 不可达时跳过 STALE 检测
+            pg_conn = None
+    try:
+        return build_subgraph(
+            executor,
+            company_id=company_id,
+            hops=hops,
+            max_nodes=max_nodes,
+            pg_conn=pg_conn,
+        )
+    finally:
+        if pg_conn is not None:
+            pg_conn.close()
 
 
 @router.get("/claims/{claim_id}/lineage")
 async def claim_lineage(claim_id: str, request: Request) -> dict[str, Any]:
     """Claim lineage：经营边 → Claim → Evidence → Document 的追溯链。"""
+    # UUID 格式先校验（非 UUID → 422，而非数据库层 500）
+    try:
+        uuid.UUID(claim_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=422, detail="claim id must be a UUID"
+        ) from exc
     settings = request.app.state.settings
 
     with _connect_read_only(settings.postgres_dsn) as conn:
@@ -317,6 +339,12 @@ async def document_evidence(
     limit: int = Query(default=50, ge=1, le=200),
 ) -> dict[str, Any]:
     """文档证据列表：片段（页码/原文/字符区间）+ 版本状态。"""
+    try:
+        uuid.UUID(document_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=422, detail="document id must be a UUID"
+        ) from exc
     settings = request.app.state.settings
 
     with _connect_read_only(settings.postgres_dsn) as conn:

@@ -33,21 +33,21 @@ test("#32 图谱：选择公司 → 子图加载 → 表格视图 → 证据追�
   await page.screenshot({ path: `${SHOTS}/graph-table-view.png`, fullPage: true });
 
   // 边带 claim_id → 证据追溯抽屉（GWT：每条经营边可回 Claim 与证据）
+  // 表格视图的"查看证据链"必达（快照有 PRODUCES 边——断言不弱化为可选）
   const evidenceButton = page.getByRole("button", { name: "查看证据链" }).first();
-  if (await evidenceButton.isVisible()) {
-    await evidenceButton.click();
-    await expect(
-      page.getByRole("dialog", { name: "证据追溯链" }),
-    ).toBeVisible({ timeout: 10_000 });
-    // 页码原文 + 来源文档（真实数据）
-    await expect(page.getByText(/第 \d+ 页/).first()).toBeVisible();
-    await expect(page.getByText(/CNINFO|SIN/i).first()).toBeVisible();
-    await page.screenshot({
-      path: `${SHOTS}/evidence-drawer.png`,
-      fullPage: true,
-    });
-    await page.getByRole("button", { name: "关闭" }).click();
-  }
+  await expect(evidenceButton).toBeVisible({ timeout: 10_000 });
+  await evidenceButton.click();
+  await expect(
+    page.getByRole("dialog", { name: "证据追溯链" }),
+  ).toBeVisible({ timeout: 10_000 });
+  // 页码原文 + 来源文档（真实数据）
+  await expect(page.getByText(/第 \d+ 页/).first()).toBeVisible();
+  await expect(page.getByText(/CNINFO|SIN/i).first()).toBeVisible();
+  await page.screenshot({
+    path: `${SHOTS}/evidence-drawer.png`,
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "关闭" }).click();
 });
 
 test("#32 图谱降级：停图后端 → DEGRADED + 原因 + PG 提示", async ({ page }) => {
@@ -77,8 +77,9 @@ test("#32 图谱降级：停图后端 → DEGRADED + 原因 + PG 提示", async 
   await page.screenshot({ path: `${SHOTS}/graph-degraded.png`, fullPage: true });
 });
 
-test("#32 证据浏览器：文档片段页码/原文/字符区间", async ({ page }) => {
-  // 从公司详情拿真实文档 ID 太绕——直接走查询工作台黄金结果 → 公司详情
+test("#32 查询结果证据链展开（图谱抽屉之外的原文定位路径）", async ({ page }) => {
+  // 查询工作台黄金结果 → 展开证据包（页码原文/推理路径）——与图谱抽屉
+  // 互补的证据定位入口
   await page.goto("/workbench/query");
   await page.getByLabel("财务指标").selectOption("NET_CF_OPERATING");
   await page.getByRole("button", { name: "执行筛选" }).click();

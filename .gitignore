@@ -33,3 +33,6 @@ web/coverage/
 web/test-results/
 web/playwright-report/
 web/.vite/
+
+.vite/
+test-results/

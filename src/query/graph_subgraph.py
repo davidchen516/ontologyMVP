@@ -29,14 +29,51 @@ LIMIT $max_paths
 MAX_PATHS = 300  # 白名单上限（后端强制，浏览器不可调高）
 
 
+def _pg_fallback_for_company(
+    conn: Any, company_id: str, limit: int = 50,
+) -> list[dict[str, Any]] | None:
+    """PG 事实回退：该公司 ACCEPTED Claim 摘要列表（图谱不可信时的真相源）。
+
+    公司不存在 → None（与"存在但图无数据"区分）；存在 → Claim 列表
+    （可能为空——公司确实无关系时回退也为空列表，但 status 由调用方
+    按 PG 有无该公司决定）。
+    """
+    exists = conn.execute(
+        "SELECT 1 FROM master.company WHERE id = %s", (company_id,)
+    ).fetchone()
+    if exists is None:
+        return None
+    rows = conn.execute(
+        """
+        SELECT c.id, c.predicate_code, c.business_stage, c.claim_status
+        FROM fact.claim c
+        WHERE c.subject_entity_id = %s AND c.claim_status = 'ACCEPTED'
+        ORDER BY c.recorded_at DESC
+        LIMIT %s
+        """,
+        (company_id, limit),
+    ).fetchall()
+    cols = ["id", "predicate_code", "business_stage", "claim_status"]
+    return [dict(zip(cols, row, strict=True)) for row in rows]
+
+
 def build_subgraph(
     executor: Any,
     *,
     company_id: str | None,
     hops: int,
     max_nodes: int,
+    pg_conn: Any = None,
 ) -> dict[str, Any]:
-    """构建公司中心子图；executor 为 None/异常 → PG 回退列表。"""
+    """构建公司中心子图。
+
+    降级矩阵（issue #32 GWT-2）：
+    - 图不可用（executor None/异常）→ DEGRADED + 原因 + pg_fallback；
+    - 图可用但结果为空 且 PG 中公司存在（或 PG 有该公司 Claim）→
+      STALE：投影水位落后，绝不静默当"权威空"返回（复用 compiler.py
+      的 pg-stale 先例语义）；
+    - PG 中公司不存在 → SUCCEEDED 空（权威空——不猜测）。
+    """
     if not company_id:
         return {
             "status": "REJECTED",
@@ -104,13 +141,41 @@ def build_subgraph(
                     "name": node.get("name"),
                 }
         for edge in row.get("edge_path", []):
-            key = f"{edge.get('type')}:{edge.get('claim_id')}"
+            # 去重键含端点信息：无 claim_id 的边（如 TAGGED_AS 成员）不因
+            # 同 type 塌缩为一条——每条路径实例独立保留
+            key = (
+                f"{edge.get('type')}:{edge.get('claim_id')}"
+                f":{edge.get('source_id', '')}:{edge.get('target_id', '')}"
+                f":{len(edges)}"
+            )
             if key not in edge_keys:
                 edge_keys.add(key)
                 edges.append({
                     "type": edge.get("type"),
                     "claim_id": edge.get("claim_id"),
                 })
+
+    # GWT-2 水位落后：图查询成功但零路径，而 PG 事实层该公司存在/有
+    # ACCEPTED Claim → 投影落后，STALE + PG 事实回退（绝不静默空）
+    if not rows and pg_conn is not None:
+        fallback = _pg_fallback_for_company(pg_conn, company_id)
+        if fallback is not None:
+            has_graph_center = False
+            pg_has_claims = len(fallback) > 0
+            if pg_has_claims or not has_graph_center:
+                return {
+                    "status": "STALE",
+                    "reason": (
+                        "graph projection returned no paths while PG holds "
+                        f"{len(fallback)} accepted claim(s) for this company "
+                        "- projection lagging; PG facts attached"
+                    ),
+                    "center": None,
+                    "nodes": [], "edges": [],
+                    "pg_fallback": fallback,
+                    "hops": hops_int, "max_nodes": max_nodes,
+                    "truncated": False,
+                }
 
     return {
         "status": "SUCCEEDED",

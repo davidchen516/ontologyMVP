@@ -175,3 +175,47 @@ def test_graph_endpoints_read_only(main_dsn) -> None:
 
         with pytest.raises(psycopg.errors.ReadOnlySqlTransaction):
             conn.execute("DELETE FROM fact.claim")
+
+
+def test_lineage_non_uuid_422(uow_factory, main_dsn) -> None:
+    """M2 回归：非 UUID 路径参数 → 422（而非 500）。"""
+    client = make_client(main_dsn)
+    assert client.get("/api/v1/claims/abc/lineage").status_code == 422
+    assert client.get("/api/v1/documents/abc/evidence").status_code == 422
+
+
+def test_subgraph_stale_when_graph_empty_but_pg_has_claims(
+    uow_factory, main_dsn
+) -> None:
+    """B2 回归（GWT-2）：图返回 0 路径但 PG 有 ACCEPTED Claim → STALE + 回退。
+
+    绝不静默当"权威空"——投影水位落后必须可见并附带 PG 事实。
+    """
+    seeded = seed_claim_with_evidence(uow_factory, company_name="水位公司")
+    client = make_client(main_dsn)
+    # 图执行器健康但返回空（模拟投影未跟上 PG 新写入）
+    client.app.state.query_graph_executor = StubGraphExecutor([])
+
+    r = client.get(
+        "/api/v1/graph/subgraph",
+        params={"company_id": str(seeded["company"]["id"])},
+    )
+    body = r.json()
+    assert body["status"] == "STALE"
+    assert "projection lagging" in body["reason"]
+    assert body["pg_fallback"] is not None
+    assert len(body["pg_fallback"]) >= 1
+    assert body["pg_fallback"][0]["predicate_code"] == "PRODUCES"
+
+
+def test_subgraph_authoritative_empty_for_unknown_company(
+    uow_factory, main_dsn
+) -> None:
+    """PG 中不存在的公司 + 图空 → SUCCEEDED 空（权威空，不猜测 STALE）。"""
+    client = make_client(main_dsn)
+    client.app.state.query_graph_executor = StubGraphExecutor([])
+    r = client.get(
+        "/api/v1/graph/subgraph",
+        params={"company_id": str(uuid.uuid4())},
+    )
+    assert r.json()["status"] == "SUCCEEDED"
