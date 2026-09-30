@@ -313,22 +313,13 @@ jobs:
 
       - name: Start API with review enabled
         run: |
-          nohup uv run python -c "
-          import hashlib, uvicorn
-          from apps.api.app import create_app
-          from src.core.config import Settings
-          s = Settings(postgres_host='127.0.0.1', postgres_port=5432,
-              postgres_db='postgres', postgres_user='postgres',
-              postgres_password='postgres',
-              neo4j_uri='bolt://127.0.0.1:7687', neo4j_user='neo4j',
-              neo4j_password='ci-neo4j', environment='ci',
-              review_write_enabled=True,
-              review_api_key_hashes=hashlib.sha256(b'ci-reviewer-key').hexdigest())
-          uvicorn.run(create_app(s), host='127.0.0.1', port=8111, log_level='warning')
-          " > /tmp/api.log 2>&1 &
+          nohup uv run python scripts/ci_e2e_api.py > /tmp/api.log 2>&1 &
           for i in $(seq 1 30); do
-            curl -sf http://127.0.0.1:8111/readyz > /dev/null && echo API-UP && break
-            sleep 1
+            if curl -sf http://127.0.0.1:8111/readyz | grep -q '"status"'; then
+              echo "API-UP (attempt $i)"
+              break
+            fi
+            sleep 2
           done
 
       - name: Start vite dev server
