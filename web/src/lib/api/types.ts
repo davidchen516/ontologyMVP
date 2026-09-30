@@ -94,3 +94,47 @@ export interface ClaimRecord {
   valid_to: string | null;
   recorded_at: string;
 }
+
+export interface CompanyListItem {
+  id: string;
+  canonical_name: string;
+  unified_social_credit_code: string | null;
+  company_type: string | null;
+  status: string | null;
+  created_at: string;
+  security_code: string | null;
+  produces_claims: number;
+}
+
+export interface CompanyListResponse {
+  companies: CompanyListItem[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface OverviewStats {
+  companies: number;
+  accepted_claims: number;
+  pending_reviews: number;
+  evidence_fragments: number;
+  financial_observations: number;
+  data_freshness: {
+    latest_claim_at: string | null;
+    latest_observation_at: string | null;
+  };
+  snapshot_note: string;
+}
+
+export interface RunRecord {
+  id: string;
+  dataset_name: string;
+  status: string;
+  finished_at: string | null;
+  source_system?: string;
+}
+
+export interface RecentRunsResponse {
+  ingest_runs: RunRecord[];
+  normalization_runs: RunRecord[];
+}

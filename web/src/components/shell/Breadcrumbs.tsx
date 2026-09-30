@@ -5,6 +5,7 @@ const LABELS: Record<string, string> = {
   "/": "首页",
   "/workbench": "研究工作台",
   "/workbench/query": "查询工作台",
+  "/workbench/companies": "公司列表",
   "/graph": "图谱浏览器",
   "/evidence": "证据浏览器",
   "/review": "Claim 审核",

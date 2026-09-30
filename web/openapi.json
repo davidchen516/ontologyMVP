@@ -1493,6 +1493,86 @@
     ]
    }
   },
+  "/api/v1/companies": {
+   "get": {
+    "description": "公司列表/搜索：名称前缀或包含匹配（参数化 LIKE，无自由 SQL）。\n\n每行携带证券代码与 ACCEPTED 量产 Claim 计数（列表页核心信息）；\n排序固定 canonical_name（确定性分页）。",
+    "operationId": "list_companies_api_v1_companies_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "q",
+      "required": false,
+      "schema": {
+       "maxLength": 200,
+       "title": "Q",
+       "type": "string"
+      }
+     },
+     {
+      "in": "query",
+      "name": "stage",
+      "required": false,
+      "schema": {
+       "maxLength": 50,
+       "title": "Stage",
+       "type": "string"
+      }
+     },
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 50,
+       "maximum": 100,
+       "minimum": 1,
+       "title": "Limit",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "offset",
+      "required": false,
+      "schema": {
+       "default": 0,
+       "maximum": 10000,
+       "minimum": 0,
+       "title": "Offset",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response List Companies Api V1 Companies Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "List Companies",
+    "tags": [
+     "query"
+    ]
+   }
+  },
   "/api/v1/companies/{company_id}": {
    "get": {
     "operationId": "get_company_api_v1_companies__company_id__get",
@@ -1636,6 +1716,78 @@
      }
     },
     "summary": "Get Company Timeline",
+    "tags": [
+     "query"
+    ]
+   }
+  },
+  "/api/v1/overview/recent-runs": {
+   "get": {
+    "description": "最近采集/标准化运行（首页\"最近活动\"卡片）。",
+    "operationId": "overview_recent_runs_api_v1_overview_recent_runs_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 10,
+       "maximum": 50,
+       "minimum": 1,
+       "title": "Limit",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Overview Recent Runs Api V1 Overview Recent Runs Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Overview Recent Runs",
+    "tags": [
+     "query"
+    ]
+   }
+  },
+  "/api/v1/overview/stats": {
+   "get": {
+    "description": "首页真实统计（issue #31）：全部来自事实库真实计数，无示例数字。\n\n携带数据新鲜度（最新 Claim/财务观察记录时间）——Epic #29 不变量：\n所有统计携带快照/更新时间。",
+    "operationId": "overview_stats_api_v1_overview_stats_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Overview Stats Api V1 Overview Stats Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Overview Stats",
     "tags": [
      "query"
     ]

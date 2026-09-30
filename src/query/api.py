@@ -163,7 +163,11 @@ def _execute_plan(
     而非未捕获 500。
     """
     settings = request.app.state.settings
-    trace_id = request.headers.get("x-trace-id")
+    # 优先外部透传头；缺失时用 TraceIdMiddleware 自动生成的 trace_id
+    # （中间件为每个请求生成并回写 X-Trace-Id 响应头）
+    from src.core.trace import get_trace_id
+
+    trace_id = request.headers.get("x-trace-id") or get_trace_id()
     executor = getattr(request.app.state, "query_graph_executor", None)
     orchestrator = QueryOrchestrator(graph_executor=executor)
     started = time.perf_counter()
@@ -342,3 +346,157 @@ async def get_company_timeline(company_id: UUID, request: Request) -> dict[str, 
     timeline = [dict(zip(cols, row, strict=True)) for row in rows]
     return {"company_id": str(company_id), "timeline": timeline,
             "count": len(timeline)}
+
+
+# ---- 公司列表/搜索与首页汇总（issue #31：受控只读端点）----
+
+
+@router.get("/companies")
+async def list_companies(
+    request: Request,
+    q: str = Query(default=None, max_length=200),
+    stage: str = Query(default=None, max_length=50),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0, le=10000),
+) -> dict[str, Any]:
+    """公司列表/搜索：名称前缀或包含匹配（参数化 LIKE，无自由 SQL）。
+
+    每行携带证券代码与 ACCEPTED 量产 Claim 计数（列表页核心信息）；
+    排序固定 canonical_name（确定性分页）。
+    """
+    settings = request.app.state.settings
+    # 搜索词转义 LIKE 通配符（%/_ 按字面处理）
+    if q is not None:
+        escaped = q.replace("\\", "\\\\").replace("%", r"\%").replace("_", r"\_")
+        pattern = f"%{escaped}%"
+    else:
+        pattern = None
+
+    with _connect_read_only(settings.postgres_dsn) as conn:
+        conditions = []
+        params: list[Any] = []
+        if pattern is not None:
+            conditions.append("c.canonical_name ILIKE %s")
+            params.append(pattern)
+        if stage is not None:
+            conditions.append(
+                "EXISTS (SELECT 1 FROM fact.claim k WHERE "
+                "k.subject_entity_id = c.id AND k.claim_status = 'ACCEPTED' "
+                "AND k.business_stage = %s)"
+            )
+            params.append(stage)
+        where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+
+        rows = conn.execute(
+            f"""
+            SELECT c.id, c.canonical_name, c.unified_social_credit_code,
+                   c.company_type, c.status, c.created_at,
+                   (SELECT s.ts_code FROM master.company_security cs
+                    JOIN master.security s ON s.id = cs.security_id
+                    WHERE cs.company_id = c.id LIMIT 1) AS security_code,
+                   (SELECT count(*) FROM fact.claim k
+                    WHERE k.subject_entity_id = c.id
+                      AND k.claim_status = 'ACCEPTED'
+                      AND k.predicate_code = 'PRODUCES') AS produces_claims
+            FROM master.company c {where}
+            ORDER BY c.canonical_name
+            LIMIT %s OFFSET %s
+            """,
+            (*params, limit, offset),
+        ).fetchall()
+        total = conn.execute(
+            f"SELECT count(*) FROM master.company c {where}", tuple(params)
+        ).fetchone()[0]
+
+    cols = ["id", "canonical_name", "unified_social_credit_code",
+            "company_type", "status", "created_at", "security_code",
+            "produces_claims"]
+    companies = [dict(zip(cols, row, strict=True)) for row in rows]
+    return {"companies": companies, "total": total, "limit": limit,
+            "offset": offset}
+
+
+@router.get("/overview/stats")
+async def overview_stats(request: Request) -> dict[str, Any]:
+    """首页真实统计（issue #31）：全部来自事实库真实计数，无示例数字。
+
+    携带数据新鲜度（最新 Claim/财务观察记录时间）——Epic #29 不变量：
+    所有统计携带快照/更新时间。
+    """
+    settings = request.app.state.settings
+
+    with _connect_read_only(settings.postgres_dsn) as conn:
+        companies = conn.execute(
+            "SELECT count(*) FROM master.company"
+        ).fetchone()[0]
+        accepted_claims = conn.execute(
+            "SELECT count(*) FROM fact.claim WHERE claim_status = 'ACCEPTED'"
+        ).fetchone()[0]
+        pending_reviews = conn.execute(
+            "SELECT count(*) FROM fact.claim "
+            "WHERE claim_status = 'NEEDS_REVIEW'"
+        ).fetchone()[0]
+        evidence_fragments = conn.execute(
+            "SELECT count(*) FROM fact.evidence_fragment"
+        ).fetchone()[0]
+        financial_observations = conn.execute(
+            "SELECT count(*) FROM finance.financial_observation"
+        ).fetchone()[0]
+        latest_claim_at = conn.execute(
+            "SELECT max(recorded_at) FROM fact.claim"
+        ).fetchone()[0]
+        latest_observation_at = conn.execute(
+            "SELECT max(recorded_at) FROM finance.financial_observation"
+        ).fetchone()[0]
+
+    return {
+        "companies": companies,
+        "accepted_claims": accepted_claims,
+        "pending_reviews": pending_reviews,
+        "evidence_fragments": evidence_fragments,
+        "financial_observations": financial_observations,
+        "data_freshness": {
+            "latest_claim_at": latest_claim_at,
+            "latest_observation_at": latest_observation_at,
+        },
+        "snapshot_note": (
+            "统计数据基于当前数据库内容；若为合成快照，公司数据非真实上市公司。"
+        ),
+    }
+
+
+@router.get("/overview/recent-runs")
+async def overview_recent_runs(
+    request: Request, limit: int = Query(default=10, ge=1, le=50),
+) -> dict[str, Any]:
+    """最近采集/标准化运行（首页"最近活动"卡片）。"""
+    settings = request.app.state.settings
+
+    with _connect_read_only(settings.postgres_dsn) as conn:
+        ingest = conn.execute(
+            """
+            SELECT id, dataset_name, source_system, status, finished_at
+            FROM ops.ingest_run
+            WHERE finished_at IS NOT NULL
+            ORDER BY finished_at DESC LIMIT %s
+            """,
+            (limit,),
+        ).fetchall()
+        normalization = conn.execute(
+            """
+            SELECT id, dataset_name, status, finished_at
+            FROM ops.normalization_run
+            WHERE finished_at IS NOT NULL
+            ORDER BY finished_at DESC LIMIT %s
+            """,
+            (limit,),
+        ).fetchall()
+    ingest_cols = ["id", "dataset_name", "source_system", "status",
+                   "finished_at"]
+    norm_cols = ["id", "dataset_name", "status", "finished_at"]
+    return {
+        "ingest_runs": [dict(zip(ingest_cols, r, strict=True)) for r in ingest],
+        "normalization_runs": [
+            dict(zip(norm_cols, r, strict=True)) for r in normalization
+        ],
+    }
