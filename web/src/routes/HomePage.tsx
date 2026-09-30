@@ -116,7 +116,7 @@ export function HomePage() {
         <h2 className="mb-2 text-sm font-semibold">交付里程碑</h2>
         <p className="text-sm text-fg-muted">
           查询/图谱/证据/审核工作台将在 #31~#33 逐步开放（侧栏中显示
-          "未启用" 的入口按里程碑解锁）。当前里程碑：#30 应用壳。
+          "未启用" 的入口按里程碑解锁）。当前里程碑：#31 查询与公司分析（#32~#33 陆续开放）。
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <Link

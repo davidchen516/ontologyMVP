@@ -101,7 +101,7 @@ export function CompanyDetailPage() {
 
       <div className="rounded-card border border-border bg-surface p-4 shadow-card">
         <h2 className="mb-3 text-sm font-semibold">
-          时间线（ACCEPTED，{timeline.data?.count ?? "…}"} 条）
+          时间线（ACCEPTED，{timeline.data?.count ?? "…"} 条）
         </h2>
         {timeline.isPending ? <LoadingSkeleton rows={2} /> : null}
         {timeline.error ? (

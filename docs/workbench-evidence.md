@@ -55,7 +55,7 @@ null——改为回落 TraceIdMiddleware 自动生成的 trace_id（每请求必
 
 `workbench-query-grounded.png`（黄金结果+证据展开）、`company-detail.png`、
 `home-with-stats.png`（真实统计卡）、`workbench-empty.png`（空结果）、
-`workbench-422.png`（注入拒绝）+ #30 的 6 张。
+`workbench-422.png`（注入拒绝）+ #30 的 8 张。
 
 ## 5. 已知限制（移交 #32/#34）
 

@@ -39,7 +39,21 @@ function Section({
   );
 }
 
-function GroundedResultCard({ result }: { result: QueryResponse["results"][number] }) {
+/** 财务值口径标签：按算子/窗口推导（值本身来自后端，period_rule 另行展示） */
+function financialLabel(form: ScreenRequest): string {
+  const years = form.fiscal_years ?? 3;
+  switch (form.operator) {
+    case "CONSECUTIVE_POSITIVE":
+      return `${years} 年窗口最小值`;
+    case "MIN_VALUE":
+    case "MAX_VALUE":
+      return "最近完整财年值";
+    default:
+      return `${years} 年现金流合计`;
+  }
+}
+
+function GroundedResultCard({ result, form }: { result: QueryResponse["results"][number]; form: ScreenRequest }) {
   const [expanded, setExpanded] = useState(false);
   return (
     <article className="rounded-card border border-border bg-surface p-4 shadow-card">
@@ -61,7 +75,7 @@ function GroundedResultCard({ result }: { result: QueryResponse["results"][numbe
       <div className="mt-2 flex flex-wrap gap-4 text-sm">
         {result.financial_value !== null ? (
           <span>
-            三年现金流合计：
+            {financialLabel(form)}：
             <strong className="ml-1">
               {result.financial_value} {result.currency ?? ""}
             </strong>
@@ -324,7 +338,7 @@ export function QueryWorkbench() {
           ) : (
             <div className="space-y-3">
               {data.results.map((r) => (
-                <GroundedResultCard key={r.company_id} result={r} />
+                <GroundedResultCard key={r.company_id} result={r} form={form} />
               ))}
             </div>
           )}
