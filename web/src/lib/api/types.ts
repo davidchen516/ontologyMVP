@@ -138,3 +138,68 @@ export interface RecentRunsResponse {
   ingest_runs: RunRecord[];
   normalization_runs: RunRecord[];
 }
+
+export interface SubgraphNode {
+  id: string;
+  labels: string[];
+  name: string | null;
+}
+
+export interface SubgraphEdge {
+  type: string;
+  claim_id: string | null;
+}
+
+export interface SubgraphResponse {
+  status: "SUCCEEDED" | "DEGRADED" | "REJECTED";
+  reason: string | null;
+  center: { id: string; name: string } | null;
+  nodes: SubgraphNode[];
+  edges: SubgraphEdge[];
+  hops: number;
+  max_nodes: number;
+  truncated: boolean;
+}
+
+export interface LineageEvidence {
+  id: string;
+  document_id: string;
+  page_number: number | null;
+  quote_text: string;
+  char_start: number | null;
+  char_end: number | null;
+  document_version_id: string | null;
+}
+
+export interface LineageDocument {
+  id: string;
+  document_type: string;
+  source_system: string;
+  title: string;
+  published_at: string | null;
+  version: number | null;
+  parse_status: string | null;
+}
+
+export interface ClaimLineageResponse {
+  claim: {
+    id: string;
+    predicate_code: string;
+    claim_status: string;
+    business_stage: string | null;
+    evidence_state: string | null;
+    confidence: number | null;
+    valid_from: string | null;
+    valid_to: string | null;
+    recorded_at: string;
+    object_entity_id: string | null;
+  };
+  evidence: LineageEvidence[];
+  documents: (LineageDocument | null)[];
+}
+
+export interface DocumentEvidenceResponse {
+  document: LineageDocument & { parse_status?: string | null };
+  fragments: LineageEvidence[];
+  count: number;
+}

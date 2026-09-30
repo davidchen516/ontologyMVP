@@ -71,8 +71,8 @@ export const NAV_ITEMS: NavItem[] = [
   },
 ];
 
-/** 里程碑检查：#30 应用壳 + #31 查询/公司已实装；其余按里程碑声明。 */
-export const CURRENT_MILESTONE = "#31";
+/** 里程碑检查：#30 应用壳 + #31 查询/公司 + #32 图谱/证据已实装；其余按里程碑声明。 */
+export const CURRENT_MILESTONE = "#32";
 
 export function navAvailability(
   item: NavItem,

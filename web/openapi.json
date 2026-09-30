@@ -1493,6 +1493,51 @@
     ]
    }
   },
+  "/api/v1/claims/{claim_id}/lineage": {
+   "get": {
+    "description": "Claim lineage：经营边 → Claim → Evidence → Document 的追溯链。",
+    "operationId": "claim_lineage_api_v1_claims__claim_id__lineage_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "claim_id",
+      "required": true,
+      "schema": {
+       "title": "Claim Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Claim Lineage Api V1 Claims  Claim Id  Lineage Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Claim Lineage",
+    "tags": [
+     "query"
+    ]
+   }
+  },
   "/api/v1/companies": {
    "get": {
     "description": "公司列表/搜索：名称前缀或包含匹配（参数化 LIKE，无自由 SQL）。\n\n每行携带证券代码与 ACCEPTED 量产 Claim 计数（列表页核心信息）；\n排序固定 canonical_name（确定性分页）。",
@@ -1716,6 +1761,133 @@
      }
     },
     "summary": "Get Company Timeline",
+    "tags": [
+     "query"
+    ]
+   }
+  },
+  "/api/v1/documents/{document_id}/evidence": {
+   "get": {
+    "description": "文档证据列表：片段（页码/原文/字符区间）+ 版本状态。",
+    "operationId": "document_evidence_api_v1_documents__document_id__evidence_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "document_id",
+      "required": true,
+      "schema": {
+       "title": "Document Id",
+       "type": "string"
+      }
+     },
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 50,
+       "maximum": 200,
+       "minimum": 1,
+       "title": "Limit",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Document Evidence Api V1 Documents  Document Id  Evidence Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Document Evidence",
+    "tags": [
+     "query"
+    ]
+   }
+  },
+  "/api/v1/graph/subgraph": {
+   "get": {
+    "description": "受控子图：白名单 Cypher 模板（后端执行），限制跳数与节点数。\n\n图后端不可用/超限时返回 DEGRADED/STALE + PG 事实列表回退\n（issue #32 GWT：明确降级且保留 PostgreSQL 事实）。",
+    "operationId": "graph_subgraph_api_v1_graph_subgraph_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "company_id",
+      "required": false,
+      "schema": {
+       "maxLength": 64,
+       "title": "Company Id",
+       "type": "string"
+      }
+     },
+     {
+      "in": "query",
+      "name": "hops",
+      "required": false,
+      "schema": {
+       "default": 1,
+       "maximum": 2,
+       "minimum": 1,
+       "title": "Hops",
+       "type": "integer"
+      }
+     },
+     {
+      "in": "query",
+      "name": "max_nodes",
+      "required": false,
+      "schema": {
+       "default": 100,
+       "maximum": 300,
+       "minimum": 1,
+       "title": "Max Nodes",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Graph Subgraph Api V1 Graph Subgraph Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Graph Subgraph",
     "tags": [
      "query"
     ]

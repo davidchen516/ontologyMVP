@@ -5,6 +5,8 @@ import { HomePage } from "./routes/HomePage";
 import { QueryWorkbench } from "./routes/QueryWorkbench";
 import { CompaniesPage } from "./routes/CompaniesPage";
 import { CompanyDetailPage } from "./routes/CompanyDetailPage";
+import { GraphBrowser } from "./routes/GraphBrowser";
+import { EvidenceBrowser } from "./routes/EvidenceBrowser";
 import { PlaceholderPage } from "./routes/PlaceholderPage";
 import { NotFoundPage } from "./routes/NotFoundPage";
 
@@ -24,14 +26,8 @@ export const router = createBrowserRouter([
         path: "/workbench/companies/:companyId",
         element: <CompanyDetailPage />,
       },
-      {
-        path: "/graph",
-        element: <PlaceholderPage milestone="#32" title="图谱浏览器" />,
-      },
-      {
-        path: "/evidence",
-        element: <PlaceholderPage milestone="#32" title="证据浏览器" />,
-      },
+      { path: "/graph", element: <GraphBrowser /> },
+      { path: "/evidence", element: <EvidenceBrowser /> },
       {
         path: "/review",
         element: <PlaceholderPage milestone="#33" title="Claim 审核" />,

@@ -12,6 +12,7 @@ from typing import Any
 import structlog
 
 from src.query.compiler import ALLOWED_GRAPH_QUERIES
+from src.query.graph_subgraph import SUBGRAPH_TEMPLATE
 
 log = structlog.get_logger(__name__)
 
@@ -36,7 +37,11 @@ class Neo4jQueryExecutor:
         return cls(driver)
 
     def execute(self, template: str, params: dict[str, Any]) -> list[dict[str, Any]]:
-        if template not in ALLOWED_GRAPH_QUERIES:
+        # 子图模板的 hops 1..2 渲染变体同属白名单（issue #32 受控子图）
+        subgraph_variants = {
+            SUBGRAPH_TEMPLATE.replace("__HOPS__", str(h)) for h in (1, 2)
+        }
+        if template not in ALLOWED_GRAPH_QUERIES | subgraph_variants:
             raise ValueError("cypher template not in whitelist")
         with self._driver.session() as session:
             result = session.run(template, params)
