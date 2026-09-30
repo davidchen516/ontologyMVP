@@ -309,20 +309,12 @@ jobs:
           done
 
       - name: Build MVP snapshot (PG + Neo4j projection)
-        # 用临时脚本文件避免 bash/python 双层引号嵌套
+        # 仓库脚本文件——避免 bash/python 双层引号嵌套
         run: |
-          cat > /tmp/e2e_setup.py <<'PYEOF'
-          import pathlib
-          from src.db.testing import run_alembic
-          from scripts.build_mvp_snapshot import build_snapshot
-          DSN = "postgresql://postgres:postgres@localhost:5432/postgres"
-          run_alembic("upgrade", "head", DSN)
-          build_snapshot(DSN,
-              neo4j_uri="bolt://localhost:7687",
-              neo4j_password="ci-neo4j-password",
-              output_dir=pathlib.Path("/tmp/snap"))
-          PYEOF
-          uv run python /tmp/e2e_setup.py"
+          uv run python scripts/ci_e2e_setup.py \
+            --dsn postgresql://postgres:postgres@localhost:5432/postgres \
+            --neo4j-uri bolt://localhost:7687 \
+            --neo4j-password ci-neo4j-password"
 
       - name: Start API with review enabled
         run: |
