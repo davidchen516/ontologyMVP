@@ -309,12 +309,7 @@ jobs:
           done
 
       - name: Build MVP snapshot (PG + Neo4j projection)
-        # 仓库脚本文件——避免 bash/python 双层引号嵌套
-        run: |
-          uv run python scripts/ci_e2e_setup.py \
-            --dsn postgresql://postgres:postgres@localhost:5432/postgres \
-            --neo4j-uri bolt://localhost:7687 \
-            --neo4j-password ci-neo4j-password"
+        run: uv run python scripts/ci_e2e_setup.py --dsn postgresql://postgres:postgres@localhost:5432/postgres --neo4j-uri bolt://localhost:7687 --neo4j-password ci-neo4j-password"
 
       - name: Start API with review enabled
         run: |

@@ -1,6 +1,7 @@
 """CI e2e 环境搭建：迁移 + MVP 快照（PG + Neo4j 投影）。
 
-用法（CI e2e job）：uv run python scripts/ci_e2e_setup.py --dsn <DSN> --neo4j-uri <uri> --neo4j-password <pw>
+用法（CI e2e job）：uv run python scripts/ci_e2e_setup.py
+  --dsn <DSN> --neo4j-uri <uri> --neo4j-password <pw>
 """
 
 from __future__ import annotations
