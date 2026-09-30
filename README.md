@@ -129,7 +129,7 @@ flowchart LR
 ### 启动与停止
 
 ```bash
-docker compose up --build -d --wait   # 启动 postgres/neo4j/api/worker 并等待健康检查
+docker compose up --build -d --wait   # 启动 postgres/neo4j/api/worker/web 并等待健康检查
 docker compose ps                     # 查看服务与健康状态
 docker compose logs -f api worker     # 结构化 JSON 日志（均带 trace_id）
 docker compose down                   # 停止；默认保留数据卷
@@ -356,8 +356,10 @@ TuShare 概念成员
 - [x] 受控 QueryPlan、图/财务联合查询与证据化 API（见「受控查询与证据化 API」）
 - [x] PostgreSQL Schema 与 Alembic 迁移、事实事务边界（Neo4j 为可重建投影，无迁移需求）
 - [x] 首个纵向场景：人形机器人核心零部件证据化筛选（合成快照闭环 + 30 黄金查询 + 端到端追溯，见 `docs/mvp-acceptance-report.md` 与 `docs/epic-closeout.md`；演示：`uv run python scripts/demo_mvp_query.py --dsn <快照库>`）
-- [ ] V0.2 可交互产品界面与研究工作台（[#29](https://github.com/davidchen516/ontologyMVP/issues/29)：查询、公司、图谱、证据、审核与运维界面）
+- [x] V0.2 可交互产品界面与研究工作台（#30~#34 全部关闭，Epic #29 随收尾 PR 关闭）（[#29](https://github.com/davidchen516/ontologyMVP/issues/29)：查询、公司、图谱、证据、审核与运维界面）
 
+> Web 研究工作台：`docker compose up -d` 后访问 `http://localhost:5173`
+>
 > V0.1 后端 MVP + V0.2 产品界面均已交付（#1~#34 全部关闭，Epic #29 随收尾 PR 关闭）：研究工作台（查询/公司/图谱/证据/审核/运维六页面）、API-Key 认证审核写 API、axe WCAG 2.2 AA 无障碍门禁、CI 真实浏览器 E2E（7 job）、BUILD_ID 可回滚静态产物。TuShare 采集 → PostgreSQL 标准化 →
 > 证据化 Claim（Provenance Hash 链）→ Neo4j 投影（可重建）→ 受控
 > QueryPlan API（每条结论返回 Claim ID、可定位原文、财务口径、双时态、

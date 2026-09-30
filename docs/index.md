@@ -22,7 +22,7 @@ ontologyMVP 是一个面向 A 股产业研究的本体查询系统工程基线�
 </div>
 
 {: .warning }
-**V0.1 后端闭环已经完成，产品界面尚未实现。** 仓库已经提供采集、标准化、Semantica、Claim/Evidence、Neo4j 投影、受控查询、真实数据库 CI 和合成快照验收；当前需要通过 [V0.2 产品界面](product-ui.html)把这些能力变成可供研究、核验和审核的 Web 工作台。真实 TuShare 数据仍需使用者自己的 Token 重建并验收。
+**V0.1 后端闭环与 V0.2 产品界面均已交付（查询/公司/图谱/证据/审核/运维六页面）。** 仓库已经提供采集、标准化、Semantica、Claim/Evidence、Neo4j 投影、受控查询、真实数据库 CI 和合成快照验收；当前需要通过 [V0.2 产品界面](product-ui.html)把这些能力变成可供研究、核验和审核的 Web 工作台。真实 TuShare 数据仍需使用者自己的 Token 重建并验收。
 
 ## 项目价值
 

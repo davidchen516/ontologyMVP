@@ -21,7 +21,7 @@
 | 2 | 新用户仅按公开文档完成证据化查询/公司/Claim 原文/推理路径 | ✅ | `docs/quality-gates-evidence.md` + E2E 主路径（workbench.spec:10 查询→证据→公司全流程）+ README 快速开始 |
 | 3 | Reviewer 认证/最小权限完成审核决定，审计/状态机/并发正确 | ✅ | E2E `review-ops.spec:10`（登录→队列→决定→成功）+ `review-ops.spec:57`（错 key→403）+ 后端真并发测试（外部 FOR UPDATE→409+状态回传） |
 | 4 | Operator 识别不可用/过期/投影滞后/对账异常，不暴露凭证 | ✅ | 运维页 `/ops`：readyz 组件/能力/探针/运行状态/投影水位+对账 JSON/新鲜度——全部只读+错误态可见（vitest+e2e 断言）；运维页无 key 要求但无敏感信息（服务器密码/密钥不在渲染面） |
-| 5 | 固定快照真实浏览器桌面/移动验收，无伪数据/死按钮/颜色依赖 | ✅ | 375/768/1024/1440px 无溢出（shell.spec:101）+ a11y 512px；全部数据来自 API 真实响应（首页统计 30/400/83 由 /overview/stats 实数渲染）；能力未声明→导航禁用（无死按钮）；图例文字+状态文本（非颜色单独表达） |
+| 5 | 固定快照真实浏览器桌面/移动验收，无伪数据/死按钮/颜色依赖 | ✅ | 375/768/1024/1440px 无溢出（shell.spec:62+101）+ a11y 512px；全部数据来自 API 真实响应（首页统计 30/400/83 由 /overview/stats 实数渲染）；能力未声明→导航禁用（无死按钮）；图例文字+状态文本（非颜色单独表达） |
 | 6 | WCAG 2.2 AA 自动检查+键盘人工检查，关键流程四断点无溢出 | ✅ | axe `wcag2a/wcag2aa/wcag21a/wcag21aa/wcag22aa` 7 �由由零违规（a11y.spec.ts）；键盘焦点序抽查（shell.spec:73）+ reduced-motion（a11y.spec:60）；四断点溢出硬断言 |
 | 7 | E2E 覆盖 happy path/错误输入/重复提交/取消超时/权限拒绝/并发审核/崩溃恢复/UI 回滚 | ✅（覆盖矩阵见 §3） | 31 条 Playwright（含 9 条 a11y）+ 后端 422 条全绿 |
 | 8 | 真实运行截图/录屏/网络/可访问性/性能/回滚证据 | ✅（部分：录屏/性能未自动化） | 22+ 截图（web/screenshots/ + CI artifact）；可访问性报告=axe 结果（0 违规）；回滚=BUILD_ID bundle 切换实证（v2-def→v1-abc）；录屏/性能基线在已知限制中如实登记 |
@@ -33,7 +33,7 @@
 | Happy path 全流程 | workbench.spec:10（查询→结果→证据→公司→深链接刷新） | ✅ |
 | 错误输入/注入 | workbench.spec:101（422）+ graph.spec:70（降级） + shell.spec:49（网络不可达） | ✅ |
 | 重复提交 | RTL submit-guard + UI isPending 禁用 | ✅ |
-| 请求取消/超时 | client.ts 七类错误分类（含 timeout/cancel）+ e2e route.abort | ✅ |
+| 请求取消/超时 | client.ts 八类错误分类（含 timeout/cancel/rate_limit）+ e2e route.abort | ✅ |
 | 权限拒绝 | review-ops.spec:57（错 key→403）+ RTL 401/403 | ✅ |
 | 并发审核 | 后端 test_true_concurrent_decision_returns_409_with_state + RTL 409 冲突横幅 | ✅ |
 | 后端崩溃/恢复 | shell.spec:49（API abort→分类错误态→重试出口）+ compose 演练（#30 证据） | ✅ |
