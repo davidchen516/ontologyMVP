@@ -78,7 +78,7 @@ def test_write_disabled_returns_503(uow_factory, main_dsn) -> None:
     seed_review_task(uow_factory)
     client = review_client(main_dsn, enabled=False)
     r = client.post(
-        "/api/v1/review/tasks/%s/decision" % uuid.uuid4(),
+        f"/api/v1/review/tasks/{uuid.uuid4()}/decision",
         json={"decision": "ACCEPTED", "reason": "ok"},
         headers={**AUTH, "Idempotency-Key": uuid.uuid4().hex},
     )
