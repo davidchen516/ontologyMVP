@@ -11,8 +11,13 @@ const apiProxy = Object.fromEntries(
   ]),
 );
 
+const BUILD_ID = process.env["BUILD_ID"] ?? "dev-local";
+
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  define: {
+    __BUILD_ID: JSON.stringify(BUILD_ID),
+  },
   server: { proxy: apiProxy },
   test: {
     environment: "jsdom",

@@ -116,4 +116,13 @@ describe("apiFetch 错误分类", () => {
     });
     await expect(apiFetch("/x")).resolves.toEqual({ status: "OK" });
   });
+
+  it("429 → rate_limit", async () => {
+    mockFetchOnce({ ok: false, status: 429, json: {} });
+    const error = (await apiFetch("/x").catch(
+      (e: unknown) => e as ApiClientError,
+    )) as ApiClientError;
+    expect(error.kind).toBe("rate_limit");
+    expect(error.message).toContain("频繁");
+  });
 });

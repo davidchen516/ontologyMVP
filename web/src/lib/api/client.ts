@@ -20,6 +20,7 @@ export type ApiErrorKind =
   | "permission"
   | "validation"
   | "not_found"
+  | "rate_limit"
   | "server"
   | "unknown";
 
@@ -64,6 +65,7 @@ function statusToKind(status: number): ApiErrorKind {
   if (status === 401 || status === 403) return "permission";
   if (status === 404) return "not_found";
   if (status === 422) return "validation";
+  if (status === 429) return "rate_limit";
   if (status >= 500) return "server";
   return "unknown";
 }
@@ -78,6 +80,8 @@ function kindMessage(kind: ApiErrorKind): string {
       return "无权限访问该资源";
     case "validation":
       return "请求未通过校验";
+    case "rate_limit":
+      return "请求过于频繁，请稍后重试";
     case "not_found":
       return "资源不存在";
     case "server":

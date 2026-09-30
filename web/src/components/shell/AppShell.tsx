@@ -139,6 +139,12 @@ export function AppShell() {
           研究工作台 · {CURRENT_MILESTONE}
         </span>
         <div className="ml-auto flex items-center gap-3">
+          <span
+            className="hidden font-mono text-[10px] text-fg-muted md:inline"
+            title="构建标识（回滚/审计锚点）"
+          >
+            build:{__BUILD_ID.slice(0, 12)}
+          </span>
           <SystemStatusDot />
           <ThemeToggle />
         </div>
