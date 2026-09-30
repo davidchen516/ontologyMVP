@@ -58,11 +58,13 @@ def create_app(settings: Settings) -> FastAPI:
     app.state.query_graph_executor = build_query_graph_executor(settings)
 
     from src.query.api import router as query_router
+    from src.review.api import router as review_router
 
     from apps.api.admin import build_admin_router
 
     app.include_router(build_admin_router(settings))
     app.include_router(query_router)
+    app.include_router(review_router)
 
     # 后添加者在外层：TraceId 最外层，请求日志随 trace_id 输出
     app.add_middleware(RequestLoggingMiddleware)

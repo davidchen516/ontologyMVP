@@ -29,8 +29,6 @@ const graphGate = (report: ReadinessReport): string | null => {
     : "Neo4j 图组件不可用";
 };
 
-const authGate = (): string => "认证/授权未启用（V0.2 后续交付）";
-
 export const NAV_ITEMS: NavItem[] = [
   { to: "/", label: "首页", availableIn: "#30", gate: () => null },
   {
@@ -61,7 +59,7 @@ export const NAV_ITEMS: NavItem[] = [
     to: "/review",
     label: "Claim 审核",
     availableIn: "#33",
-    gate: authGate,
+    gate: () => null,
   },
   {
     to: "/ops",
@@ -72,7 +70,7 @@ export const NAV_ITEMS: NavItem[] = [
 ];
 
 /** 里程碑检查：#30 应用壳 + #31 查询/公司 + #32 图谱/证据已实装；其余按里程碑声明。 */
-export const CURRENT_MILESTONE = "#32";
+export const CURRENT_MILESTONE = "#33";
 
 /** 里程碑序比较：availableIn 序 <= 当前序 ⇒ 已交付（启用）。 */
 function milestoneNumber(milestone: string): number {

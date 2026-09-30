@@ -70,6 +70,6 @@ def test_worker_startup_log_has_no_secrets():
     startup = events[0]
     content = json.dumps(startup, ensure_ascii=False)
     assert "unit-test-password" not in content
-    assert startup["capabilities"] == {"tushare": False, "llm": False}
+    assert startup["capabilities"] == {"tushare": False, "llm": False, "review_write": False}
     # 快速退出：启动即请求关闭时应立即返回
     assert startup["environment"] == "ci"

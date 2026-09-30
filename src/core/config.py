@@ -93,6 +93,10 @@ class Settings(PostgresConnectionSettings):
 
     # ---- 可选能力项：缺失 → 能力不可用 ----
     tushare_token: SecretStr | None = None
+    # 审核写操作（ADR-0006）：默认关闭；开启需同时提供 Reviewer API Key
+    # 的 SHA-256 哈希（逗号分隔），明文密钥绝不入库/日志
+    review_write_enabled: bool = False
+    review_api_key_hashes: str | None = None
     llm_api_key: SecretStr | None = None
 
     @field_validator("tushare_token", "llm_api_key", mode="before")
@@ -122,6 +126,9 @@ class Settings(PostgresConnectionSettings):
         return {
             "tushare": self.tushare_token is not None,
             "llm": self.llm_api_key is not None,
+            # 审核写能力：开关 + 至少一个有效密钥哈希同时满足才可用
+            "review_write": self.review_write_enabled
+            and bool(self.review_api_key_hashes),
         }
 
     def safe_summary(self) -> dict[str, object]:

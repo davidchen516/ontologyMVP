@@ -28,12 +28,17 @@ export class ApiClientError extends Error {
   readonly status?: number;
   readonly traceId: string | null;
   /** 后端受控 detail（如 422 的计划校验原因）；不保证存在 */
-  readonly detail: string | null;
+  /** 后端受控 detail（422 文本或 409 结构化冲突状态）；不保证存在 */
+  readonly detail: string | Record<string, unknown> | null;
 
   constructor(
     kind: ApiErrorKind,
     message: string,
-    opts: { status?: number; traceId?: string | null; detail?: string | null } = {},
+    opts: {
+      status?: number;
+      traceId?: string | null;
+      detail?: string | Record<string, unknown> | null;
+    } = {},
   ) {
     super(message);
     this.name = "ApiClientError";
@@ -51,6 +56,8 @@ interface RequestOptions {
   body?: unknown;
   signal?: AbortSignal;
   timeoutMs?: number;
+  /** 附加请求头（认证等；绝不接受用户控制的 Content-Type 之外的白名单） */
+  headers?: Record<string, string>;
 }
 
 function statusToKind(status: number): ApiErrorKind {
@@ -106,7 +113,10 @@ export async function apiFetch<T>(
   try {
     response = await fetch(path, {
       method,
-      headers: body === undefined ? undefined : { "Content-Type": "application/json" },
+      headers: {
+        ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+        ...options.headers,
+      },
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: controller.signal,
     });
@@ -126,14 +136,18 @@ export async function apiFetch<T>(
   const traceId = response.headers.get("X-Trace-Id");
 
   if (!response.ok) {
-    let detail: string | null = null;
+    let detail: string | Record<string, unknown> | null = null;
     let bodyTraceId: string | null = null;
     try {
       const payload = (await response.json()) as {
         detail?: unknown;
         trace_id?: string;
       };
-      if (typeof payload.detail === "string") detail = payload.detail;
+      if (typeof payload.detail === "string") {
+        detail = payload.detail;
+      } else if (payload.detail !== null && payload.detail !== undefined) {
+        detail = payload.detail as Record<string, unknown>;
+      }
       if (typeof payload.trace_id === "string") bodyTraceId = payload.trace_id;
     } catch {
       /* 非 JSON 错误体：仅用状态码分类 */

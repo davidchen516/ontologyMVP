@@ -524,6 +524,41 @@
     "title": "QueryStatus",
     "type": "string"
    },
+   "ReviewDecisionRequest": {
+    "properties": {
+     "decision": {
+      "pattern": "^(ACCEPTED|REJECTED)$",
+      "title": "Decision",
+      "type": "string"
+     },
+     "evidence_ids": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Evidence Ids"
+     },
+     "reason": {
+      "maxLength": 2000,
+      "minLength": 1,
+      "title": "Reason",
+      "type": "string"
+     }
+    },
+    "required": [
+     "decision",
+     "reason"
+    ],
+    "title": "ReviewDecisionRequest",
+    "type": "object"
+   },
    "ScreenRequest": {
     "description": "筛选请求：语义条件 + 财务条件的简化入口。\n\n前置约束与 QueryPlan 模型一致（非法组合在请求层即 422）；\n注入载荷在计划构造层被拒（同样走受控 422）。",
     "properties": {
@@ -2004,6 +2039,120 @@
     "summary": "Execute Query",
     "tags": [
      "query"
+    ]
+   }
+  },
+  "/api/v1/review/queue": {
+   "get": {
+    "description": "待审队列（Reviewer 只读）：任务 + Claim 摘要 + 证据计数。",
+    "operationId": "review_queue_api_v1_review_queue_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "status",
+      "required": false,
+      "schema": {
+       "default": "OPEN",
+       "maxLength": 30,
+       "title": "Status",
+       "type": "string"
+      }
+     },
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 50,
+       "maximum": 200,
+       "minimum": 1,
+       "title": "Limit",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Review Queue Api V1 Review Queue Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Review Queue",
+    "tags": [
+     "review"
+    ]
+   }
+  },
+  "/api/v1/review/tasks/{task_id}/decision": {
+   "post": {
+    "description": "提交审核决定（唯一写端点）。\n\nGWT 并发/幂等矩阵：\n- 乐观并发失败 → 409 + 当前状态（第二位 Reviewer 刷新差异）；\n- 同 Idempotency-Key 重放 → 首次结果原样返回（不重复决定/审计）；\n- 状态机拒绝（如任务已 COMPLETED）→ 409 带前后状态；\n- 任何失败：事实库零副作用（事务回滚）。",
+    "operationId": "submit_review_decision_api_v1_review_tasks__task_id__decision_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "task_id",
+      "required": true,
+      "schema": {
+       "title": "Task Id",
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ReviewDecisionRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Submit Review Decision Api V1 Review Tasks  Task Id  Decision Post",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Submit Review Decision",
+    "tags": [
+     "review"
     ]
    }
   },

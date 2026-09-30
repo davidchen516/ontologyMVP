@@ -7,12 +7,12 @@ import { CompaniesPage } from "./routes/CompaniesPage";
 import { CompanyDetailPage } from "./routes/CompanyDetailPage";
 import { GraphBrowser } from "./routes/GraphBrowser";
 import { EvidenceBrowser } from "./routes/EvidenceBrowser";
-import { PlaceholderPage } from "./routes/PlaceholderPage";
+import { ReviewWorkbench } from "./routes/ReviewWorkbench";
+import { OpsPage } from "./routes/OpsPage";
 import { NotFoundPage } from "./routes/NotFoundPage";
 
 /**
- * 路由表（#30 里程碑）：首页实装；#31~#33 页面为占位（能力感知导航
- * 会把它们显示为"未启用"，占位路由仅供深链接直达时的说明页）。
+ * 路由表（#30~#33 里程碑）：首页/查询/公司/图谱/证据/审核/运维全部实装。
  */
 export const router = createBrowserRouter([
   {
@@ -28,14 +28,8 @@ export const router = createBrowserRouter([
       },
       { path: "/graph", element: <GraphBrowser /> },
       { path: "/evidence", element: <EvidenceBrowser /> },
-      {
-        path: "/review",
-        element: <PlaceholderPage milestone="#33" title="Claim 审核" />,
-      },
-      {
-        path: "/ops",
-        element: <PlaceholderPage milestone="#33" title="运维视图" />,
-      },
+      { path: "/review", element: <ReviewWorkbench /> },
+      { path: "/ops", element: <OpsPage /> },
       { path: "*", element: <NotFoundPage /> },
     ],
   },

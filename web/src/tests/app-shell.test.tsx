@@ -57,8 +57,10 @@ describe("应用壳（#30）", () => {
     for (const label of ["查询工作台", "公司列表", "图谱浏览器", "证据浏览器"]) {
       expect(screen.getByRole("link", { name: label })).toBeInTheDocument();
     }
-    const reviewItem = screen.getByText("Claim 审核").parentElement;
-    expect(reviewItem).toHaveAttribute("title", "将于 #33 交付");
+    // #33 已实装：全部导航入口（含 Claim 审核）均为可点击链接
+    expect(
+      screen.getByRole("link", { name: "Claim 审核" }),
+    ).toBeInTheDocument();
     expect(screen.getAllByText("首页")[0]).toBeInTheDocument();
   });
 
@@ -77,12 +79,19 @@ describe("应用壳（#30）", () => {
     );
   });
 
-  it("Given 未到 #33 里程碑，When 渲染导航，Then 审核入口显示里程碑原因", async () => {
+  it("Given #33 已实装，When 渲染导航，Then 审核/运维入口可点击", async () => {
     mockReadyz(READY_OK);
     renderWithQuery();
-    const reviewItem = (await screen.findByText("Claim 审核")).parentElement;
-    expect(reviewItem).toHaveTextContent("未启用");
-    expect(reviewItem).toHaveAttribute("title", "将于 #33 交付");
+    await waitFor(() =>
+      expect(
+        screen.getByRole("link", { name: "Claim 审核" }),
+      ).toBeInTheDocument(),
+    );
+    await waitFor(() =>
+      expect(
+        screen.getByRole("link", { name: "运维视图" }),
+      ).toBeInTheDocument(),
+    );
   });
 
   it("Given 未知路由，Then 404 页面", async () => {
@@ -123,8 +132,10 @@ describe("深链接刷新（SPA fallback 由 nginx try_files 提供，路由层�
       </QueryClientProvider>,
     );
     await waitFor(() => {
-      // PlaceholderPage 正文（区别于侧栏导航项的"运维视图"）
-      expect(screen.getByText("此工作台将于 #33 交付")).toBeInTheDocument();
+      // OpsPage 真实渲染（#33 已实装——占位期断言过期）
+      expect(
+        screen.getByRole("heading", { name: "运维视图" }),
+      ).toBeInTheDocument();
     });
   });
 });
