@@ -75,6 +75,17 @@ services:
       neo4j:
         condition: service_healthy
 
+  # Web 研究工作台（V0.2 #30）：静态产物 + 同源 API 反代；
+  # 可单独停止/回退，不影响 API/Worker/数据库（Epic #29 回滚原则）。
+  web:
+    build:
+      context: ./web
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "5173:80"
+
 volumes:
   postgres_data:
   neo4j_data:

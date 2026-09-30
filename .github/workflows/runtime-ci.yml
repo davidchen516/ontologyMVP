@@ -148,6 +148,76 @@ jobs:
         if: always()
         run: rm -f requirements-audit.txt
 
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node (pinned major)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install locked dependencies
+        # npm ci：锁文件不一致立即失败，绝不现场解析新版本
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc -b --noEmit
+
+      - name: Lint
+        run: npx eslint .
+
+      - name: Unit and component tests
+        run: npx vitest run --reporter=default
+
+      - name: Production build
+        run: npm run build
+
+      - name: Bundle size report
+        run: |
+          echo "## web bundle" >> "$GITHUB_STEP_SUMMARY"
+          ls -la dist/assets | awk '{print $5, $9}' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Dependency license audit
+        # 读取实际安装树的 package.json 许可证字段；非宽松集合即失败
+        # （豁免须在 web/scripts/license-audit.mjs 的 WAIVERS 登记理由）
+        run: npm run license:audit
+
+  # 后端契约漂移检测：OpenAPI 快照与代码不同步即失败（前端类型契约的锚点）
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up uv (pinned Python 3.11)
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.11"
+          enable-cache: true
+
+      - name: Install locked dependencies
+        run: uv sync --frozen
+
+      - name: OpenAPI contract drift check
+        # 重新导出并 diff：后端契约变化后必须同步前端类型（#30 验收）
+        run: |
+          uv run python scripts/export_openapi.py /tmp/openapi.json
+          if ! diff -q /tmp/openapi.json web/openapi.json; then
+            echo "OpenAPI contract drifted; regenerate web/openapi.json"
+            diff /tmp/openapi.json web/openapi.json | head -40
+            exit 1
+          fi
+
   secret-scan:
     runs-on: ubuntu-latest
     timeout-minutes: 5

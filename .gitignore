@@ -25,3 +25,11 @@ vendor/bundle/
 # 快照构建产物（每次 build 生成，manifest 由验收报告引用本地文件）
 docs/snapshots/
 tests/mvp/snapshots/
+
+# web 构建产物与测试中间物（截图作为 #30 证据入库）
+web/node_modules/
+web/dist/
+web/coverage/
+web/test-results/
+web/playwright-report/
+web/.vite/

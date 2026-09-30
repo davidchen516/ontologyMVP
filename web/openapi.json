@@ -1,0 +1,1773 @@
+{
+ "components": {
+  "schemas": {
+   "EntityRef": {
+    "description": "实体引用：ID 或名称+类型，不信任用户输入的自由表名/列名。",
+    "properties": {
+     "entity_id": {
+      "anyOf": [
+       {
+        "format": "uuid",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Entity Id"
+     },
+     "entity_type": {
+      "pattern": "^(Company|Security|Product|Theme|Concept|Industry)$",
+      "title": "Entity Type",
+      "type": "string"
+     },
+     "name_hint": {
+      "anyOf": [
+       {
+        "maxLength": 200,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name Hint"
+     }
+    },
+    "required": [
+     "entity_type"
+    ],
+    "title": "EntityRef",
+    "type": "object"
+   },
+   "GroundedResult": {
+    "description": "每个命中公司的结构化证据包（验收 10 + issue #11 验收 8）。\n\n证券/标准产品/原文引文/双时态有效期由查询链路加载——\n每条经营结论可回溯至 Claim 与可定位 Evidence。",
+    "properties": {
+     "business_stage": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Business Stage"
+     },
+     "claim_ids": {
+      "items": {
+       "format": "uuid",
+       "type": "string"
+      },
+      "title": "Claim Ids",
+      "type": "array"
+     },
+     "company_id": {
+      "format": "uuid",
+      "title": "Company Id",
+      "type": "string"
+     },
+     "company_name": {
+      "title": "Company Name",
+      "type": "string"
+     },
+     "currency": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Currency"
+     },
+     "data_freshness": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Data Freshness"
+     },
+     "evidence_ids": {
+      "items": {
+       "format": "uuid",
+       "type": "string"
+      },
+      "title": "Evidence Ids",
+      "type": "array"
+     },
+     "evidence_quotes": {
+      "items": {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      "title": "Evidence Quotes",
+      "type": "array"
+     },
+     "evidence_state": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Evidence State"
+     },
+     "financial_detail": {
+      "items": {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      "title": "Financial Detail",
+      "type": "array"
+     },
+     "financial_value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Financial Value"
+     },
+     "reasoning_path": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Reasoning Path",
+      "type": "array"
+     },
+     "report_period": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Report Period"
+     },
+     "security_code": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Security Code"
+     },
+     "standard_product": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Standard Product"
+     },
+     "valid_from": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Valid From"
+     },
+     "valid_to": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Valid To"
+     }
+    },
+    "required": [
+     "company_id",
+     "company_name"
+    ],
+    "title": "GroundedResult",
+    "type": "object"
+   },
+   "HTTPValidationError": {
+    "properties": {
+     "detail": {
+      "items": {
+       "$ref": "#/components/schemas/ValidationError"
+      },
+      "title": "Detail",
+      "type": "array"
+     }
+    },
+    "title": "HTTPValidationError",
+    "type": "object"
+   },
+   "NumericFilter": {
+    "description": "财务筛选：只使用 financial_metric_catalog 白名单中的指标。\n\nPeriodRule 与 operator/fiscal_years 必须一致（验收 5 的口径约束）：\n- LAST_N_FY            ⇒ fiscal_years == N；\n- LAST_3_FY_TOTAL_POSITIVE ⇒ operator=TOTAL_POSITIVE 且 fiscal_years=3；\n- CONSECUTIVE_3_FY_POSITIVE ⇒ operator=CONSECUTIVE_POSITIVE 且 fiscal_years=3。",
+    "properties": {
+     "fiscal_years": {
+      "default": 3,
+      "maximum": 10.0,
+      "minimum": 1.0,
+      "title": "Fiscal Years",
+      "type": "integer"
+     },
+     "metric_code": {
+      "maxLength": 64,
+      "minLength": 2,
+      "title": "Metric Code",
+      "type": "string"
+     },
+     "operator": {
+      "$ref": "#/components/schemas/PathOperator"
+     },
+     "period_rule": {
+      "default": "LAST_3_FY",
+      "maxLength": 50,
+      "title": "Period Rule",
+      "type": "string"
+     },
+     "threshold": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Threshold"
+     }
+    },
+    "required": [
+     "metric_code",
+     "operator"
+    ],
+    "title": "NumericFilter",
+    "type": "object"
+   },
+   "PathOperator": {
+    "enum": [
+     "TOTAL_POSITIVE",
+     "CONSECUTIVE_POSITIVE",
+     "MIN_VALUE",
+     "MAX_VALUE"
+    ],
+    "title": "PathOperator",
+    "type": "string"
+   },
+   "QueryIntent": {
+    "enum": [
+     "ENTITY_LOOKUP",
+     "SEMANTIC_SCREEN",
+     "EXPLAIN_RELATION",
+     "TIMELINE",
+     "COMPARE",
+     "EVIDENCE_SEARCH"
+    ],
+    "title": "QueryIntent",
+    "type": "string"
+   },
+   "QueryPlan": {
+    "description": "受控查询计划：Planner 输出的唯一合法形态。",
+    "properties": {
+     "as_of": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "As Of"
+     },
+     "evidence_required": {
+      "default": true,
+      "title": "Evidence Required",
+      "type": "boolean"
+     },
+     "intent": {
+      "$ref": "#/components/schemas/QueryIntent"
+     },
+     "known_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Known At"
+     },
+     "max_results": {
+      "default": 50,
+      "maximum": 100.0,
+      "minimum": 1.0,
+      "title": "Max Results",
+      "type": "integer"
+     },
+     "numeric_filter": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/NumericFilter"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "object_entity": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/EntityRef"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "plan_id": {
+      "format": "uuid",
+      "title": "Plan Id",
+      "type": "string"
+     },
+     "semantic_filter": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/SemanticFilter"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "subject": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/EntityRef"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "timeout_seconds": {
+      "default": 30,
+      "maximum": 60.0,
+      "minimum": 1.0,
+      "title": "Timeout Seconds",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "intent"
+    ],
+    "title": "QueryPlan",
+    "type": "object"
+   },
+   "QueryRequest": {
+    "description": "查询请求：直接传入受控 QueryPlan（LLM Planner 后续可选）。",
+    "properties": {
+     "natural_question": {
+      "anyOf": [
+       {
+        "maxLength": 2000,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Natural Question"
+     },
+     "plan": {
+      "$ref": "#/components/schemas/QueryPlan"
+     }
+    },
+    "required": [
+     "plan"
+    ],
+    "title": "QueryRequest",
+    "type": "object"
+   },
+   "QueryResponse": {
+    "description": "Grounded 结构化响应：不添加结构化结果中不存在的任何实体。",
+    "properties": {
+     "conflicts": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Conflicts",
+      "type": "array"
+     },
+     "degradation_notes": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Degradation Notes",
+      "type": "array"
+     },
+     "degraded": {
+      "default": false,
+      "title": "Degraded",
+      "type": "boolean"
+     },
+     "error": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Error"
+     },
+     "excluded": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Excluded",
+      "type": "array"
+     },
+     "intent": {
+      "$ref": "#/components/schemas/QueryIntent"
+     },
+     "period_rule": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Period Rule"
+     },
+     "query_id": {
+      "format": "uuid",
+      "title": "Query Id",
+      "type": "string"
+     },
+     "results": {
+      "items": {
+       "$ref": "#/components/schemas/GroundedResult"
+      },
+      "title": "Results",
+      "type": "array"
+     },
+     "status": {
+      "$ref": "#/components/schemas/QueryStatus"
+     },
+     "trace_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Trace Id"
+     },
+     "unknowns": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Unknowns",
+      "type": "array"
+     }
+    },
+    "required": [
+     "query_id",
+     "status",
+     "intent"
+    ],
+    "title": "QueryResponse",
+    "type": "object"
+   },
+   "QueryStatus": {
+    "enum": [
+     "RECEIVED",
+     "PLANNED",
+     "RUNNING",
+     "SUCCEEDED",
+     "FAILED",
+     "CANCELLED",
+     "REJECTED",
+     "DEGRADED"
+    ],
+    "title": "QueryStatus",
+    "type": "string"
+   },
+   "ScreenRequest": {
+    "description": "筛选请求：语义条件 + 财务条件的简化入口。\n\n前置约束与 QueryPlan 模型一致（非法组合在请求层即 422）；\n注入载荷在计划构造层被拒（同样走受控 422）。",
+    "properties": {
+     "as_of": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "As Of"
+     },
+     "business_stage": {
+      "anyOf": [
+       {
+        "maxLength": 50,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Business Stage"
+     },
+     "concept_name": {
+      "anyOf": [
+       {
+        "maxLength": 200,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Concept Name"
+     },
+     "evidence_required": {
+      "default": true,
+      "title": "Evidence Required",
+      "type": "boolean"
+     },
+     "fiscal_years": {
+      "default": 3,
+      "title": "Fiscal Years",
+      "type": "integer"
+     },
+     "known_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Known At"
+     },
+     "max_results": {
+      "default": 50,
+      "maximum": 100.0,
+      "minimum": 1.0,
+      "title": "Max Results",
+      "type": "integer"
+     },
+     "metric_code": {
+      "anyOf": [
+       {
+        "maxLength": 64,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Metric Code"
+     },
+     "operator": {
+      "$ref": "#/components/schemas/PathOperator",
+      "default": "TOTAL_POSITIVE"
+     },
+     "period_rule": {
+      "anyOf": [
+       {
+        "maxLength": 50,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Period Rule"
+     },
+     "threshold": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Threshold"
+     }
+    },
+    "title": "ScreenRequest",
+    "type": "object"
+   },
+   "SemanticFilter": {
+    "description": "语义筛选：本体概念/关系/阶段——只使用白名单谓词。",
+    "properties": {
+     "business_stage": {
+      "anyOf": [
+       {
+        "maxLength": 50,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Business Stage"
+     },
+     "concept_name": {
+      "anyOf": [
+       {
+        "maxLength": 200,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Concept Name"
+     },
+     "max_hops": {
+      "default": 2,
+      "maximum": 4.0,
+      "minimum": 1.0,
+      "title": "Max Hops",
+      "type": "integer"
+     },
+     "relation_type": {
+      "anyOf": [
+       {
+        "maxLength": 64,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Relation Type"
+     }
+    },
+    "title": "SemanticFilter",
+    "type": "object"
+   },
+   "ValidationError": {
+    "properties": {
+     "ctx": {
+      "title": "Context",
+      "type": "object"
+     },
+     "input": {
+      "title": "Input"
+     },
+     "loc": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "integer"
+        }
+       ]
+      },
+      "title": "Location",
+      "type": "array"
+     },
+     "msg": {
+      "title": "Message",
+      "type": "string"
+     },
+     "type": {
+      "title": "Error Type",
+      "type": "string"
+     }
+    },
+    "required": [
+     "loc",
+     "msg",
+     "type"
+    ],
+    "title": "ValidationError",
+    "type": "object"
+   }
+  }
+ },
+ "info": {
+  "title": "ontologyMVP API",
+  "version": "0.1.0"
+ },
+ "openapi": "3.1.0",
+ "paths": {
+  "/admin/capabilities": {
+   "get": {
+    "operationId": "capabilities_admin_capabilities_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "additionalProperties": true,
+          "type": "object"
+         },
+         "title": "Response Capabilities Admin Capabilities Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Capabilities",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/claims/{claim_id}": {
+   "get": {
+    "operationId": "claim_detail_admin_claims__claim_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "claim_id",
+      "required": true,
+      "schema": {
+       "title": "Claim Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Claim Detail Admin Claims  Claim Id  Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Claim Detail",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/data-freshness": {
+   "get": {
+    "operationId": "data_freshness_admin_data_freshness_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Data Freshness Admin Data Freshness Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Data Freshness",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/documents": {
+   "get": {
+    "operationId": "documents_admin_documents_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "source_system",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "maxLength": 50,
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Source System"
+      }
+     },
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 50,
+       "maximum": 200,
+       "minimum": 1,
+       "title": "Limit",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Documents Admin Documents Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Documents",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/documents/{document_id}": {
+   "get": {
+    "operationId": "document_detail_admin_documents__document_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "document_id",
+      "required": true,
+      "schema": {
+       "title": "Document Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Document Detail Admin Documents  Document Id  Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Document Detail",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/evidence": {
+   "get": {
+    "operationId": "evidence_fragments_admin_evidence_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "document_version_id",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Document Version Id"
+      }
+     },
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 100,
+       "maximum": 500,
+       "minimum": 1,
+       "title": "Limit",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Evidence Fragments Admin Evidence Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Evidence Fragments",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/financial/current/{security_id}": {
+   "get": {
+    "operationId": "financial_current_admin_financial_current__security_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "security_id",
+      "required": true,
+      "schema": {
+       "title": "Security Id",
+       "type": "string"
+      }
+     },
+     {
+      "in": "query",
+      "name": "metric",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Metric"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Financial Current Admin Financial Current  Security Id  Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Financial Current",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/financial/operating-cashflow/{security_id}": {
+   "get": {
+    "description": "最近三个完整财年经营现金流（可复现查询；含选择策略与充足性判定）。",
+    "operationId": "operating_cashflow_admin_financial_operating_cashflow__security_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "security_id",
+      "required": true,
+      "schema": {
+       "title": "Security Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Operating Cashflow Admin Financial Operating Cashflow  Security Id  Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Operating Cashflow",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/ingest-runs": {
+   "get": {
+    "operationId": "ingest_runs_admin_ingest_runs_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "dataset",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "maxLength": 100,
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Dataset"
+      }
+     },
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 50,
+       "maximum": 200,
+       "minimum": 1,
+       "title": "Limit",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Ingest Runs Admin Ingest Runs Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Ingest Runs",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/ingest-runs/{run_id}": {
+   "get": {
+    "operationId": "ingest_run_detail_admin_ingest_runs__run_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "run_id",
+      "required": true,
+      "schema": {
+       "title": "Run Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Ingest Run Detail Admin Ingest Runs  Run Id  Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Ingest Run Detail",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/normalization-runs": {
+   "get": {
+    "operationId": "normalization_runs_admin_normalization_runs_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "dataset",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "maxLength": 100,
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Dataset"
+      }
+     },
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 50,
+       "maximum": 200,
+       "minimum": 1,
+       "title": "Limit",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Normalization Runs Admin Normalization Runs Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Normalization Runs",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/normalization-runs/{run_id}": {
+   "get": {
+    "operationId": "normalization_run_detail_admin_normalization_runs__run_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "run_id",
+      "required": true,
+      "schema": {
+       "title": "Run Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Normalization Run Detail Admin Normalization Runs  Run Id  Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Normalization Run Detail",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/normalization/rejections": {
+   "get": {
+    "operationId": "normalization_rejections_admin_normalization_rejections_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "run_id",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Run Id"
+      }
+     },
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 100,
+       "maximum": 500,
+       "minimum": 1,
+       "title": "Limit",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Normalization Rejections Admin Normalization Rejections Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Normalization Rejections",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/projection/reconciliation": {
+   "get": {
+    "description": "图对账报告（issue #8 范围项：对账报告的管理接口/指标）。",
+    "operationId": "projection_reconciliation_admin_projection_reconciliation_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Projection Reconciliation Admin Projection Reconciliation Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Projection Reconciliation",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/projection/status": {
+   "get": {
+    "description": "图投影新鲜度与 Outbox 积压（issue #8 管理接口）。",
+    "operationId": "projection_status_admin_projection_status_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Projection Status Admin Projection Status Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Projection Status",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/review-tasks": {
+   "get": {
+    "operationId": "review_tasks_admin_review_tasks_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "status",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "maxLength": 30,
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Status"
+      }
+     },
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 50,
+       "maximum": 200,
+       "minimum": 1,
+       "title": "Limit",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Review Tasks Admin Review Tasks Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Review Tasks",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/api/v1/companies/{company_id}": {
+   "get": {
+    "operationId": "get_company_api_v1_companies__company_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "company_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Company Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Get Company Api V1 Companies  Company Id  Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Company",
+    "tags": [
+     "query"
+    ]
+   }
+  },
+  "/api/v1/companies/{company_id}/claims": {
+   "get": {
+    "operationId": "get_company_claims_api_v1_companies__company_id__claims_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "company_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Company Id",
+       "type": "string"
+      }
+     },
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 50,
+       "maximum": 200,
+       "minimum": 1,
+       "title": "Limit",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Get Company Claims Api V1 Companies  Company Id  Claims Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Company Claims",
+    "tags": [
+     "query"
+    ]
+   }
+  },
+  "/api/v1/companies/{company_id}/timeline": {
+   "get": {
+    "description": "主体时间线：ACCEPTED Claim 的双时态视图。",
+    "operationId": "get_company_timeline_api_v1_companies__company_id__timeline_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "company_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Company Id",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Get Company Timeline Api V1 Companies  Company Id  Timeline Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Get Company Timeline",
+    "tags": [
+     "query"
+    ]
+   }
+  },
+  "/api/v1/query": {
+   "post": {
+    "description": "执行受控查询计划。只读——不修改事实/财务/图（除查询审计）。",
+    "operationId": "execute_query_api_v1_query_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/QueryRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/QueryResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Execute Query",
+    "tags": [
+     "query"
+    ]
+   }
+  },
+  "/api/v1/screen": {
+   "post": {
+    "description": "筛选：概念/阶段 + 财务条件的简化查询。\n\n计划构造经由工厂延迟到 _execute_plan 的受控 try 块内执行——\n非法组合与注入载荷得到 422，而非未捕获 500。",
+    "operationId": "execute_screen_api_v1_screen_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ScreenRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/QueryResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Execute Screen",
+    "tags": [
+     "query"
+    ]
+   }
+  },
+  "/healthz": {
+   "get": {
+    "operationId": "healthz_healthz_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": {
+          "type": "string"
+         },
+         "title": "Response Healthz Healthz Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Healthz",
+    "tags": [
+     "health"
+    ]
+   }
+  },
+  "/readyz": {
+   "get": {
+    "operationId": "readyz_readyz_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Readyz",
+    "tags": [
+     "health"
+    ]
+   }
+  }
+ }
+}
