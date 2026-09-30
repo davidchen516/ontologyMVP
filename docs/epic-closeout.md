@@ -26,17 +26,17 @@
 
 `gh issue list --state open` 仅剩本 Epic（#12）。#1~#11 全部以
 「实现 → 测试全绿 → PR → CI 全绿 → 独立审查（含整改轮）→ APPROVE →
-squash 合并 → 关闭」闭环关闭。审查共拦截并整改 14 个 BLOCKER 级缺陷
-（#4×2、#5×1、#6×5、#7×4、#8×4+#系统性ID、#9×4+#1、#10×1+#1、
-#11×4+1+#2——计数按轮累计），全部有整改提交与复审实证。
+squash 合并 → 关闭」闭环关闭。审查共拦截并整改 28 个 BLOCKER 级缺陷（按轮累计：#4×2、#5×1、
+#6×3+整改2、#7×4、#8×4+系统性ID缺陷1、#9×4+整改引入1、#10×1、
+#11×4+整改引入1），全部有整改提交与复审实证。
 
 ## 3. Epic 验收标准逐条核对
 
 | # | 验收标准 | 结论 | 证据 |
 |---|---------|------|------|
 | 1 | #1~#10 均按各自验收标准关闭 | ✅ | 各轮 goal-state 记录 + GitHub issue 状态 |
-| 2 | #11 端到端业务验收通过 | ✅ | `docs/mvp-acceptance-report.md`（三轮审查后 APPROVE） |
-| 3 | 最新 CI 所有必需检查成功 | ✅ | runtime-ci（build/test/db/quality/secret-scan）+ validate-design 全绿；覆盖率门禁 88%（实测 90%+）；pip-audit 零豁免（1 条登记的规则误报豁免）；gitleaks 通过 |
+| 2 | #11 端到端业务验收通过 | ✅ | `docs/mvp-acceptance-report.md`（两轮整改提交 2039dc7/bbf4949，第三轮复审裁决通过，记录见 `.goal/goal-state.md` Round 11） |
+| 3 | 最新 CI 所有必需检查成功 | ✅ | runtime-ci（build/test/db/quality/secret-scan）+ validate-design 全绿；覆盖率门禁 88%（实测 90%+）；pip-audit 零豁免；gitleaks 通过（一条登记理由的 generic-api-key 误报 allowlist） |
 | 4 | 状态机/负向/并发/崩溃/恢复/副作用自动化证据 | ✅ | tests/db/test_state_machines（7 台状态机合法+非法迁移）、tests/db 故障矩阵（事务中断/并发审核/租约 fencing/乱序守卫/超时/审计幂等）、tests/mvp（30 黄金 + 重建一致性）、tests/integration（真实 Neo4j 读写路径 e2e） |
 | 5 | PostgreSQL 事实 ↔ Neo4j 投影 ↔ API 响应 ↔ Evidence 端到端追溯 | ✅ | `tests/db/test_epic_traceability.py`：PG 事实（claim+fragment+页码）→ Neo4j Claim 节点+带 claim_id 经营边 → API claim_ids/evidence_quotes 回链 → 事实库可定位（四环断言） |
 | 6 | 验收报告明确快照/版本/局限/边界 | ✅ | mvp-acceptance-report §2 合成快照声明、§3 版本清单、§4 已知限制（6 项）、§5 非投资建议边界 |

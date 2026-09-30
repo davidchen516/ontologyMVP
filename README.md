@@ -355,7 +355,7 @@ TuShare 概念成员
 - [x] PostgreSQL Schema 与 Alembic 迁移、事实事务边界（Neo4j 为可重建投影，无迁移需求）
 - [x] 首个纵向场景：人形机器人核心零部件证据化筛选（合成快照闭环 + 30 黄金查询 + 端到端追溯，见 `docs/mvp-acceptance-report.md` 与 `docs/epic-closeout.md`；演示：`uv run python scripts/demo_mvp_query.py --dsn <快照库>`）
 
-> V0.1 MVP 已交付（#1~#12 全部关闭）：TuShare 采集 → PostgreSQL 标准化 →
+> V0.1 MVP 已交付（#1~#11 全部关闭，Epic #12 随收尾 PR 关闭）：TuShare 采集 → PostgreSQL 标准化 →
 > 证据化 Claim（Provenance Hash 链）→ Neo4j 投影（可重建）→ 受控
 > QueryPlan API（每条结论返回 Claim ID、可定位原文、财务口径、双时态、
 > 推理路径与数据新鲜度）。配置 `TUSHARE_TOKEN` 后以 `--real` 模式构建
