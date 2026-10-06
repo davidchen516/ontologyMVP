@@ -10,9 +10,22 @@ from __future__ import annotations
 from typing import Any
 
 import psycopg
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.concurrency import run_in_threadpool
+from pydantic import BaseModel, Field, StrictBool
+from src.connectors.operator_auth import authenticate_operator
 from src.core.config import Settings
+
+
+class CapabilityResetRequest(BaseModel):
+    """解除请求体（issue #44 二次确认语义）。
+
+    StrictBool 拒绝 "yes"/1 等隐式真值：confirm 必须是显式 JSON true；
+    reason 非空。缺字段/畸形体由 FastAPI 统一 422，不走手写解析。
+    """
+
+    reason: str = Field(min_length=1, max_length=300)
+    confirm: StrictBool
 
 
 def _fetch_all_rows(dsn: str, query: str, params: tuple[Any, ...] = ()) -> list[dict[str, Any]]:
@@ -22,8 +35,14 @@ def _fetch_all_rows(dsn: str, query: str, params: tuple[Any, ...] = ()) -> list[
         return [dict(zip(columns, row, strict=True)) for row in cur.fetchall()]
 
 
+
 def build_admin_router(settings: Settings) -> APIRouter:
     router = APIRouter(prefix="/admin", tags=["admin"])
+
+    def _uow_factory():
+        from src.db.uow import UnitOfWorkFactory
+
+        return UnitOfWorkFactory(settings.postgres_dsn)
 
     def _freshness(dsn: str) -> dict[str, str | None]:
         """数据新鲜度：每数据集最近一次成功运行的完成时间或最新 Raw 时间。"""
@@ -46,6 +65,75 @@ def build_admin_router(settings: Settings) -> APIRouter:
             row["dataset_name"]: raw_map.get(row["dataset_name"]) or row["last_success_at"]
             for row in rows
         }
+
+    @router.post("/capabilities/{api_name}/reset")
+    async def reset_capability_endpoint(
+        api_name: str,
+        body: CapabilityResetRequest,
+        request: Request,
+        operator: str = Depends(authenticate_operator),
+    ) -> dict[str, Any]:
+        """熔断解除（issue #44）：SCHEMA_CHANGED → 单发验证探针 → AVAILABLE。
+
+        审计每次状态迁移（actor/reason/前态/后态）；二次确认（reason +
+        confirm: true）；解除验证探针失败自动回滚熔断。
+        """
+        trace_id = request.headers.get("x-trace-id")
+        if not body.confirm:
+            raise HTTPException(status_code=422, detail="confirm: true is required")
+
+        from src.connectors.capability_reset import (
+            CapabilityResetError,
+            reset_capability,
+        )
+        from src.connectors.datasets import load_datasets
+
+        # 数据集注册表先校验：404 必须先于任何状态变更，否则 LookupError
+        # 会被探针崩溃兜底吞掉，变成一次 200 的盲目解除（审查 B1）
+        dataset = load_datasets().get(api_name)
+        if dataset is None:
+            raise HTTPException(
+                status_code=404, detail=f"dataset {api_name} not found"
+            )
+
+        # 生产探针走真实 TuShare transport（审查 B1：不再用测试 fixtures
+        # 回放——部署镜像中不存在 fixtures，解除必须真实验证）。无 Token
+        # 时 probe 返回 NO_PERMISSION，按 I2 回滚，绝不伪装已验证。
+        from src.connectors import tushare_client
+        from src.connectors.tushare_connectors import TushareConnector
+
+        token = (
+            settings.tushare_token.get_secret_value()
+            if settings.tushare_token is not None else None
+        )
+
+        def _probe_fn():
+            connector = TushareConnector(
+                dataset,
+                settings=settings,
+                token=token,
+                transport=tushare_client.http_transport(
+                    settings.tushare_base_url,
+                    token or "",
+                    settings.tushare_timeout_seconds,
+                ),
+            )
+            return connector.probe()
+
+        with _uow_factory().transaction() as uow:
+            try:
+                result = reset_capability(
+                    uow,
+                    source_system="TUSHARE",
+                    api_name=api_name,
+                    actor=operator,
+                    reason=body.reason,
+                    probe_fn=_probe_fn,
+                    trace_id=trace_id,
+                )
+            except CapabilityResetError as exc:
+                raise HTTPException(status_code=404, detail=str(exc)) from exc
+        return result
 
     @router.get("/capabilities")
     async def capabilities() -> list[dict[str, Any]]:

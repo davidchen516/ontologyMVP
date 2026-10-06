@@ -49,6 +49,8 @@ def test_readyz_ok_when_core_and_capabilities_available(monkeypatch):
         tushare_token=SecretStr("t"), llm_api_key=SecretStr("k"),
         review_write_enabled=True,
         review_api_key_hashes="0" * 64,
+        operator_write_enabled=True,
+        operator_api_key_hashes="0" * 64,
     )
     response = client.get("/readyz")
     assert response.status_code == 200
@@ -59,7 +61,7 @@ def test_readyz_ok_when_core_and_capabilities_available(monkeypatch):
     assert body["capabilities"] == {
         "tushare": {"status": "OK"},
         "llm": {"status": "OK"},
-        "review_write": {"status": "OK"},
+        "review_write": {"status": "OK"}, "operator_write": {"status": "OK"},
     }
     # 响应携带与响应头一致的 trace_id
     assert body["trace_id"] == response.headers["x-trace-id"]
