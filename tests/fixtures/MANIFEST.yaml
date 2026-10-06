@@ -2,7 +2,7 @@
 # （tests/unit/test_fixture_manifest.py）。更新流程见 MANIFEST.md。
 {
   "version": "v2",
-  "updated": "2026-09-30",
+  "updated": "2026-10-06",
   "files": {
     "tushare/anns_d.json": "1de1188716a78e2972442427241bc2f410f42169dfc223e9c39167c5f5b58c4a",
     "tushare/balancesheet_vip.json": "83e1e2f9020bb135c8df8d82129a4b00e5b370380fe957352e6cd4d960085e1f",
@@ -26,6 +26,7 @@
     "tushare/stk_surv.json": "b46bbe1a4e35545c5947905d520254061d404214beb7d36cf145b8c2107c05d9",
     "tushare/stock_basic.json": "249091a9b2981a3d6d392f4e64f6fd33e3b569986d4fdfeb4359497bf25fd124",
     "tushare/stock_company.json": "97bbd29ab6e995874e5786e48e2696d40cad9c767007ec5600e907b47a5c27f6",
+    "tushare/stock_company.low_tier.json": "0bfae0671d14987c73dab6c20a7babb9098be5e5f1fae4662b75f5c4d89c1ce2",
     "tushare/ths_index.json": "c6fe7726a8667b3b49b64f96ad34f0eddc993cc1293802916182d9136b717a98",
     "tushare/ths_member.json": "e4908e0b88cf1568b602c490ee07bfb11c7c1936fb46b4a515d42feff7df51ab",
     "tushare/top10_holders.json": "cfffb1402b63e28ebc9e82a63b9af69ce74838abc0b4cdc58a78dad1cd96d19b",

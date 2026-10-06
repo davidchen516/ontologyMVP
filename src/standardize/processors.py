@@ -163,8 +163,14 @@ class StockCompanyProcessor:
         rejected: list[dict[str, Any]] = []
         try:
             ts_code = validate_ts_code(payload.get("ts_code"))
-            company_name = clean_str(payload.get("name")) or clean_str(
-                payload.get("fullname")
+            # 公司名解析顺序（issue #49）：name → com_name → fullname。
+            # com_name 是 stock_company 接口的公司全称官方键——低层级账户
+            # 实测仅有 com_name（name/fullname 均缺失）；fullname 保留为
+            # 历史/高层级形态回退。三者全缺 → 拒绝（不建无名公司）。
+            company_name = (
+                clean_str(payload.get("name"))
+                or clean_str(payload.get("com_name"))
+                or clean_str(payload.get("fullname"))
             )
             if company_name is None:
                 raise TransformError("missing company name")

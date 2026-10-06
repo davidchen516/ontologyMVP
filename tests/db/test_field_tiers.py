@@ -8,6 +8,12 @@
 - C2 跨页自然键签名漂移 → 熔断（裁决：签名仅对 identity 字段集计算）
 - I1 质量标记落 raw 层可查
 - I2 list_status 缺失 → UNKNOWN（非 ACTIVE）
+
+issue #49 追加（stock_company 公司名键位兼容）：
+- H1c 低层级（仅 com_name）→ master.company 落库（canonical_name=com_name）
+- H2c 全字段（name）回归不变
+- H3c name 与 com_name 并存 → name 优先
+- E1c 三键全缺 → 拒绝（不建无名公司）
 """
 
 from __future__ import annotations
@@ -42,7 +48,8 @@ class TieredTransport:
         self.calls: list[dict] = []
 
     def _load(self, api: str) -> dict:
-        suffix = ".low_tier.json" if (self.tier == "low" and api == "stock_basic") else ".json"
+        low_tier_apis = ("stock_basic", "stock_company")
+        suffix = ".low_tier.json" if (self.tier == "low" and api in low_tier_apis) else ".json"
         return json.loads((self.fixture_dir / f"{api}{suffix}").read_text())
 
     def __call__(self, request: dict) -> dict:
@@ -338,6 +345,138 @@ def test_stock_basic_field_tiers_loaded() -> None:
     assert config.required_fields == ("ts_code", "symbol", "name")
     assert set(config.expected_fields) == {"exchange", "list_status"}
     assert config.identity_fields == config.required_fields
+
+
+# ---- issue #49：stock_company 公司名键位兼容 ----
+
+
+def _company_names(uow_factory) -> dict[str, str | None]:
+    with uow_factory.transaction() as uow:
+        rows = uow._conn.execute(  # noqa: SLF001
+            "SELECT s.ts_code, c.canonical_name FROM master.company c "
+            "JOIN master.company_security cs ON cs.company_id = c.id "
+            "JOIN master.security s ON s.id = cs.security_id "
+            "ORDER BY s.ts_code"
+        ).fetchall()
+    return {ts_code: name for ts_code, name in rows}
+
+
+def test_stock_company_low_tier_com_name_writes_company(uow_factory) -> None:
+    """H1c：低层级 stock_company（仅 com_name，无 name/fullname）→
+    master.company 落库，canonical_name = com_name，0 拒绝。"""
+    ingest_tiered(uow_factory, "stock_basic", "full")  # 证券锚定先行
+    outcome = ingest_tiered(uow_factory, "stock_company", "low")
+    assert outcome.status == IngestRunStatus.SUCCEEDED
+    assert outcome.rows_inserted == 2
+
+    norm_basic = normalize(uow_factory, "stock_basic")
+    assert norm_basic.rows_written == 2
+    norm_company = normalize(uow_factory, "stock_company")
+    assert norm_company.rows_written == 2
+    assert norm_company.rows_rejected == 0
+
+    names = _company_names(uow_factory)
+    assert names == {
+        "000001.SZ": "样本公司一股份有限公司",
+        "600519.SH": "样本公司二股份有限公司",
+    }
+
+
+def test_stock_company_full_tier_name_regression(uow_factory) -> None:
+    """H2c：全字段 Fixture（name 键）→ canonical_name = name（回归不变）。"""
+    ingest_tiered(uow_factory, "stock_basic", "full")
+    ingest_tiered(uow_factory, "stock_company", "full")
+    normalize(uow_factory, "stock_basic")
+    norm = normalize(uow_factory, "stock_company")
+    assert norm.rows_written == 2
+
+    names = _company_names(uow_factory)
+    assert names == {"000001.SZ": "样本公司一", "600519.SH": "样本公司二"}
+
+
+class _BothNamesTransport:
+    """name 与 com_name 并存（高层级叠加形态）——name 必须优先。"""
+
+    def __call__(self, request: dict) -> dict:
+        if request["api_name"] != "stock_company":
+            return json.loads((FIXTURE_DIR / f"{request['api_name']}.json").read_text())
+        return {"code": 0, "msg": "", "data": {
+            "fields": ["ts_code", "name", "com_name"],
+            "items": [["000001.SZ", "样本简称", "样本全称股份有限公司"]],
+        }}
+
+
+def test_stock_company_name_takes_priority_over_com_name(uow_factory) -> None:
+    """H3c：name 与 com_name 并存 → canonical_name = name（高层级语义）。"""
+    ingest_tiered(uow_factory, "stock_basic", "full")
+    config = load_datasets()["stock_company"]
+    connector = TushareConnector(
+        config, settings=make_settings(), token="t",
+        transport=_BothNamesTransport(),
+    )
+    with uow_factory.transaction() as uow:
+        run = start_run(
+            uow, dataset_name="stock_company", trace_id="both-names",
+            lease_owner="t", lease_ttl_seconds=LEASE_TTL,
+        )
+    outcome = ingest_dataset(
+        uow_factory, connector, run_id=run["id"], lease_ttl_seconds=LEASE_TTL,
+    )
+    assert outcome.rows_inserted == 1
+    normalize(uow_factory, "stock_basic")
+    normalize(uow_factory, "stock_company")
+    assert _company_names(uow_factory)["000001.SZ"] == "样本简称"
+
+
+class _NoNameTransport:
+    """name/com_name/fullname 三键全缺 → 必须拒绝（不建无名公司）。"""
+
+    def __call__(self, request: dict) -> dict:
+        if request["api_name"] != "stock_company":
+            return json.loads((FIXTURE_DIR / f"{request['api_name']}.json").read_text())
+        return {"code": 0, "msg": "", "data": {
+            "fields": ["ts_code"],
+            "items": [["000001.SZ"]],
+        }}
+
+
+def test_stock_company_all_name_keys_missing_rejects(uow_factory) -> None:
+    """E1c：公司名三键全缺 → 行级拒绝 + 0 写入（拒绝不是失败）。"""
+    ingest_tiered(uow_factory, "stock_basic", "full")
+    config = load_datasets()["stock_company"]
+    connector = TushareConnector(
+        config, settings=make_settings(), token="t",
+        transport=_NoNameTransport(),
+    )
+    with uow_factory.transaction() as uow:
+        run = start_run(
+            uow, dataset_name="stock_company", trace_id="no-name",
+            lease_owner="t", lease_ttl_seconds=LEASE_TTL,
+        )
+    outcome = ingest_dataset(
+        uow_factory, connector, run_id=run["id"], lease_ttl_seconds=LEASE_TTL,
+    )
+    assert outcome.rows_inserted == 1  # raw 层如实入账
+    normalize(uow_factory, "stock_basic")
+    norm = normalize(uow_factory, "stock_company")
+    assert norm.rows_written == 0
+    assert norm.rows_rejected == 1
+    assert _company_names(uow_factory) == {}
+
+
+def test_stock_company_com_name_registered_in_mapping() -> None:
+    """I1c（#49）：com_name 注册入映射 v0.1.4 optional_fields；层级不变。"""
+    import yaml
+    from src.connectors.datasets import MAPPING_FILE
+
+    raw = yaml.safe_load(MAPPING_FILE.read_text(encoding="utf-8"))
+    assert raw["version"] == "0.1.4"
+    spec = raw["datasets"]["stock_company"]
+    assert "com_name" in spec["optional_fields"]
+    # required/expected 层级不变（#43 回归锁定）
+    config = load_datasets()["stock_company"]
+    assert config.required_fields == ("ts_code",)
+    assert config.expected_fields == ("fullname",)
 
 
 def test_low_tier_probe_detail_persisted_to_capability(uow_factory, main_dsn) -> None:
