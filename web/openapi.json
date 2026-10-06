@@ -1,6 +1,27 @@
 {
  "components": {
   "schemas": {
+   "CapabilityResetRequest": {
+    "description": "解除请求体（issue #44 二次确认语义）。\n\nStrictBool 拒绝 \"yes\"/1 等隐式真值：confirm 必须是显式 JSON true；\nreason 非空。缺字段/畸形体由 FastAPI 统一 422，不走手写解析。",
+    "properties": {
+     "confirm": {
+      "title": "Confirm",
+      "type": "boolean"
+     },
+     "reason": {
+      "maxLength": 300,
+      "minLength": 1,
+      "title": "Reason",
+      "type": "string"
+     }
+    },
+    "required": [
+     "reason",
+     "confirm"
+    ],
+    "title": "CapabilityResetRequest",
+    "type": "object"
+   },
    "EntityRef": {
     "description": "实体引用：ID 或名称+类型，不信任用户输入的自由表名/列名。",
     "properties": {
@@ -789,6 +810,61 @@
      }
     },
     "summary": "Capabilities",
+    "tags": [
+     "admin"
+    ]
+   }
+  },
+  "/admin/capabilities/{api_name}/reset": {
+   "post": {
+    "description": "熔断解除（issue #44）：SCHEMA_CHANGED → 单发验证探针 → AVAILABLE。\n\n审计每次状态迁移（actor/reason/前态/后态）；二次确认（reason +\nconfirm: true）；解除验证探针失败自动回滚熔断。",
+    "operationId": "reset_capability_endpoint_admin_capabilities__api_name__reset_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "api_name",
+      "required": true,
+      "schema": {
+       "title": "Api Name",
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CapabilityResetRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Reset Capability Endpoint Admin Capabilities  Api Name  Reset Post",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Reset Capability Endpoint",
     "tags": [
      "admin"
     ]

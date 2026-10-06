@@ -138,12 +138,15 @@ def reset_capability(
                                   "metadata": probe_metadata},
                 "detail": detail}
     # 探针失败（含返回 SCHEMA_CHANGED）→ 回滚熔断（I2）
+    # 保留原熔断证据（error_code/schema_signature）：失败解除不抹掉
+    # 触发熔断的原始上下文（审查 N3，证据链完整性）
+    prior_detail = current.get("detail") or {}
     uow.source_capabilities.upsert(
         source_system=source_system, api_name=api_name,
         status=probe_status if probe_status in (
             "SCHEMA_CHANGED", "NO_PERMISSION", "SEPARATE_PERMISSION_REQUIRED",
             "RATE_LIMITED", "NETWORK_ERROR", "UNKNOWN") else "UNKNOWN",
-        detail={"reset_verified": False,
+        detail={**prior_detail, "reset_verified": False,
                 "probe_status": probe_status},
     )
     _audit_reset(
