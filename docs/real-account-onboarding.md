@@ -163,7 +163,36 @@ issue #43 的字段分级是真实账户可用性的核心（`ontology/mappings/
 - 最终运行（#49 修复验证，全绿）：探针 6 + 采集 10 = **16 请求**
 - 三次合计 **44 请求**，全程 stock_basic/stock_company 单行、财务单批 1000 行
 
-## 7. 编排回归锁定
+## 7. 全市场数据接入（issue #56：`scripts/real_data_pipeline.py`）
+
+冒烟（上文）是**有界验收**；把全市场真实数据装进本地栈并让界面
+（公司分析 / 财务 / 图谱页）承载真实数据，用全市场管道：
+
+```bash
+docker compose run --rm -v "$PWD:/host" api \
+  /app/.venv/bin/python /host/scripts/real_data_pipeline.py \
+  --fresh --company-limit 300 \
+  --report-out /host/real_pipeline_report.md
+```
+
+- **数据集**：stock_basic 全量分页（~5000+ 证券，issue #56 修复）；
+  income/cashflow/fina_indicator/fina_mainbz vip 按 period 全市场分页；
+  stock_company 逐只（`--company-limit`，默认 300 ≈ 5 分钟；0=全量
+  ~5000 只，限频 60/min ≈ 85 分钟，运行时长如实入报告）。
+- **投影**：清图 → `full_rebuild`（实体+Claim[真实数据为 0]+claim 边）
+  → 真实主营构成 `PRODUCES` 边直接物化（`source: 'business_segment'`，
+  projector 经营边以 claim_id 为幂等键，真实无 claim 故与演示快照同模式
+  走直接物化）→ 对账报告。
+- **一次性库** `real_market`（`--fresh` 重建；默认复跑幂等——payload_hash
+  /watermark，行数不变）。
+- **切栈**：让界面读真实数据——compose api 指向一次性库后重启：
+  在 `.env` 加 `POSTGRES_DB=real_market` 并
+  `docker compose up -d --force-recreate api web`；回滚 = 删该行重建
+  演示切片（`build_mvp_snapshot`，本地演示栈数据可重建）。
+- **代价**（issue #56 非目标）：claim/证据页为空（演示切片专属）；
+  概念/股东数据不接入（探针单点参数问题，另行立项）。
+
+## 8. 编排回归锁定
 
 `tests/db/test_real_smoke_script.py` 用 stub transport（低层级字段形态：
 缺 exchange/list_status）在一次性 PG 上锁定编排逻辑：探针 AVAILABLE +

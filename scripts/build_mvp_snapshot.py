@@ -10,6 +10,13 @@ Outbox）→ Neo4j 投影（#8）→ 对账报告。
 真实公司）：8 类情景覆盖 issue #11 全部黄金负向场景。快照清单
 （manifest）记录全部版本与统计；payload_hash 幂等保证重复构建无重复
 事实。真实数据快照：配置 TUSHARE_TOKEN 后 --real 经同一管线采集。
+
+定位澄清（issue #56）：本工具是**演示切片工具**——claim/证据/演示查询
+阶段绑定合成公司词表（WHERE canonical_name LIKE '辛示%' 等硬编码），
+真实账户数据会在此断言处失败（属预期）。**全市场真实数据接入请用
+scripts/real_data_pipeline.py**（真实采集→标准化→full_rebuild 投影；
+claim/证据为空是既定代价）。--real 仅覆盖采集+标准化两阶段的真实形态
+验证。
 """
 
 from __future__ import annotations

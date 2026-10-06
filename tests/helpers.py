@@ -17,9 +17,13 @@ BASE: dict[str, object] = {
     "environment": "ci",
     "log_level": "INFO",
     # 显式固定可选能力为缺失：init 参数优先级最高，保证测试不受
-    # 开发机环境变量 / .env 中 Token 影响（独立审查遗留观察项）
+    # 开发机环境变量 / .env 中 Token 影响（独立审查遗留观察项）。
+    # operator_* 同理钉住（2026-10-06：.env 启用熔断解除工具时曾使
+    # 4 个测试泄漏失败）
     "tushare_token": None,
     "llm_api_key": None,
+    "operator_write_enabled": False,
+    "operator_api_key_hashes": None,
 }
 
 ENV_NAMES = {
