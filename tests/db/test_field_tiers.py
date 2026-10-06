@@ -340,7 +340,7 @@ def test_low_tier_double_ingest_idempotent(uow_factory) -> None:
 
 
 def test_stock_basic_field_tiers_loaded() -> None:
-    """映射 v0.1.3：required=自然键，expected=非键业务字段。"""
+    """映射层级（v0.1.4 起 com_name 注册）：required=自然键，expected=非键业务字段。"""
     config = load_datasets()["stock_basic"]
     assert config.required_fields == ("ts_code", "symbol", "name")
     assert set(config.expected_fields) == {"exchange", "list_status"}
