@@ -1,4 +1,4 @@
-version: "0.1.3"
+version: "0.1.4"
 source_system: TUSHARE
 notes:
   - Interface availability and actual columns must be verified by Source Capability Probe.
@@ -142,6 +142,9 @@ datasets:
       - employees
       - main_business
       - business_scope
+      # issue #49：低层级账户公司名的实际承载键（公司全称官方字段）；
+      # 处理器解析顺序 name → com_name → fullname
+      - com_name
     fields:
       ts_code:
         target: security_ts_code
