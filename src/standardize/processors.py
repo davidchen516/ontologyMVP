@@ -115,10 +115,8 @@ class StockBasicProcessor:
 
         # issue #43 I2：list_status 缺失 → UNKNOWN（不静默默认 ACTIVE——
         # 已退市证券不得被标为在市；降级必须可识别）
-        status = (
-            {"L": "ACTIVE", "D": "DELISTED", "P": "PAUSED"}.get(list_status or "")
-            if list_status is not None
-            else "UNKNOWN"
+        status = {"L": "ACTIVE", "D": "DELISTED", "P": "PAUSED"}.get(
+            list_status or "", "UNKNOWN"
         )
 
         # issue #43：payload 的 exchange 字段优先（消除"字段从未被读"的
@@ -133,8 +131,10 @@ class StockBasicProcessor:
             if payload_exchange
             else derived_code
         )
+        # main 基线行为：exchange 行 name=原始后缀码（SH/SZ/BJ），保持
+        # 全字段回归逐字段一致（issue #43 I3）——不放宽为 code 同名
         exchange = ctx.exchanges.upsert(
-            code=exchange_code, name=exchange_code
+            code=exchange_code, name=ts_code.split(".")[1]
         )
         security = ctx.securities.upsert(
             ts_code=ts_code,

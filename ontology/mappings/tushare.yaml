@@ -123,6 +123,9 @@ datasets:
       - ts_code
     required_fields:
       - ts_code
+    # issue #43 M6：fullname 为非键 expected 字段（缺失→质量标记降级）
+    expected_fields:
+      - fullname
     optional_fields:
       - exchange
       - chairman

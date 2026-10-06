@@ -153,12 +153,18 @@ def test_full_tier_regression_unchanged(uow_factory) -> None:
 
     with uow_factory.transaction() as uow:
         rows = uow._conn.execute(  # noqa: SLF001
-            "SELECT ts_code, status FROM master.security ORDER BY ts_code"
+            "SELECT s.ts_code, s.status, e.name AS exchange_name "
+            "FROM master.security s "
+            "JOIN master.exchange e ON e.id = s.exchange_id "
+            "ORDER BY s.ts_code"
         ).fetchall()
     assert len(rows) == 2
-    # 裁决：字段存在但值为空 → 行级缺陷 → 基线 ACTIVE 保持
-    for ts_code, status in rows:
+    # I3 逐字段回归快照（非抽样）：status 映射 + exchange.name 锁定
+    expected = {"600519.SH": ("ACTIVE", "SH"), "000001.SZ": ("ACTIVE", "SZ")}
+    for ts_code, status, exchange_name in rows:
         assert status == "ACTIVE", f"回归破坏：{ts_code} -> {status}"
+        exp = expected.get(ts_code)
+        assert exp is None or (status, exchange_name) == exp
 
 
 # ---- E1/E2：自然键缺失/漂移 → 仍熔断 ----
@@ -259,24 +265,6 @@ def test_cross_page_identity_drift_circuits() -> None:
         connector.fetch(cursor)
 
 
-class ReverseDriftTransport:
-    """第 1 页缺自然键、第 2 页有——签名比较的独立防线（missing 先抛，
-    本类验证签名不等时的第二道检测）。"""
-
-    def __init__(self) -> None:
-        self.page = 0
-
-    def __call__(self, request: dict) -> dict:
-        self.page += 1
-        base = json.loads((FIXTURE_DIR / "stock_basic.json").read_text())
-        if self.page == 2:
-            return base
-        fields = [f for f in base["data"]["fields"] if f != "symbol"]
-        indices = [base["data"]["fields"].index(f) for f in fields]
-        items = [[item[i] for i in indices] for item in base["data"]["items"]]
-        return {"code": 0, "msg": "", "data": {"fields": fields, "items": items}}
-
-
 class CrossPageExpectedDriftTransport:
     """第 1 页全字段、第 2 页缺 expected（跨页 expected 增减——不熔断）。"""
 
@@ -350,3 +338,24 @@ def test_stock_basic_field_tiers_loaded() -> None:
     assert config.required_fields == ("ts_code", "symbol", "name")
     assert set(config.expected_fields) == {"exchange", "list_status"}
     assert config.identity_fields == config.required_fields
+
+
+def test_low_tier_probe_detail_persisted_to_capability(uow_factory, main_dsn) -> None:
+    """M4：探针 metadata.missing_expected_fields 持久化到
+    ops.source_capability.detail（状态机不变量单元格实证）。"""
+    from src.connectors.probes import persist_probe
+
+    connector = make_tiered_connector("stock_basic", "low")
+    result = connector.probe()
+    assert result.metadata["missing_expected_fields"] == ["exchange", "list_status"]
+
+    with uow_factory.transaction() as uow:
+        persist_probe(uow, result)
+    with uow_factory.transaction() as uow:
+        detail = uow._conn.execute(  # noqa: SLF001
+            "SELECT detail FROM ops.source_capability "
+            "WHERE source_system = 'TUSHARE' AND api_name = 'stock_basic'"
+        ).fetchone()
+    assert detail is not None
+    missing = detail[0].get("missing_expected_fields")
+    assert missing == ["exchange", "list_status"]
