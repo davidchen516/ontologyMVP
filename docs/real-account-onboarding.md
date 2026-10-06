@@ -61,6 +61,11 @@ watermark）；重复行不会重复插入。
 
 写入一次性库 `real_smoke`（复跑自动 DROP+CREATE），**不触碰共享演示库**。
 
+> 2026-10-06 后注（#56 分页修复）：stock_basic 已全量分页——冒烟默认
+> 路径单请求现在拉取 ≤1000 行（`max_batches=1` 短批即止，状态如实
+> PARTIAL_SUCCESS/max_batches_reached），探针仍为 limit=1 单行；
+> 冒烟的有界性语义（请求计数）不变。
+
 ### 为什么要"钉住 ts_code"（两次真实运行的设计教训）
 
 注册表的探针参数是探针导向的（stock_basic `limit=1`、stock_company
@@ -189,6 +194,13 @@ docker compose run --rm -v "$PWD:/host" api \
   在 `.env` 加 `POSTGRES_DB=real_market` 并
   `docker compose up -d --force-recreate api web`；回滚 = 删该行重建
   演示切片（`build_mvp_snapshot`，本地演示栈数据可重建）。
+- **刷新流程（栈切换后）**：`--fresh` 重建会**拒绝**作用于当前配置库
+  （切换后 `.env` 的 `POSTGRES_DB=real_market` 即线上库）——先回切
+  `.env` 或停栈再 `--fresh`；不重建的幂等复跑不受限（无 DROP）。
+  DROP/CREATE 一律经维护库连接（`postgres` 库），绝不会自删当前连接库。
+- **对账注意**：真实模式下经营边为直接物化（`source: 'business_segment'`，
+  无 claim_id）——`reconciliation_report` 的"经营边 claim_id 比例"为 0%
+  属既定代价，与演示切片（100%）语义不同；实体计数对账不受影响。
 - **代价**（issue #56 非目标）：claim/证据页为空（演示切片专属）；
   概念/股东数据不接入（探针单点参数问题，另行立项）。
 

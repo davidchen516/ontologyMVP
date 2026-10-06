@@ -221,15 +221,24 @@ def _project(
         if product_id is None:
             continue
         graph_executor.execute(
-            "MATCH (c:Company {id: $source}) MATCH (p:Product {id: $target}) "
+            "MATCH (c:Company {id: $source_id}) "
+            "MATCH (p:Product {id: $target_id}) "
             "MERGE (c)-[r:PRODUCES {source: 'business_segment'}]->(p) "
             "SET r.active = true, r.period_end = $period_end",
-            {"source": str(company_id), "target": str(product_id),
+            {"source_id": str(company_id), "target_id": str(product_id),
              "period_end": str(period_end)},
         )
         edges += 1
-    log.info("real_pipeline_edges_materialized", edges=edges)
-    rebuild["mainbz_edges"] = edges
+    log.info("real_pipeline_edges_materialized", merge_attempts=edges)
+    # N2：MERGE 尝试数只是上界——以图内实测计数为准（fake 执行器无此
+    # 查询分支时回退尝试数）
+    counted = graph_executor.execute(
+        "MATCH ()-[r:PRODUCES {source: 'business_segment'}]->() "
+        "RETURN count(r) AS n", {},
+    )
+    rebuild["mainbz_edges"] = (
+        counted[0]["n"] if counted and "n" in counted[0] else edges
+    )
     return rebuild
 
 
@@ -290,8 +299,22 @@ def _check_invariants(report: dict[str, Any], company_limit: int) -> list[str]:
         failures.append("master.product == 0（真实主营构成未物化）")
     if master["business_segment_total"] <= 0:
         failures.append("finance.business_segment == 0")
-    if not report.get("projection", {}).get("mainbz_edges"):
+    projection = report.get("projection", {})
+    if not projection.get("mainbz_edges"):
         failures.append("公司-产品经营边为 0（图谱页将无真实边）")
+    if projection.get("error"):
+        failures.append(f"投影失败：{projection['error']}")
+    # 对账子句：重建实体计数 = PG master 计数（键名回归锁——渲染/机器双通道）
+    rebuilt = projection.get("entities_rebuilt") or {}
+    if rebuilt:
+        for label, master_key in (("Company", "master_company_total"),
+                                  ("Security", "master_security_total"),
+                                  ("Product", "master_product_total")):
+            if label in rebuilt and rebuilt[label] != master[master_key]:
+                failures.append(
+                    f"投影对账不一致：{label} 重建 {rebuilt[label]} != "
+                    f"PG {master[master_key]}"
+                )
     return failures
 
 
@@ -328,10 +351,14 @@ def _render_markdown(report: dict[str, Any], failures: list[str]) -> str:
     projection = report.get("projection", {})
     lines += [
         "", "## 投影（full_rebuild + 主营构成边）", "",
-        f"- 实体：{ {k: v for k, v in projection.get('entities', {}).items()} }",
-        f"- 主营构成 PRODUCES 边：{projection.get('mainbz_edges')}",
-        f"- claim（真实数据预期 0）：{report['master']['claim_total']}", "",
+        f"- 实体（entities_rebuilt）：{projection.get('entities_rebuilt')}",
+        f"- 主营构成 PRODUCES 边（实测数）：{projection.get('mainbz_edges')}",
+        f"- claim（真实数据预期 0）：{report['master']['claim_total']}",
+        f"- 逐只采集：尝试 {report['meta'].get('company_attempted', 0)} /"
+        f" 失败 {report['meta'].get('company_failed', 0)}", "",
     ]
+    if projection.get("error"):
+        lines.append(f"❌ 投影失败：{projection['error']}")
     if failures:
         lines += ["## 不变量失败项", ""] + [f"❌ {f}" for f in failures]
     else:
@@ -372,10 +399,40 @@ def run(
     pipeline_db = os.environ.get("PIPELINE_DB", "real_market")
     if uow_factory is None:
         import psycopg
+        from psycopg.conninfo import conninfo_to_dict, make_conninfo
 
+        # B1 守护（审查）：--fresh 重建不得作用于当前配置库（切换后
+        # real_market 即线上库——重建须先回切 .env 或停栈）与维护库
         if fresh:
-            with psycopg.connect(settings.postgres_dsn, autocommit=True) as conn:
-                conn.execute(f'DROP DATABASE IF EXISTS "{pipeline_db}" WITH (FORCE)')
+            configured = conninfo_to_dict(settings.postgres_dsn).get("dbname")
+            if pipeline_db == configured:
+                return (
+                    {"meta": {
+                        "started_at": dt.datetime.now(dt.UTC).isoformat(),
+                        "data_mode": "refused", "pipeline_db": pipeline_db,
+                    }},
+                    [f"--fresh refuses to rebuild the currently configured "
+                     f"database ({configured}) — switch .env POSTGRES_DB back "
+                     "or stop the stack first (non-fresh rerun stays available)"],
+                    2,
+                )
+            if pipeline_db == "postgres":
+                return (
+                    {"meta": {
+                        "started_at": dt.datetime.now(dt.UTC).isoformat(),
+                        "data_mode": "refused", "pipeline_db": pipeline_db,
+                    }},
+                    ["PIPELINE_DB must not be the maintenance database "
+                     "('postgres')"],
+                    2,
+                )
+            # DROP/CREATE 一律经维护库连接——绝不 DROP 当前所连库（避免 PG 55006 自删错误）
+            admin_params = conninfo_to_dict(settings.postgres_dsn)
+            admin_params["dbname"] = "postgres"
+            admin_dsn = make_conninfo(**admin_params)
+            with psycopg.connect(admin_dsn, autocommit=True) as conn:
+                conn.execute(
+                    f'DROP DATABASE IF EXISTS "{pipeline_db}" WITH (FORCE)')
                 conn.execute(f'CREATE DATABASE "{pipeline_db}"')
         os.environ["POSTGRES_DB"] = pipeline_db
         settings = load_settings_or_fail()
@@ -430,19 +487,26 @@ def run(
         ]
     shared_limiter = RateLimiter(settings.tushare_rate_per_minute)
     company_results: dict[str, Any] = {
-        "status": "PARTIAL", "rows_received": 0, "rows_inserted": 0,
+        "rows_received": 0, "rows_inserted": 0,
         "rows_rejected": 0, "request_count": 0,
     }
     failed_companies = 0
+    from src.connectors.ingest import ActiveRunExistsError
+
     for index, ts_code in enumerate(ts_codes):
         if not available.get("stock_company"):
             break
-        entry = _ingest_one(
-            uow_factory,
-            _connector(settings, transport, "stock_company",
-                       params={"ts_code": ts_code}, rate_limiter=shared_limiter),
-            "stock_company", max_batches=1,
-        )
+        try:
+            entry = _ingest_one(
+                uow_factory,
+                _connector(settings, transport, "stock_company",
+                           params={"ts_code": ts_code},
+                           rate_limiter=shared_limiter),
+                "stock_company", max_batches=1,
+            )
+        except ActiveRunExistsError:
+            failed_companies += 1
+            continue
         company_results["request_count"] += entry["request_count"]
         company_results["rows_received"] += entry["rows_received"]
         company_results["rows_inserted"] += entry["rows_inserted"]
@@ -451,6 +515,9 @@ def run(
             failed_companies += 1
         if (index + 1) % 50 == 0:
             print(f"stock_company {index + 1}/{len(ts_codes)}", flush=True)
+    company_results["status"] = (
+        "SUCCEEDED" if failed_companies == 0 else "PARTIAL"
+    )
     report["ingest"]["requests"] += company_results["request_count"]
     report["ingest"]["datasets"]["stock_company"] = company_results
     report["meta"]["company_attempted"] = len(ts_codes)
@@ -472,11 +539,17 @@ def run(
         "segments_total": products["segments_total"],
     }
 
-    # 6. 全量投影
-    if graph_executor is None:
-        graph_executor = _build_graph_executor()
-    rebuild = _project(uow_factory, graph_executor, products["product_ids"])
-    report["projection"] = rebuild
+    # 6. 全量投影（不可达/异常 → 如实入报告：数据已保全，退出码走 3）
+    try:
+        if graph_executor is None:
+            graph_executor = _build_graph_executor()
+        report["projection"] = _project(
+            uow_factory, graph_executor, products["product_ids"],
+        )
+    except Exception as exc:  # noqa: BLE001
+        report["projection"] = {
+            "error": f"{type(exc).__name__}: {str(exc)[:200]}"
+        }
 
     # 7. 主数据统计 + 不变量
     report["master"] = _master_stats(uow_factory)

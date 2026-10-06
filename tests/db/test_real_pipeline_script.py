@@ -137,3 +137,51 @@ def test_real_pipeline_no_token_exits_2(monkeypatch) -> None:
     report, failures, exit_code = run()
     assert exit_code == 2
     assert failures == ["TUSHARE_TOKEN not set"]
+
+
+def test_real_pipeline_fresh_guard_refuses_configured_db(uow_factory, main_dsn,
+                                                         monkeypatch) -> None:
+    """B1 回归：--fresh 不得重建当前配置库（栈切换后 real_market 即线上库）。"""
+    params = conninfo_to_dict(main_dsn)
+    monkeypatch.setenv("POSTGRES_HOST", params["host"])
+    monkeypatch.setenv("POSTGRES_PORT", str(params.get("port") or 5432))
+    monkeypatch.setenv("POSTGRES_DB", params["dbname"])
+    monkeypatch.setenv("POSTGRES_USER", params["user"])
+    monkeypatch.setenv("POSTGRES_PASSWORD", params["password"])
+    monkeypatch.setenv("NEO4J_URI", "bolt://127.0.0.1:7687")
+    monkeypatch.setenv("NEO4J_USER", "neo4j")
+    monkeypatch.setenv("NEO4J_PASSWORD", "unit-test-password")
+    monkeypatch.setenv("TUSHARE_TOKEN", "stub-token-not-real")
+    # PIPELINE_DB = 当前配置库 → --fresh 必须拒绝（退出码 2，零 DB 触碰）。
+    # 守护在主链路（生产路径）内——不注入 uow_factory，让 run() 走到
+    # 守护分支本身即证明其在任何 DROP 之前生效
+    monkeypatch.setenv("PIPELINE_DB", params["dbname"])
+
+    report, failures, exit_code = run(fresh=True)
+    assert exit_code == 2
+    assert any("refuses to rebuild the currently configured database" in f
+               for f in failures)
+    assert report["meta"]["data_mode"] == "refused"
+    # 幂等复跑（非 fresh）不受限：非 fresh 无 DROP，注入路径流程走通
+    report2, failures2, exit_code2 = run(fresh=False, uow_factory=uow_factory,
+                                         transport=_stub_transport)
+    assert exit_code2 == 3  # 规模不变量（stub 数据），但流程走通
+    assert report2["meta"]["data_mode"] == "stub"
+
+
+def test_real_pipeline_fresh_guard_refuses_maintenance_db(uow_factory, monkeypatch) -> None:
+    """B1 回归：PIPELINE_DB=postgres（维护库）→ 拒绝。"""
+    monkeypatch.setenv("POSTGRES_HOST", "127.0.0.1")
+    monkeypatch.setenv("POSTGRES_PORT", "5432")
+    monkeypatch.setenv("POSTGRES_DB", "ontology")
+    monkeypatch.setenv("POSTGRES_USER", "ontology")
+    monkeypatch.setenv("POSTGRES_PASSWORD", "unit-test-password")
+    monkeypatch.setenv("NEO4J_URI", "bolt://127.0.0.1:7687")
+    monkeypatch.setenv("NEO4J_USER", "neo4j")
+    monkeypatch.setenv("NEO4J_PASSWORD", "unit-test-password")
+    monkeypatch.setenv("TUSHARE_TOKEN", "stub-token-not-real")
+    monkeypatch.setenv("PIPELINE_DB", "postgres")
+
+    report, failures, exit_code = run(fresh=True)
+    assert exit_code == 2
+    assert any("maintenance database" in f for f in failures)

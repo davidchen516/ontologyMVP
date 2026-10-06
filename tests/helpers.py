@@ -24,6 +24,9 @@ BASE: dict[str, object] = {
     "llm_api_key": None,
     "operator_write_enabled": False,
     "operator_api_key_hashes": None,
+    # 对称补钉（#57 审查 N4）：REVIEW_* 在 .env 启用时同样会泄漏
+    "review_write_enabled": False,
+    "review_api_key_hashes": None,
 }
 
 ENV_NAMES = {

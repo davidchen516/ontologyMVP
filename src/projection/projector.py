@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import decimal
+import re
 from typing import Any
 
 import structlog
@@ -201,6 +202,10 @@ class Neo4jProjector:
         )
 
 
+# 边 MERGE 识别（单字母节点变量：MERGE (s)-[r: / MERGE (c)-[r: 等）
+_EDGE_MERGE = re.compile(r"MERGE \(\w\)-\[r:")
+
+
 class FakeGraphExecutor:
     """测试用内存图执行器——不写真实 Neo4j。"""
 
@@ -225,14 +230,15 @@ class FakeGraphExecutor:
                 **params.get("props", {}), "id": node_id, "_label": label,
             }
             return [{"id": node_id}]
-        # 边 MERGE 模拟
-        if "MERGE (s)-[r:" in template and "claim_id" in params:
+        # 边 MERGE 模拟（任意单字母节点变量：演示用 (s)-、#56 管道直接
+        # 物化用 (c)- ——泛化识别，避免直接物化边被静默吞掉）
+        if _EDGE_MERGE.search(template) and "claim_id" in params:
             key = (params["source_id"], params["target_id"],
                    params["claim_id"], template)
             self.edges[key] = {**params.get("props", {}),
                                "claim_id": params["claim_id"]}
             return [{"claim_id": params["claim_id"]}]
-        if "MERGE (s)-[r:" in template:
+        if _EDGE_MERGE.search(template):
             key = (params["source_id"], params["target_id"], "", template)
             self.edges[key] = params.get("props", {})
             return [{"c": 1}]
