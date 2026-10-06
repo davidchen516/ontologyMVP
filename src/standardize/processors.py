@@ -210,7 +210,12 @@ class StockCompanyProcessor:
                 province=clean_str(payload.get("province")),
                 city=clean_str(payload.get("city")),
                 employees=decimal_or_null(payload.get("employees")),
-                main_part_business=clean_str(payload.get("main_part_business")),
+                # issue #51：TuShare 实发键名为 main_business（低层级真实
+                # 形态实测）——保留旧键回退，与 #49 公司名键位兼容同模式
+                main_part_business=(
+                    clean_str(payload.get("main_part_business"))
+                    or clean_str(payload.get("main_business"))
+                ),
             )
         except TransformError as exc:
             rejected.append(ctx.reject(
