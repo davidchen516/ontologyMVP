@@ -63,6 +63,15 @@ def begin_run(uow_factory: UnitOfWorkFactory, dataset: str, *, cursor=None, pare
 
 
 def test_happy_path_persists_rows_params_hash_signature_cursor(uow_factory) -> None:
+    # 顺序无关化（issue #54）：PRESERVE_STANDARDIZATION_DATA 模块的 raw 行
+    # 跨测试存活且被 master.security 等以 FK 引用（payload_hash 幂等去重
+    # 使计数断言错位）——本测试断言全表计数，先清空依赖链（等价于
+    # conftest 对非 PRESERVE 模块做的会话内清库）
+    with uow_factory.transaction() as uow:
+        uow._conn.execute(  # noqa: SLF001
+            "TRUNCATE raw.source_record, master.security CASCADE"
+        )
+
     transport = FixtureTransport(FIXTURE_DIR)
     connector = make_connector("stock_basic", transport)
     run = begin_run(uow_factory, "stock_basic")
