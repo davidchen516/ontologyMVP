@@ -498,3 +498,94 @@ def test_low_tier_probe_detail_persisted_to_capability(uow_factory, main_dsn) ->
     assert detail is not None
     missing = detail[0].get("missing_expected_fields")
     assert missing == ["exchange", "list_status"]
+
+
+# ---- issue #51：company_profile.main_part_business 键位兼容 ----
+
+
+def _profile_main_business(uow_factory, ts_code: str) -> str | None:
+    with uow_factory.transaction() as uow:
+        row = uow._conn.execute(  # noqa: SLF001
+            "SELECT p.main_part_business FROM master.company_profile p "
+            "JOIN master.company_security cs ON cs.company_id = p.company_id "
+            "JOIN master.security s ON s.id = cs.security_id "
+            "WHERE s.ts_code = %s", (ts_code,),
+        ).fetchone()
+    return row[0] if row else None
+
+
+def test_profile_main_business_from_real_key(uow_factory) -> None:
+    """H1（#51）：真实形态（仅 main_business 键）→ profile 落库非 NULL。"""
+    ingest_tiered(uow_factory, "stock_basic", "full")
+    ingest_tiered(uow_factory, "stock_company", "low")
+    normalize(uow_factory, "stock_basic")
+    normalize(uow_factory, "stock_company")
+    assert _profile_main_business(
+        uow_factory, "000001.SZ"
+    ) == "工业机器人核心部件的研发、生产与销售。"
+
+
+class _OldKeyTransport:
+    """旧形态（main_part_business 键）——历史/合成 Fixture 语义回归。"""
+
+    def __call__(self, request: dict) -> dict:
+        if request["api_name"] != "stock_company":
+            return json.loads((FIXTURE_DIR / f"{request['api_name']}.json").read_text())
+        return {"code": 0, "msg": "", "data": {
+            "fields": ["ts_code", "com_name", "main_part_business"],
+            "items": [["000001.SZ", "样本全称股份有限公司", "旧键主营描述"]],
+        }}
+
+
+def test_profile_main_part_business_old_key_regression(uow_factory) -> None:
+    """H2（#51）：旧键 main_part_business → 回归不变。"""
+    ingest_tiered(uow_factory, "stock_basic", "full")
+    config = load_datasets()["stock_company"]
+    connector = TushareConnector(
+        config, settings=make_settings(), token="t",
+        transport=_OldKeyTransport(),
+    )
+    with uow_factory.transaction() as uow:
+        run = start_run(
+            uow, dataset_name="stock_company", trace_id="old-key",
+            lease_owner="t", lease_ttl_seconds=LEASE_TTL,
+        )
+    ingest_dataset(
+        uow_factory, connector, run_id=run["id"], lease_ttl_seconds=LEASE_TTL,
+    )
+    normalize(uow_factory, "stock_basic")
+    normalize(uow_factory, "stock_company")
+    assert _profile_main_business(uow_factory, "000001.SZ") == "旧键主营描述"
+
+
+class _NoBusinessTransport:
+    """两键全缺——缺失不是负面事实，落 NULL。"""
+
+    def __call__(self, request: dict) -> dict:
+        if request["api_name"] != "stock_company":
+            return json.loads((FIXTURE_DIR / f"{request['api_name']}.json").read_text())
+        return {"code": 0, "msg": "", "data": {
+            "fields": ["ts_code", "com_name"],
+            "items": [["000001.SZ", "样本全称股份有限公司"]],
+        }}
+
+
+def test_profile_main_business_missing_stays_null(uow_factory) -> None:
+    """E1（#51）：main_business/main_part_business 皆缺 → NULL（不编造）。"""
+    ingest_tiered(uow_factory, "stock_basic", "full")
+    config = load_datasets()["stock_company"]
+    connector = TushareConnector(
+        config, settings=make_settings(), token="t",
+        transport=_NoBusinessTransport(),
+    )
+    with uow_factory.transaction() as uow:
+        run = start_run(
+            uow, dataset_name="stock_company", trace_id="no-biz",
+            lease_owner="t", lease_ttl_seconds=LEASE_TTL,
+        )
+    ingest_dataset(
+        uow_factory, connector, run_id=run["id"], lease_ttl_seconds=LEASE_TTL,
+    )
+    normalize(uow_factory, "stock_basic")
+    normalize(uow_factory, "stock_company")
+    assert _profile_main_business(uow_factory, "000001.SZ") is None
