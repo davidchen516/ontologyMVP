@@ -45,8 +45,11 @@ PROBE_PARAMS: dict[str, dict[str, Any] | None] = {
     "irm_qa_sz": None,  # 互动接口：只探测
 }
 
-# Raw 采集的分页配置：True = offset/limit 分页；False = 单次全量
+# Raw 采集的分页配置：True = offset/limit 分页；False = 单次全量。
+# issue #56：stock_basic 采集必须全量分页（探针参数 limit=1 只服务探针；
+# 分页开启后 fetch 会以 limit=page_size+offset 循环，正常拉全市场 ~5000+）。
 PAGINATED: dict[str, bool] = {
+    "stock_basic": True,
     "fina_mainbz_vip": True,
     "income_vip": True,
     "balancesheet_vip": True,

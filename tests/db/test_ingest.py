@@ -450,3 +450,69 @@ def test_resume_from_nonempty_cursor_skips_consumed_pages(uow_factory) -> None:
             "SELECT raw_payload->>'ts_code' FROM raw.source_record"
         ).fetchall()}
     assert codes == {"000006.SZ", "000007.SZ"}  # 第 1 页未被重放
+
+
+# ---- issue #56：stock_basic 全量分页（PAGINATED 修复） ----
+
+
+class PagedTransport:
+    """多页 stock_basic：每页 ≤limit 行，末页短终止（真实全市场形态）。"""
+
+    def __init__(self, total: int = 2300) -> None:
+        self.total = total
+        self.calls: list[dict] = []
+
+    def __call__(self, request: dict) -> dict:
+        self.calls.append(request)
+        params = request.get("params") or {}
+        offset = int(params.get("offset", 0))
+        limit = int(params.get("limit", 1000))
+        # 低层级字段形态（缺 exchange/list_status——分页与层级降级正交）
+        fields = ["ts_code", "symbol", "name"]
+        count = max(0, min(limit, self.total - offset))
+        items = [
+            [f"{offset + i:06d}.SZ", str(offset + i), f"公司{offset + i}"]
+            for i in range(count)
+        ]
+        return {"code": 0, "msg": "", "data": {"fields": fields, "items": items}}
+
+
+def test_stock_basic_full_market_pagination(uow_factory) -> None:
+    """H1（#56）：stock_basic 分页循环 → 3 页 2300 行、3 请求、SUCCEEDED 无熔断。"""
+    transport = PagedTransport(total=2300)
+    connector = make_connector("stock_basic", transport)
+    run = begin_run(uow_factory, "stock_basic")
+
+    outcome = ingest_dataset(uow_factory, connector, run_id=run["id"],
+                             lease_ttl_seconds=LEASE_TTL)
+
+    assert outcome.status == IngestRunStatus.SUCCEEDED
+    assert outcome.rows_inserted == 2300
+    assert outcome.rows_received == 2300
+    assert outcome.request_count == 3
+    # 分页参数：limit 被页大小覆写（1000），offset 递进
+    assert [int(c["params"]["offset"]) for c in transport.calls] == [0, 1000, 2000]
+    assert all(int(c["params"]["limit"]) == 1000 for c in transport.calls)
+
+
+def test_stock_basic_pagination_probe_semantics_unchanged(uow_factory) -> None:
+    """H2（#56）：探针语义回归——仍用探针参数（limit=1 单行），不走分页参数。"""
+    transport = PagedTransport(total=2300)
+    probe = make_connector("stock_basic", transport).probe()
+    assert probe.status.value == "AVAILABLE"
+    assert transport.calls, "probe must issue a request"
+    params = transport.calls[0]["params"]
+    assert params.get("limit") == "1"  # 探针参数原样（字符串 1，非分页 1000）
+    assert "offset" not in params
+
+
+def test_stock_basic_fixture_single_page_regression_unchanged(uow_factory) -> None:
+    """H2（#56）：Fixture 单页（2 行 < 页大小）→ 仍 1 批 SUCCEEDED 不受分页影响。"""
+    transport = FixtureTransport(FIXTURE_DIR)
+    connector = make_connector("stock_basic", transport)
+    run = begin_run(uow_factory, "stock_basic")
+    outcome = ingest_dataset(uow_factory, connector, run_id=run["id"],
+                             lease_ttl_seconds=LEASE_TTL)
+    assert outcome.status == IngestRunStatus.SUCCEEDED
+    assert outcome.rows_inserted == 2
+    assert outcome.request_count == 1

@@ -61,6 +61,11 @@ watermark）；重复行不会重复插入。
 
 写入一次性库 `real_smoke`（复跑自动 DROP+CREATE），**不触碰共享演示库**。
 
+> 2026-10-06 后注（#56 分页修复）：stock_basic 已全量分页——冒烟默认
+> 路径单请求现在拉取 ≤1000 行（`max_batches=1` 短批即止，状态如实
+> PARTIAL_SUCCESS/max_batches_reached），探针仍为 limit=1 单行；
+> 冒烟的有界性语义（请求计数）不变。
+
 ### 为什么要"钉住 ts_code"（两次真实运行的设计教训）
 
 注册表的探针参数是探针导向的（stock_basic `limit=1`、stock_company
@@ -163,7 +168,43 @@ issue #43 的字段分级是真实账户可用性的核心（`ontology/mappings/
 - 最终运行（#49 修复验证，全绿）：探针 6 + 采集 10 = **16 请求**
 - 三次合计 **44 请求**，全程 stock_basic/stock_company 单行、财务单批 1000 行
 
-## 7. 编排回归锁定
+## 7. 全市场数据接入（issue #56：`scripts/real_data_pipeline.py`）
+
+冒烟（上文）是**有界验收**；把全市场真实数据装进本地栈并让界面
+（公司分析 / 财务 / 图谱页）承载真实数据，用全市场管道：
+
+```bash
+docker compose run --rm -v "$PWD:/host" api \
+  /app/.venv/bin/python /host/scripts/real_data_pipeline.py \
+  --fresh --company-limit 300 \
+  --report-out /host/real_pipeline_report.md
+```
+
+- **数据集**：stock_basic 全量分页（~5000+ 证券，issue #56 修复）；
+  income/cashflow/fina_indicator/fina_mainbz vip 按 period 全市场分页；
+  stock_company 逐只（`--company-limit`，默认 300 ≈ 5 分钟；0=全量
+  ~5000 只，限频 60/min ≈ 85 分钟，运行时长如实入报告）。
+- **投影**：清图 → `full_rebuild`（实体+Claim[真实数据为 0]+claim 边）
+  → 真实主营构成 `PRODUCES` 边直接物化（`source: 'business_segment'`，
+  projector 经营边以 claim_id 为幂等键，真实无 claim 故与演示快照同模式
+  走直接物化）→ 对账报告。
+- **一次性库** `real_market`（`--fresh` 重建；默认复跑幂等——payload_hash
+  /watermark，行数不变）。
+- **切栈**：让界面读真实数据——compose api 指向一次性库后重启：
+  在 `.env` 加 `POSTGRES_DB=real_market` 并
+  `docker compose up -d --force-recreate api web`；回滚 = 删该行重建
+  演示切片（`build_mvp_snapshot`，本地演示栈数据可重建）。
+- **刷新流程（栈切换后）**：`--fresh` 重建会**拒绝**作用于当前配置库
+  （切换后 `.env` 的 `POSTGRES_DB=real_market` 即线上库）——先回切
+  `.env` 或停栈再 `--fresh`；不重建的幂等复跑不受限（无 DROP）。
+  DROP/CREATE 一律经维护库连接（`postgres` 库），绝不会自删当前连接库。
+- **对账注意**：真实模式下经营边为直接物化（`source: 'business_segment'`，
+  无 claim_id）——`reconciliation_report` 的"经营边 claim_id 比例"为 0%
+  属既定代价，与演示切片（100%）语义不同；实体计数对账不受影响。
+- **代价**（issue #56 非目标）：claim/证据页为空（演示切片专属）；
+  概念/股东数据不接入（探针单点参数问题，另行立项）。
+
+## 8. 编排回归锁定
 
 `tests/db/test_real_smoke_script.py` 用 stub transport（低层级字段形态：
 缺 exchange/list_status）在一次性 PG 上锁定编排逻辑：探针 AVAILABLE +
