@@ -26,8 +26,11 @@
 ```bash
 docker compose run --rm -v "$PWD:/host" api \
   /app/.venv/bin/python /host/scripts/real_account_smoke.py \
-  --report-out /tmp/real_smoke_report.md
+  --report-out /host/real_smoke_report.md
 ```
+
+> 报告必须写到 `/host/...`（宿主机挂载路径）——容器自身文件系统随
+> `--rm` 销毁，写到容器内 `/tmp` 的报告不可找回。
 
 脚本一次性完成并如实报告：
 
@@ -41,9 +44,20 @@ docker compose run --rm -v "$PWD:/host" api \
 | 4 证据/Claim | 胜出公司真实档案文本 → 规则抽取 → intake | 0 |
 | 5 查询 API | 容器内 uvicorn + `POST /api/v1/screen` | 0 |
 
-**总请求数有界：≤18（典型 13：首家候选即胜出）。** 退出码：`0` 全部
-不变量满足；`2` 配置失败（如缺 token）；`3` 不变量未满足（不假装
-成功，失败项逐条列出）。
+**总请求数有界：≤18（典型 14：首家候选即胜出 = 探针 6 + 默认 2 +
+候选 2 + 财务 4）。** 退出码：`0` 全部不变量满足；`2` 配置失败（缺
+token / 一次性库名守护拒绝）；`3` 不变量未满足（不假装成功，失败项逐条
+列出）。
+
+> 额度语义：计数为**逻辑请求数**（一次探针/一批采集各计 1）。瞬时错误
+> （限频/网络）下 `TushareClient` 会指数退避重试（上限
+> `tushare_max_retries=3`），真实 HTTP 调用数可至逻辑数的 ~4×——
+> 报告计数按既有口径如实入账（含重试的运行会在 ingest run 的
+> request_count 中体现）。
+
+**幂等性**：脚本可安全重跑——每次运行 DROP+CREATE 全新一次性库
+（跨运行无残留），库内采集/标准化走既有幂等键（payload_hash /
+watermark）；重复行不会重复插入。
 
 写入一次性库 `real_smoke`（复跑自动 DROP+CREATE），**不触碰共享演示库**。
 

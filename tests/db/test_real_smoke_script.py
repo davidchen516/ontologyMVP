@@ -174,3 +174,45 @@ def test_real_smoke_no_token_fails_explicitly(uow_factory, monkeypatch) -> None:
     assert exit_code == 2
     assert failures == ["TUSHARE_TOKEN not set"]
     assert report["meta"]["data_mode"] == "no-token"
+
+
+def test_real_smoke_main_no_token_exits_2_not_crash(monkeypatch, capsys) -> None:
+    """审查 B1 回归：CLI main() 缺 token → 返回 2（而非渲染 KeyError 崩溃）。"""
+    import sys
+
+    monkeypatch.setenv("POSTGRES_HOST", "127.0.0.1")
+    monkeypatch.setenv("POSTGRES_PORT", "5432")
+    monkeypatch.setenv("POSTGRES_DB", "ontology")
+    monkeypatch.setenv("POSTGRES_USER", "ontology")
+    monkeypatch.setenv("POSTGRES_PASSWORD", "unit-test-password")
+    monkeypatch.setenv("TUSHARE_TOKEN", "")
+    monkeypatch.setenv("NEO4J_URI", "bolt://127.0.0.1:7687")
+    monkeypatch.setenv("NEO4J_USER", "neo4j")
+    monkeypatch.setenv("NEO4J_PASSWORD", "unit-test-password")
+    monkeypatch.setattr(sys, "argv", ["real_account_smoke.py"])
+
+    from scripts.real_account_smoke import main
+
+    assert main() == 2
+    stdout = capsys.readouterr().out
+    assert "TUSHARE_TOKEN not set" in stdout
+
+
+def test_real_smoke_shared_db_name_guard(monkeypatch, main_dsn) -> None:
+    """审查 N4 回归：SMOKE_DB 与共享库同名 → 拒绝（退出码 2，零 DB 触碰）。"""
+    params = conninfo_to_dict(main_dsn)
+    monkeypatch.setenv("POSTGRES_HOST", params["host"])
+    monkeypatch.setenv("POSTGRES_PORT", str(params.get("port") or 5432))
+    monkeypatch.setenv("POSTGRES_DB", params["dbname"])
+    monkeypatch.setenv("POSTGRES_USER", params["user"])
+    monkeypatch.setenv("POSTGRES_PASSWORD", params["password"])
+    monkeypatch.setenv("NEO4J_URI", "bolt://127.0.0.1:7687")
+    monkeypatch.setenv("NEO4J_USER", "neo4j")
+    monkeypatch.setenv("NEO4J_PASSWORD", "unit-test-password")
+    monkeypatch.setenv("TUSHARE_TOKEN", "stub-token-not-real")
+    monkeypatch.setenv("SMOKE_DB", params["dbname"])  # 冒烟库 = 共享库！
+
+    report, failures, exit_code = run()
+    assert exit_code == 2
+    assert any("SMOKE_DB" in f for f in failures)
+    assert report["meta"]["data_mode"] == "refused"

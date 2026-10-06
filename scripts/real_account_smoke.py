@@ -9,8 +9,11 @@
 - 写入一次性数据库（SMOKE_DB，默认 real_smoke），不触碰共享演示库；
 - 报告只记字段名/字段顺序/计数/比率，不落全量证券数据。
 
-用法（compose 栈，推荐——环境与 .env 注入一致）：
-  docker compose run --rm api /app/.venv/bin/python scripts/real_account_smoke.py
+用法（compose 栈，推荐——环境与 .env 注入一致；宿主机挂载运行，
+容器镜像不含 scripts/）：
+  docker compose run --rm -v "$PWD:/host" api \
+    /app/.venv/bin/python /host/scripts/real_account_smoke.py \
+    --report-out /host/real_smoke_report.md
 
 退出码：0 = 全部端到端不变量满足；2 = 配置/前置失败；3 = 不变量未满足
 （如实报告，绝不假装成功）。
@@ -584,6 +587,17 @@ def run(
     )
     injected_transport = transport is not None  # 测试注入 → data_mode=stub
 
+    # 守护（审查 N4）：一次性库名不得与共享库同名——DROP 路径的脚枪
+    from psycopg.conninfo import conninfo_to_dict
+
+    shared_db = conninfo_to_dict(settings.postgres_dsn).get("dbname")
+    if smoke_db == shared_db:
+        return (
+            {"meta": {"data_mode": "refused", "smoke_db": smoke_db}},
+            [f"SMOKE_DB must not equal the shared database name ({shared_db})"],
+            2,
+        )
+
     # 负向场景前置检查：缺 token 时不得触碰任何数据库（明确报告退出）
     if not injected_transport and not token:
         report = {"meta": {
@@ -648,6 +662,10 @@ def main() -> int:
         "ingest_requests": report.get("ingest", {}).get("requests"),
         "failures": failures,
     }, ensure_ascii=False))
+    if exit_code == 2:
+        # 配置失败（缺 token / 库名守护拒绝）：无探针/采集数据可渲染，
+        # 如实打印失败项退出——绝不渲染崩溃（审查 B1）
+        return 2
     if args.report_out:
         Path(args.report_out).write_text(
             _render_markdown(report, failures), encoding="utf-8",
