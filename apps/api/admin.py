@@ -7,11 +7,13 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import psycopg
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.concurrency import run_in_threadpool
+from src.connectors.operator_auth import authenticate_operator
 from src.core.config import Settings
 
 
@@ -22,8 +24,14 @@ def _fetch_all_rows(dsn: str, query: str, params: tuple[Any, ...] = ()) -> list[
         return [dict(zip(columns, row, strict=True)) for row in cur.fetchall()]
 
 
+
 def build_admin_router(settings: Settings) -> APIRouter:
     router = APIRouter(prefix="/admin", tags=["admin"])
+
+    def _uow_factory():
+        from src.db.uow import UnitOfWorkFactory
+
+        return UnitOfWorkFactory(settings.postgres_dsn)
 
     def _freshness(dsn: str) -> dict[str, str | None]:
         """数据新鲜度：每数据集最近一次成功运行的完成时间或最新 Raw 时间。"""
@@ -46,6 +54,66 @@ def build_admin_router(settings: Settings) -> APIRouter:
             row["dataset_name"]: raw_map.get(row["dataset_name"]) or row["last_success_at"]
             for row in rows
         }
+
+    @router.post("/capabilities/{api_name}/reset")
+    async def reset_capability_endpoint(
+        api_name: str, request: Request,
+        operator: str = Depends(authenticate_operator),
+    ) -> dict[str, Any]:
+        """熔断解除（issue #44）：SCHEMA_CHANGED → 单发验证探针 → AVAILABLE。
+
+        审计每次状态迁移（actor/reason/前态/后态）；二次确认（reason +
+        confirm: true）；解除验证探针失败自动回滚熔断。
+        """
+        body = await request.json() if request.headers.get("content-length") else {}
+        reason = str(body.get("reason") or "")
+        confirm = body.get("confirm") is True
+        trace_id = request.headers.get("x-trace-id")
+
+        if not reason or not confirm:
+            raise HTTPException(
+                status_code=422,
+                detail="reason (non-empty) and confirm: true are required",
+            )
+
+        from src.connectors.capability_reset import (
+            CapabilityResetError,
+            reset_capability,
+        )
+
+        def _probe_fn():
+            from src.connectors.datasets import load_datasets
+            from src.connectors.testing import FixtureTransport
+            from src.connectors.tushare_connectors import TushareConnector
+
+            config = load_datasets().get(api_name)
+            if config is None:
+                raise LookupError(api_name)
+            connector = TushareConnector(
+                config, settings=settings, token="probe",
+                transport=FixtureTransport(
+                    Path(__file__).resolve().parents[2] / "tests" / "fixtures" / "tushare"),
+            )
+            return connector.probe()
+
+        with _uow_factory().transaction() as uow:
+            try:
+                result = reset_capability(
+                    uow,
+                    source_system="TUSHARE",
+                    api_name=api_name,
+                    actor=operator,
+                    reason=reason,
+                    probe_fn=_probe_fn,
+                    trace_id=trace_id,
+                )
+            except CapabilityResetError as exc:
+                raise HTTPException(status_code=404, detail=str(exc)) from exc
+            except LookupError as exc:
+                raise HTTPException(
+                    status_code=404, detail=f"dataset {api_name} not found"
+                ) from exc
+        return result
 
     @router.get("/capabilities")
     async def capabilities() -> list[dict[str, Any]]:

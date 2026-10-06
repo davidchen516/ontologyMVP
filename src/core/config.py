@@ -97,6 +97,9 @@ class Settings(PostgresConnectionSettings):
     # 的 SHA-256 哈希（逗号分隔），明文密钥绝不入库/日志
     review_write_enabled: bool = False
     review_api_key_hashes: str | None = None
+    # 运维写操作（issue #44 / ADR-0006 同构）：默认关闭；SHA-256 哈希
+    operator_write_enabled: bool = False
+    operator_api_key_hashes: str | None = None
     llm_api_key: SecretStr | None = None
 
     @field_validator("tushare_token", "llm_api_key", mode="before")
@@ -129,6 +132,9 @@ class Settings(PostgresConnectionSettings):
             # 审核写能力：开关 + 至少一个有效密钥哈希同时满足才可用
             "review_write": self.review_write_enabled
             and bool(self.review_api_key_hashes),
+            # 运维写能力（熔断解除等）：同构
+            "operator_write": self.operator_write_enabled
+            and bool(self.operator_api_key_hashes),
         }
 
     def safe_summary(self) -> dict[str, object]:
