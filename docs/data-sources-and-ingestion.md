@@ -429,6 +429,25 @@ checksum
 - 行数较历史基线突降或突增时阻断自动发布；
 - 新字段和字段消失都触发Schema告警。
 
+### 12.1.1 字段层级（v0.1.3，账户积分层级兼容）
+
+数据集字段分两级（定义于 `ontology/mappings/tushare.yaml`，单一事实源）：
+
+| 层级 | 语义 | 缺失行为 |
+|------|------|---------|
+| `required_fields`（自然键/身份字段，如 ts_code/symbol/name） | 数据行身份与幂等键 | **SCHEMA_CHANGED 熔断**（真实布局漂移） |
+| `expected_fields`（非键业务字段，如 exchange/list_status） | 业务质量字段 | **质量标记降级**（账户层级差异—— AVAILABLE + missing_expected_fields detail，行级 `raw.source_record.request_params.missing_expected_fields` 可审计） |
+
+签名漂移检测仅对自然键字段集计算：自然键集跨页变化仍熔断；expected 字段跨页增减记标记继续。
+
+数据质量边界：`list_status` 缺失时 `master.security.status` 写 **UNKNOWN**（不默认 ACTIVE——已退市证券不得标为在市）；`exchange` 缺失时从 ts_code 后缀派生。首批字段层级应用于 `stock_basic`（exchange/list_status → expected）。
+
+**当前字段层级表**：
+
+| 数据集 | required（自然键） | expected（降级） |
+|--------|-------------------|------------------|
+| stock_basic | ts_code, symbol, name | exchange, list_status |
+
 ### 12.2 财务规则
 
 - 报告期、公告日期和更新标志完整；

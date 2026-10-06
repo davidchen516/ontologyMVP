@@ -1,4 +1,4 @@
-version: "0.1.2"
+version: "0.1.3"
 source_system: TUSHARE
 notes:
   - Interface availability and actual columns must be verified by Source Capability Probe.
@@ -53,10 +53,14 @@ datasets:
     schedule: weekly
     natural_key:
       - ts_code
+    # 字段层级（v0.1.3，issue #43）：required=自然键/身份字段（缺失即
+    # SCHEMA_CHANGED 熔断）；expected=非键业务字段（缺失记质量标记降级，
+    # 不熔断——账户积分层级差异）。
     required_fields:
       - ts_code
       - symbol
       - name
+    expected_fields:
       - exchange
       - list_status
     optional_fields:
@@ -119,6 +123,9 @@ datasets:
       - ts_code
     required_fields:
       - ts_code
+    # issue #43 M6：fullname 为非键 expected 字段（缺失→质量标记降级）
+    expected_fields:
+      - fullname
     optional_fields:
       - exchange
       - chairman

@@ -115,21 +115,33 @@ class TushareConnector:
         items = data.get("items") or []
         missing = [f for f in self.config.required_fields if f not in fields]
         if missing:
-            # 成功码但字段缺失/布局变化：记录签名并按 SCHEMA_CHANGED 上报，不伪装可用
+            # 自然键/身份字段缺失：真实布局漂移，熔断不伪装可用
             return ProbeResult(
                 dataset_name=self.dataset_name,
                 status=CapabilityStatus.SCHEMA_CHANGED,
                 error_code="REQUIRED_FIELDS_MISSING",
-                error_message=f"required fields missing: {missing}",
-                schema_signature=schema_signature_for_fields(fields),
+                error_message=f"required (identity) fields missing: {missing}",
+                schema_signature=schema_signature_for_fields(
+                    [f for f in fields if f in self.config.identity_fields]
+                ),
                 metadata={"rows": len(items), "attempts": result.attempts},
             )
+        # issue #43：expected 字段缺失 → AVAILABLE + 字段层级 detail
+        # （账户层级差异，非 schema 漂移——采集端同语义）
+        missing_expected = [
+            f for f in self.config.expected_fields if f not in fields
+        ]
+        metadata: dict[str, Any] = {"rows": len(items), "attempts": result.attempts}
+        if missing_expected:
+            metadata["missing_expected_fields"] = missing_expected
         return ProbeResult(
             dataset_name=self.dataset_name,
             status=CapabilityStatus.AVAILABLE,
             response_latency_ms=result.latency_ms,
-            schema_signature=schema_signature_for_fields(fields),
-            metadata={"rows": len(items), "attempts": result.attempts},
+            schema_signature=schema_signature_for_fields(
+                [f for f in fields if f in self.config.identity_fields]
+            ),
+            metadata=metadata,
         )
 
     def _probe_params(self) -> dict[str, Any]:
@@ -169,20 +181,28 @@ class TushareConnector:
         items = data.get("items") or []
         rows = [dict(zip(fields, item, strict=False)) for item in items]
 
-        signature = schema_signature_for_fields(fields)
+        # issue #43 裁决：签名漂移检测仅对自然键/身份字段集计算——
+        # expected（非键）字段的跨页增减是账户层级差异，走质量标记而非熔断
+        signature = schema_signature_for_fields(
+            [f for f in fields if f in self.config.identity_fields]
+        )
         missing = [f for f in self.config.required_fields if f not in fields]
         if missing:
             raise SchemaChangedError(
-                f"{self.dataset_name}: required fields missing {missing} "
+                f"{self.dataset_name}: required (identity) fields missing {missing} "
                 f"(signature={signature[:12]}…)"
             )
-        # 同批内字段签名与上批不一致 → 数据集字段布局漂移
+        # 自然键集跨页变化 → 仍熔断（不弱化）
         previous_signature = cursor.get("schema_signature")
         if previous_signature and previous_signature != signature:
             raise SchemaChangedError(
-                f"{self.dataset_name}: schema signature changed "
+                f"{self.dataset_name}: identity-field signature changed "
                 f"{previous_signature[:12]}… -> {signature[:12]}…"
             )
+        # expected 字段缺失 → 质量标记降级（不熔断，I1：必须可识别）
+        missing_expected = tuple(
+            f for f in self.config.expected_fields if f not in fields
+        )
 
         return SourceBatch(
             source_system=SOURCE_SYSTEM,
@@ -192,6 +212,7 @@ class TushareConnector:
             rows=rows,
             schema_signature=signature,
             is_empty=len(rows) == 0,
+            missing_expected_fields=missing_expected,
         )
 
     def next_cursor(self, batch: SourceBatch) -> dict[str, Any] | None:

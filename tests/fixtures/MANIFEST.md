@@ -1,6 +1,6 @@
 # Fixture 清单（issue #10：固定版本、内容 Hash、来源说明与更新流程）
 
-清单版本：v1（与 MANIFEST.yaml 的 version 字段同步，由
+清单版本：v2（与 MANIFEST.yaml 的 version 字段同步，由
 tests/unit/test_fixture_manifest.py 守护）
 
 所有 Fixture 均为**手工审定的静态快照**：CI 离线运行、结果确定、不含
@@ -12,7 +12,7 @@ tests/unit/test_fixture_manifest.py 守护）
 
 | 目录 | 来源 | 数据集 |
 |------|------|--------|
-| `tushare/` | TuShare Pro API 公开接口样例（脱敏手工重制） | stock_basic / stock_company / namechange / ths_index / ths_member / dc_index / dc_member / index_classify / index_member_all / fina 三表 / fina_mainbz_vip / top10_holders / anns_d / stk_surv / irm_qa_sh|sz + 6 个错误响应 |
+| `tushare/` | TuShare Pro API 公开接口样例（脱敏手工重制；`stock_basic.low_tier.json` 为低层级账户字段子集形态，issue #43 字段层级覆盖） | stock_basic / stock_company / namechange / ths_index / ths_member / dc_index / dc_member / index_classify / index_member_all / fina 三表 / fina_mainbz_vip / top10_holders / anns_d / stk_surv / irm_qa_sh|sz + 6 个错误响应 |
 | `claims/` | 披露文档语料样例（手工构造的合成文本） | （预留目录，#7 Claim 抽取语料按需补充） |
 
 约定：

@@ -66,6 +66,17 @@ class DatasetConfig:
     paginated: bool
     page_size: int = DEFAULT_PAGE_SIZE
     probe_only: bool = field(default=False)
+    # issue #43 字段层级：expected=非键业务字段（缺失→质量标记降级不熔断）
+    expected_fields: tuple[str, ...] = ()
+
+    @property
+    def identity_fields(self) -> tuple[str, ...]:
+        """签名漂移检测字段集（issue #43 裁决）：仅自然键/身份字段。
+
+        全字段集签名会把账户字段层级差异误判为 schema 漂移——收窄到
+        required_fields 后，expected 字段跨页增减走质量标记而非熔断。
+        """
+        return self.required_fields
 
     @property
     def ingested(self) -> bool:
@@ -85,6 +96,7 @@ def load_datasets() -> dict[str, DatasetConfig]:
             api_name=api_name,
             target=str(spec.get("target", "")),
             required_fields=tuple(spec.get("required_fields", [])),
+            expected_fields=tuple(spec.get("expected_fields", [])),
             probe_params=probe_params,
             paginated=PAGINATED.get(api_name, False),
             probe_only=probe_only,
