@@ -231,6 +231,15 @@ def ingest_dataset(
         with uow_factory.transaction() as uow:
             for row in accepted:
                 source_key = str(row.get("ts_code") or row.get("code") or "")[:500] or None
+                # I1：expected 字段缺失的降级必须在 raw 层可查——
+                # 写入 request_params.missing_expected_fields（行级审计）
+                record_params = batch.request_params
+                if batch.missing_expected_fields:
+                    record_params = {
+                        **batch.request_params,
+                        "missing_expected_fields":
+                            list(batch.missing_expected_fields),
+                    }
                 result = uow.source_records.insert_idempotent(
                     source_system=SOURCE_SYSTEM,
                     api_name=batch.dataset_name,
@@ -238,7 +247,7 @@ def ingest_dataset(
                     raw_payload=row,
                     ingest_run_id=run_id,
                     source_key=source_key,
-                    request_params=batch.request_params,
+                    request_params=record_params,
                     schema_signature=batch.schema_signature,
                 )
                 if result["inserted"]:

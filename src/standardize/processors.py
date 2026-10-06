@@ -113,9 +113,28 @@ class StockBasicProcessor:
             rejected.append(ctx.reject(str(exc), source_id, str(payload.get("ts_code"))))
             return ProcessedOutcome(0, rejected)
 
+        # issue #43 I2：list_status 缺失 → UNKNOWN（不静默默认 ACTIVE——
+        # 已退市证券不得被标为在市；降级必须可识别）
+        status = (
+            {"L": "ACTIVE", "D": "DELISTED", "P": "PAUSED"}.get(list_status or "")
+            if list_status is not None
+            else "UNKNOWN"
+        )
+
+        # issue #43：payload 的 exchange 字段优先（消除"字段从未被读"的
+        # 死映射）；缺失时从 ts_code 后缀派生（既有行为）
+        payload_exchange = clean_str(payload.get("exchange"))
         suffix_map = {"SH": "SSE", "SZ": "SZSE", "BJ": "BSE"}
+        derived_code = suffix_map[ts_code.split(".")[1]]
+        exchange_code = (
+            {"SSE": "SSE", "SZSE": "SZSE", "BSE": "BSE"}.get(
+                (payload_exchange or "").upper(), derived_code
+            )
+            if payload_exchange
+            else derived_code
+        )
         exchange = ctx.exchanges.upsert(
-            code=suffix_map[exchange_code], name=exchange_code
+            code=exchange_code, name=exchange_code
         )
         security = ctx.securities.upsert(
             ts_code=ts_code,
@@ -123,7 +142,7 @@ class StockBasicProcessor:
             name=name,
             exchange_id=exchange["id"],
             source_record_id=source_id,
-            status={"L": "ACTIVE", "D": "DELISTED", "P": "PAUSED"}.get(list_status or "", "ACTIVE"),
+            status=status,
         )
         written = 1 if security["inserted"] else 0
         return ProcessedOutcome(written, rejected)

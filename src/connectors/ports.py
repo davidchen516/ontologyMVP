@@ -30,6 +30,10 @@ class SourceBatch:
     schema_signature: str
     # 空 DataFrame / 无数据：rows 为空但结果合法；绝不能解释为"没有数据"的否定事实
     is_empty: bool = False
+    # issue #43 字段层级质量标记：本批响应缺失的 expected（非键）字段。
+    # 下游（raw 事件/标准化）据此给每行打 missing_fields 标记——降级
+    # 必须可识别，禁止无标记的静默降级（I1）。
+    missing_expected_fields: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

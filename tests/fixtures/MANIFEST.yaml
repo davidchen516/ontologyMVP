@@ -1,8 +1,8 @@
 # 机器可读 Fixture 清单（issue #10）。哈希不匹配即失败
 # （tests/unit/test_fixture_manifest.py）。更新流程见 MANIFEST.md。
 {
-  "version": "v1",
-  "updated": "2026-09-29",
+  "version": "v2",
+  "updated": "2026-09-30",
   "files": {
     "tushare/anns_d.json": "1de1188716a78e2972442427241bc2f410f42169dfc223e9c39167c5f5b58c4a",
     "tushare/balancesheet_vip.json": "83e1e2f9020bb135c8df8d82129a4b00e5b370380fe957352e6cd4d960085e1f",
@@ -28,6 +28,7 @@
     "tushare/stock_company.json": "97bbd29ab6e995874e5786e48e2696d40cad9c767007ec5600e907b47a5c27f6",
     "tushare/ths_index.json": "c6fe7726a8667b3b49b64f96ad34f0eddc993cc1293802916182d9136b717a98",
     "tushare/ths_member.json": "e4908e0b88cf1568b602c490ee07bfb11c7c1936fb46b4a515d42feff7df51ab",
-    "tushare/top10_holders.json": "cfffb1402b63e28ebc9e82a63b9af69ce74838abc0b4cdc58a78dad1cd96d19b"
+    "tushare/top10_holders.json": "cfffb1402b63e28ebc9e82a63b9af69ce74838abc0b4cdc58a78dad1cd96d19b",
+    "tushare/stock_basic.low_tier.json": "b6207e7a20e68b139cc79b64dab4b3729af3bc1df5c930e7e616fc2a725c94c6"
   }
 }
